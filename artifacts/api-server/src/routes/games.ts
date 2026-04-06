@@ -73,6 +73,8 @@ router.get("/games", async (req, res): Promise<void> => {
       durationMinutes: game.durationMinutes,
       isPublic: game.isPublic,
       mapsUrl: game.mapsUrl,
+      latitude: game.latitude ? parseFloat(game.latitude as string) : null,
+      longitude: game.longitude ? parseFloat(game.longitude as string) : null,
     }))
   );
 

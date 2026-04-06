@@ -44,6 +44,12 @@ if (!process.env.SESSION_SECRET) {
   logger.warn("SESSION_SECRET not set — using insecure fallback");
 }
 
+// In Replit's preview iframe the app is embedded cross-origin, so the
+// session cookie needs sameSite:"none" + secure:true to be sent by the browser.
+const isReplit = Boolean(process.env.REPLIT_DOMAINS);
+const isProduction = process.env.NODE_ENV === "production";
+const secureCookie = isReplit || isProduction;
+
 app.use(
   session({
     name: "playos_session",
@@ -52,9 +58,9 @@ app.use(
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: secureCookie,
       maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: secureCookie ? "none" : "lax",
     },
   })
 );

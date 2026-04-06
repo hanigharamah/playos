@@ -16,6 +16,8 @@ export const gamesTable = pgTable("games", {
   durationMinutes: integer("duration_minutes").notNull().default(60),
   isPublic: boolean("is_public").notNull().default(true),
   mapsUrl: text("maps_url"),
+  latitude: numeric("latitude", { precision: 10, scale: 6 }),
+  longitude: numeric("longitude", { precision: 10, scale: 6 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

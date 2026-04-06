@@ -108,6 +108,8 @@ export const ListGamesResponseItem = zod.object({
   durationMinutes: zod.number(),
   isPublic: zod.boolean(),
   mapsUrl: zod.string().nullish(),
+  latitude: zod.number().nullish(),
+  longitude: zod.number().nullish(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
 
