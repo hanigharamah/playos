@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
+import { useQueryClient } from "@tanstack/react-query";
 import { useGetGame, useBookSpot } from "@workspace/api-client-react";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
@@ -296,6 +297,7 @@ export default function GameDetail() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
+  const queryClient = useQueryClient();
   const { data: game, isLoading } = useGetGame(id);
   const bookSpot = useBookSpot();
 
@@ -340,7 +342,11 @@ export default function GameDetail() {
     bookSpot.mutate(
       { id, data: { team: selectedSlot.team, slotIndex: selectedSlot.slot } },
       {
-        onSuccess: (data) => { window.location.href = data.checkoutUrl; },
+        onSuccess: () => {
+          toast({ title: "Spot booked!", description: "You're in. See you on the pitch." });
+          setSelectedSlot(null);
+          queryClient.invalidateQueries({ queryKey: [`/api/games/${id}`] });
+        },
         onError: (err: any) => {
           toast({
             variant: "destructive",

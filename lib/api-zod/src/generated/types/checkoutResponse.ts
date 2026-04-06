@@ -7,6 +7,6 @@
  */
 
 export interface CheckoutResponse {
-  checkoutUrl: string;
-  sessionId: string;
+  booked: boolean;
+  bookingId: string;
 }
