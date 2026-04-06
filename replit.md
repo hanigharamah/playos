@@ -25,6 +25,8 @@ PlayOS is a full-stack football pickup game booking platform for Saudi Arabia. B
 - React + Vite frontend at `/`
 - Pages: home, games, game detail, auth, host/login, dashboard, dashboard/payouts, game/new, game/manage, payment/callback, contact, complaints, policies/refund
 - Auth guard: protected pages redirect to `/host/login` (for organiser pages)
+- `src/components/dashboard/WeeklyCalendar.tsx` — Google Calendar-style grid (3 PM–3 AM, 7 columns, drag-to-create, game color coding, week navigation, pitch filter tabs, current time indicator)
+- `src/components/dashboard/CreateGameModal.tsx` — modal for new game creation (time pre-fill from drag, pitch select, capacity/price/auto-cancel, public/private toggle)
 
 ### `artifacts/api-server` — Express API Server (port 8080)
 - REST API at `/api/*`

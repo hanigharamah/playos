@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useGetDashboardPayouts, useSavePayoutDetails, getGetDashboardPayoutsQueryKey } from "@workspace/api-client-react";
 import { useAuth } from "@/lib/auth";
@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
@@ -31,10 +30,14 @@ export default function Payouts() {
     swift: data?.payoutDetails?.swift || "",
   });
 
-  if (authLoading) return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
-  if (!user || user.role !== "organiser") {
-    setLocation("/host/login");
-    return null;
+  useEffect(() => {
+    if (!authLoading && (!user || user.role !== "organiser")) {
+      setLocation("/host/login");
+    }
+  }, [authLoading, user]);
+
+  if (authLoading || !user || user.role !== "organiser") {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   const handleSaveBank = (e: React.FormEvent) => {
@@ -55,16 +58,19 @@ export default function Payouts() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Tabs */}
-      <div className="flex items-center justify-center mb-8">
-        <Tabs value="payouts">
-          <TabsList>
-            <TabsTrigger value="dashboard" asChild>
-              <Link href="/dashboard">{t("dash.title")}</Link>
-            </TabsTrigger>
-            <TabsTrigger value="payouts">{t("dash.payouts")}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Dashboard / Payouts toggle navigation */}
+      <div className="flex justify-center mb-8">
+        <div className="inline-flex items-center bg-muted rounded-xl p-1 gap-1">
+          <Link
+            href="/dashboard"
+            className="px-5 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Dashboard
+          </Link>
+          <span className="px-5 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm">
+            Payouts
+          </span>
+        </div>
       </div>
 
       <h1 className="text-2xl font-bold mb-6">{t("dash.payouts")}</h1>
