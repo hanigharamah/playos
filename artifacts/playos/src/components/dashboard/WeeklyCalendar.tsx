@@ -248,7 +248,7 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
             <span className="w-2.5 h-2.5 rounded-sm inline-block bg-green-500" /> Full
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2.5 h-2.5 rounded-sm inline-block bg-yellow-400" /> 50%+
+            <span className="w-2.5 h-2.5 rounded-sm inline-block bg-yellow-400" /> &gt;50%
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2.5 h-2.5 rounded-sm inline-block bg-orange-400" /> &lt;50%
@@ -314,7 +314,7 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
       </div>
 
       {/* Scrollable grid area */}
-      <div className="overflow-y-auto flex-1 min-h-0">
+      <div className="overflow-y-auto flex-1 min-h-0 pt-2">
         {/* Grid */}
         <div
           ref={gridRef}
