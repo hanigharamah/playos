@@ -56,6 +56,17 @@
   --color-sidebar-accent-border: var(--sidebar-accent-border);
   --color-sidebar-ring: hsl(var(--sidebar-ring));
 
+  /* iOS system brand tokens */
+  --color-navy: #1D3557;
+  --color-ios-blue: #0A84FF;
+  --color-ios-green: #30D158;
+  --color-ios-orange: #FF9F0A;
+  --color-ios-red: #FF3B30;
+  --color-separator: #E5E5EA;
+  --color-label: #1C1C1E;
+  --color-secondary-label: #6C6C70;
+  --color-tertiary-label: #AEAEB2;
+
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
   --font-mono: var(--app-font-mono);
@@ -66,7 +77,7 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* HIGH ENERGY SPORTS THEME - LIGHT MODE */
+/* iOS-INSPIRED DESIGN SYSTEM */
 :root {
   --button-outline: rgba(0,0,0, .10);
   --badge-outline: rgba(0,0,0, .05);
@@ -76,46 +87,65 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  --background: 0 0% 98%;
-  --foreground: 240 10% 3.9%;
-  
+  /* #F2F2F7 — light gray page bg */
+  --background: 240 24% 96%;
+  /* #1C1C1E — near-black */
+  --foreground: 240 1% 11%;
+
+  /* #FFFFFF — white cards */
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 3.9%;
-  --card-border: 240 5.9% 90%;
-  
+  --card-foreground: 240 1% 11%;
+  --card-border: 240 11% 91%;
+
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 3.9%;
-  --popover-border: 240 5.9% 90%;
-  
-  --primary: 142 76% 36%;
-  --primary-foreground: 355.7 100% 97.3%;
-  
-  --secondary: 240 4.8% 95.9%;
-  --secondary-foreground: 240 5.9% 10%;
-  
-  --muted: 240 4.8% 95.9%;
-  --muted-foreground: 240 3.8% 46.1%;
-  
-  --accent: 240 4.8% 95.9%;
-  --accent-foreground: 240 5.9% 10%;
-  
-  --destructive: 0 84.2% 60.2%;
-  --destructive-foreground: 0 0% 98%;
+  --popover-foreground: 240 1% 11%;
+  --popover-border: 240 11% 91%;
 
-  --border: 240 5.9% 90%;
-  --input: 240 5.9% 90%;
-  --ring: 142 76% 36%;
+  /* #0A84FF — iOS blue */
+  --primary: 211 100% 52%;
+  --primary-foreground: 0 0% 100%;
 
-  --chart-1: 142 76% 36%;
-  --chart-2: 173 58% 39%;
-  --chart-3: 197 37% 24%;
-  --chart-4: 43 74% 66%;
-  --chart-5: 27 87% 67%;
+  /* #F2F2F7 for secondary surfaces */
+  --secondary: 240 24% 96%;
+  --secondary-foreground: 240 11% 43%;
 
-  --app-font-sans: "Inter", sans-serif;
+  /* Muted = same as secondary */
+  --muted: 240 24% 96%;
+  --muted-foreground: 240 11% 43%;
+
+  --accent: 240 24% 96%;
+  --accent-foreground: 240 1% 11%;
+
+  /* #FF3B30 */
+  --destructive: 3 100% 60%;
+  --destructive-foreground: 0 0% 100%;
+
+  /* #E5E5EA */
+  --border: 240 11% 91%;
+  --input: 240 11% 91%;
+  --ring: 211 100% 52%;
+
+  --chart-1: 211 100% 52%;
+  --chart-2: 145 63% 50%;
+  --chart-3: 218 50% 23%;
+  --chart-4: 38 100% 52%;
+  --chart-5: 3 100% 60%;
+
+  /* Sidebar inherits same system */
+  --sidebar: 0 0% 100%;
+  --sidebar-foreground: 240 1% 11%;
+  --sidebar-border: 240 11% 91%;
+  --sidebar-primary: 211 100% 52%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 24% 96%;
+  --sidebar-accent-foreground: 240 1% 11%;
+  --sidebar-ring: 211 100% 52%;
+
+  /* iOS SF Pro font stack */
+  --app-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
   --app-font-serif: Georgia, serif;
-  --app-font-mono: Menlo, monospace;
-  --radius: 0.5rem;
+  --app-font-mono: ui-monospace, Menlo, monospace;
+  --radius: 0.625rem;
 }
 
 .dark {
@@ -127,35 +157,35 @@
   --elevate-1: rgba(255,255,255, .04);
   --elevate-2: rgba(255,255,255, .09);
 
-  --background: 240 10% 3.9%;
+  --background: 240 10% 5%;
   --foreground: 0 0% 98%;
-  
-  --card: 240 10% 3.9%;
+
+  --card: 240 6% 10%;
   --card-foreground: 0 0% 98%;
-  --card-border: 240 3.7% 15.9%;
-  
-  --popover: 240 10% 3.9%;
+  --card-border: 240 4% 18%;
+
+  --popover: 240 6% 10%;
   --popover-foreground: 0 0% 98%;
-  --popover-border: 240 3.7% 15.9%;
-  
-  --primary: 142 70% 45%;
-  --primary-foreground: 144.9 80.4% 10%;
-  
-  --secondary: 240 3.7% 15.9%;
-  --secondary-foreground: 0 0% 98%;
-  
-  --muted: 240 3.7% 15.9%;
-  --muted-foreground: 240 5% 64.9%;
-  
-  --accent: 240 3.7% 15.9%;
+  --popover-border: 240 4% 18%;
+
+  --primary: 211 100% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 4% 15%;
+  --secondary-foreground: 0 0% 78%;
+
+  --muted: 240 4% 15%;
+  --muted-foreground: 240 5% 65%;
+
+  --accent: 240 4% 15%;
   --accent-foreground: 0 0% 98%;
-  
-  --destructive: 0 62.8% 30.6%;
+
+  --destructive: 3 90% 55%;
   --destructive-foreground: 0 0% 98%;
 
-  --border: 240 3.7% 15.9%;
-  --input: 240 3.7% 15.9%;
-  --ring: 142 70% 45%;
+  --border: 240 4% 18%;
+  --input: 240 4% 18%;
+  --ring: 211 100% 58%;
 }
 
 @layer base {
@@ -164,5 +194,20 @@
   }
   body {
     @apply font-sans antialiased bg-background text-foreground;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
+}
+
+/* Card style utility */
+.card-ios {
+  background: #ffffff;
+  border-radius: 12px;
+  border: 1px solid #E5E5EA;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+}
+
+/* Primary button glow */
+.btn-primary-glow {
+  box-shadow: 0 4px 12px rgba(10,132,255,0.25);
 }
