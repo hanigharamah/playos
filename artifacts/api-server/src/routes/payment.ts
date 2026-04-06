@@ -10,7 +10,7 @@ import {
 } from "@workspace/api-zod";
 import { generateId } from "../lib/auth";
 import { logger } from "../lib/logger";
-import { stripe } from "../lib/stripe";
+import { getUncachableStripeClient } from "../lib/stripe";
 
 const router: IRouter = Router();
 
@@ -143,8 +143,9 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
   // Create Stripe Checkout session
   const origin = getAppOrigin();
   const priceInHalalas = Math.round(Number(game.price) * 100);
+  const stripeClient = await getUncachableStripeClient();
 
-  const session = await stripe.checkout.sessions.create({
+  const session = await stripeClient.checkout.sessions.create({
     payment_method_types: ["card"],
     line_items: [
       {
@@ -180,7 +181,8 @@ router.get("/payment/verify", async (req, res): Promise<void> => {
 
   const { session_id, gameId } = parsed.data;
 
-  const session = await stripe.checkout.sessions.retrieve(session_id);
+  const stripeClient = await getUncachableStripeClient();
+  const session = await stripeClient.checkout.sessions.retrieve(session_id);
 
   if (session.payment_status === "paid") {
     const bookingId = session.metadata?.bookingId;

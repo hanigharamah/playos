@@ -22,7 +22,8 @@
     "express-session": "^1.19.0",
     "pino": "^9",
     "pino-http": "^10",
-    "stripe": "^22.0.0"
+    "stripe": "^22.0.0",
+    "stripe-replit-sync": "^1.0.0"
   },
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
