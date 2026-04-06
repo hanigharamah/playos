@@ -1,0 +1,341 @@
+Got a comprehensive picture of the app. Here's your Replit prompt:
+
+---
+
+**Build PlayOS — a production-ready football (soccer) pickup game booking platform for Saudi Arabia.**
+
+---
+
+## Overview
+
+PlayOS is a mobile-first web app where **hosts** (pitch owners) create football games and **players** discover, book, and pay for spots. Think "Eventbrite for pickup football." The platform collects a service fee from players and a listing fee from hosts on every booking.
+
+Use **Replit's built-in PostgreSQL database**, **Replit Auth** (or custom auth as described below), and **Stripe** for payments. Build with **Next.js (App Router)**, **React**, and **Tailwind CSS**. The app must be fully responsive (mobile-first) and support **English** and **Arabic (RTL)**.
+
+---
+
+## Database Schema
+
+Create these tables:
+
+### `users`
+| Column | Type | Notes |
+|---|---|---|
+| id | text PK | UUID |
+| email | text | Unique, nullable (hosts may not have email) |
+| phone | text | Saudi format +966XXXXXXXXX |
+| name | text | |
+| role | text | 'player' or 'organiser' |
+| password_hash | text | For organisers only (SHA256 with salt) |
+| created_at | timestamptz | Default now() |
+
+### `games`
+| Column | Type | Notes |
+|---|---|---|
+| id | text PK | UUID |
+| organiser_id | text FK→users | |
+| title | text | 2-80 chars |
+| pitch_name | text | Name of the pitch/venue |
+| location_text | text | Optional address |
+| kickoff_time | timestamptz | |
+| price | numeric | SAR per player |
+| capacity | int | 6-22, must be even |
+| status | text | 'open', 'full', 'cancelled' |
+| auto_cancel_hours | int | Default 4. If game not full X hours before kickoff, auto-cancel |
+| duration_minutes | int | Default 60 |
+| is_public | boolean | Default true. False = private (link-only) |
+| created_at | timestamptz | |
+
+### `bookings`
+| Column | Type | Notes |
+|---|---|---|
+| id | text PK | UUID |
+| game_id | text FK→games | |
+| user_id | text FK→users | |
+| team | int | 1 or 2 |
+| slot_index | int | Position within the team |
+| payment_status | text | 'pending', 'paid', 'refunded' |
+| payment_id | text | Stripe charge/session ID |
+| booked_at | timestamptz | |
+
+### `pitches`
+| Column | Type | Notes |
+|---|---|---|
+| id | text PK | UUID |
+| organiser_id | text FK→users | |
+| name | text | |
+| maps_url | text | Google Maps link (optional) |
+| created_at | timestamptz | |
+
+### `host_payout_details`
+| Column | Type | Notes |
+|---|---|---|
+| organiser_id | text PK FK→users | |
+| account_holder | text | |
+| iban | text | |
+| bank_name | text | Optional |
+| swift | text | Optional |
+| updated_at | timestamptz | |
+
+### `host_applications`
+| Column | Type | Notes |
+|---|---|---|
+| id | text PK | |
+| name | text | |
+| pitch_name | text | |
+| phone | text | |
+| city | text | |
+| created_at | timestamptz | |
+
+### `login_events`
+| Column | Type | Notes |
+|---|---|---|
+| id | text PK | |
+| user_id | text FK→users | |
+| ip | text | |
+| user_agent | text | |
+| created_at | timestamptz | |
+
+---
+
+## Fee Structure
+
+- **Player Service Fee**: SAR 2 added on top of the game price at checkout
+- **Host Listing Fee**: SAR 1 deducted per paid booking from the host's payout
+- Example: Game price SAR 50, 10 paid players → Player pays SAR 52, Host receives (50 - 1) × 10 = SAR 490
+
+---
+
+## User Roles & Auth
+
+### Players
+- Sign up with: email, password, phone (Saudi format: 05XXXXXXXX), name
+- Sign in with email + password
+- Phone stored as +966XXXXXXXXX (strip leading 0, prepend +966)
+- Session-based auth with secure HTTPOnly cookies (30-day expiry)
+- Can browse games and view game details without account (guest browsing)
+- Must authenticate to book/pay
+
+### Organisers (Hosts)
+- Apply at `/host/login` → Submit name, pitch name, phone, city → stored in `host_applications`
+- After manual approval: account created with phone + password
+- Login with phone + password (password hashed SHA256 with salt `playos_2025`)
+- Redirected to `/dashboard` after login
+
+---
+
+## Pages & Routes
+
+### Public Pages
+- **`/`** — Landing page. Hero section with tagline "Find and book football games near you." CTA buttons for players (Browse Games) and hosts (List Your Pitch). Show a few featured upcoming public games.
+- **`/games`** — Browse all public open games, grouped by location/city. Each game card shows: title, pitch name, date/time, price, spots remaining (e.g. "4/10 spots filled"), and a "Book Now" button. Include a map placeholder section saying "Coming soon" with a pin icon.
+- **`/game/[id]`** — Game detail page:
+  - **Interactive pitch layout (SVG)**: Visual football pitch divided into Team 1 (left) and Team 2 (right). Each slot is a circle — green if filled (shows player initial), empty/clickable if available. Players click empty slots to select their spot.
+  - **Game info card**: Date, kickoff time, pitch name, price + service fee breakdown, spots available
+  - **Player roster**: List of booked players grouped by team
+  - **Share button**: Native Web Share API on mobile, copy-link fallback on desktop
+  - **Google Maps link**: If pitch has maps_url, show "Open in Google Maps" link; otherwise show "Coming soon"
+  - **Booking flow**: Select spot → authenticate if needed → pay → confirmed
+  - After successful booking, show a green "You're in!" confirmation badge
+- **`/auth`** — Combined sign-in / sign-up page with tab toggle. Support `returnUrl` query param to redirect back after auth.
+- **`/host/login`** — Host login page (phone + password). Below: "Apply to become a host" section with application form.
+- **`/contact`** — Contact info page
+- **`/complaints`** — Complaint policy (24hr response SLA)
+- **`/policies/refund`** — Full refund policy page (see Refund Policy below)
+- **`/payment/callback`** — Payment return page. Verifies payment status, confirms booking, redirects to game page.
+
+### Protected Pages (require player auth)
+- **`/game/new`** — Create a new game form (also accessible by hosts). Fields: title, pitch name (dropdown if host has pitches), location, kickoff time, max players (6-22, even only), price per player (SAR), auto-cancel hours (1-72, default 4), visibility toggle (public/private).
+
+### Protected Pages (require organiser auth)
+- **`/dashboard`** — Host dashboard:
+  - Toggle tabs at top center: "Dashboard" | "Payouts" (active tab highlighted in blue)
+  - Calendar view showing scheduled games with color-coded indicators:
+    - Green = Full, Yellow = 50%+ filled, Orange = <50% filled, Red = Empty
+  - Color legend displayed above the calendar
+  - List of upcoming games with booking counts
+  - Quick stats: total upcoming games, total past games
+- **`/dashboard/payouts`** — Payouts page:
+  - Same toggle tabs (Payouts highlighted)
+  - **Weekly payout card**: Net payout for current week (Sun-Sat), paid player count, next payout date (following Sunday)
+  - **All-time stats**: Total gross collected
+  - **Upcoming games sidebar**: Next 3 games with dates
+  - **Bank details form**: Account holder name, IBAN (required, min 10 chars), bank name, SWIFT code. Upsert on save.
+- **`/game/[id]/manage`** — Game management page:
+  - Net payout calculation displayed
+  - Team roster with payment status per player
+  - Spot availability counter
+  - Visibility toggle (public/private)
+  - Delete game button (with confirmation)
+  - Share link
+
+### Arabic Routes
+Mirror ALL routes under `/ar/...` with full Arabic translations and RTL layout. Examples: `/ar`, `/ar/games`, `/ar/game/[id]`, `/ar/auth`, `/ar/dashboard`, etc. Add a language toggle button in the navbar that switches between English and Arabic.
+
+---
+
+## Payment Integration (Stripe)
+
+Use **Stripe Checkout** for payments.
+
+### Booking & Payment Flow
+1. Player selects a spot on the pitch layout
+2. If not authenticated, redirect to `/auth?returnUrl=/game/[id]`
+3. Player clicks "Book Spot" → Server creates Stripe Checkout Session:
+   - Amount: game price + SAR 2 service fee
+   - Currency: SAR
+   - Metadata: game_id, user_id, team, slot_index
+   - Success URL: `/payment/callback?session_id={CHECKOUT_SESSION_ID}&gameId=[id]&userId=[uid]&team=[t]&slot=[s]`
+   - Cancel URL: `/game/[id]`
+4. Player completes payment on Stripe
+5. **Webhook** (`/api/payment/webhook`): On `checkout.session.completed`:
+   - Verify session metadata
+   - Create booking with payment_status = 'paid'
+   - If requested slot is taken, auto-assign next free slot on same team
+   - If game reaches capacity, update status to 'full'
+6. **Callback page** (`/payment/callback`): Verify payment, show confirmation, redirect to game page
+
+### Slot Assignment Logic
+- Prefer the player's requested team + slot
+- If that slot was taken during payment, find next free slot on same team
+- If team is full, find slot on other team
+- Only `paid` bookings count as filled slots
+
+---
+
+## Auto-Cancellation Logic
+
+When fetching open games (in `getAllOpenGames` or `getGamesByOrganiser`):
+- Check each game: if `kickoff_time - auto_cancel_hours` has passed AND game is not at capacity
+- Automatically update status to `cancelled`
+- This runs passively on every game list fetch (no cron needed)
+
+---
+
+## Refund Policy
+
+Display on `/policies/refund`:
+
+**Player Cancellations:**
+- More than 12 hours before kickoff → 100% refund
+- 6-12 hours before kickoff → 50% refund
+- Less than 6 hours before kickoff → No refund
+
+**Game Cancellations by Host:**
+- More than 12 hours before → 100% refund to all players
+- 12 hours or less before → 100% refund + host pays SAR 20 late cancellation penalty
+
+---
+
+## Pitch Layout Component
+
+Build an **interactive SVG football pitch**:
+- Green rectangle with white field markings (center circle, penalty boxes, halfway line)
+- Divided into Team 1 (left half) and Team 2 (right half)
+- Player slots rendered as circles positioned across the pitch
+- **Empty slot**: Dashed border circle, clickable → triggers booking flow
+- **Filled slot**: Solid green circle with player's first initial in white
+- **Current user's slot**: Blue circle with their initial
+- Slots per team = capacity ÷ 2
+- Slot positions distributed evenly across each half of the pitch
+
+---
+
+## Security & Validation
+
+- **Rate limiting** on all auth endpoints and payment initialization:
+  - 20 requests per 60s globally per IP
+  - 10 requests per 60s per identifier (email/phone)
+  - Return 429 with Retry-After header
+- **Input validation**:
+  - Email: RFC 5322 pattern, max 254 chars
+  - Password: 4-72 chars
+  - Phone: Saudi format validation
+  - Game title: 2-80 chars, sanitize control characters
+  - Capacity: 6-22, must be even
+  - Price: positive number
+- **Protected routes**: Middleware checks auth cookie, redirects to `/auth` with `returnUrl`
+- **Organiser routes**: Additional check that user role = 'organiser'
+- **Payment webhook**: Verify Stripe signature before processing
+
+---
+
+## API Routes
+
+- `POST /api/host/login` — Organiser phone + password auth
+- `POST /api/host/apply` — Submit host application
+- `POST /api/payment/webhook` — Stripe webhook handler
+- `GET /api/og` — Dynamic Open Graph image generation for game sharing (generates preview image with game title, date, pitch name, spots remaining)
+
+---
+
+## Design System
+
+Mobile-first, clean, modern design. Use these Tailwind theme values:
+
+```
+Colors:
+- background: #FFFFFF
+- card: #F8F9FA
+- label: #1A1A1A (primary text)
+- secondary: #6B7280 (secondary text)
+- separator: #E5E7EB (borders)
+- blue: #3B82F6 (primary action, active states)
+- green: #22C55E (success, full games)
+- yellow: #EAB308 (warning, 50%+ filled)
+- orange: #F97316 (caution, <50% filled)
+- red: #EF4444 (danger, empty games, errors)
+
+Typography:
+- Font: Inter (or system sans-serif)
+- Headings: font-bold
+- Body: font-normal
+
+Layout:
+- Max width: 1024px centered
+- Padding: 16px mobile, 32px desktop
+- Border radius: 12px for cards, 8px for inputs
+- Cards: bg-card with 1px separator border
+```
+
+---
+
+## Key Business Rules
+
+1. **Even capacity only** — Games must have even number of max players (for balanced teams)
+2. **One booking per player per game** — Prevent duplicate bookings
+3. **Paid = confirmed** — Only paid bookings hold slots. Pending bookings don't count toward capacity.
+4. **Auto-balance teams** — When no specific slot selected, assign to team with fewer players
+5. **Public vs Private games** — Public games appear in `/games` browse list. Private games are link-only.
+6. **Phone normalization** — All Saudi phones stored as +966XXXXXXXXX
+7. **Organiser can only manage their own games** — Enforce in all queries
+
+---
+
+## Share & OG Images
+
+- **Share button** on game pages uses Web Share API (mobile) with fallback to clipboard copy
+- **Dynamic OG images** at `/api/og?gameId=[id]` — Generate an image showing game title, date, pitch, and spots remaining for rich WhatsApp/social previews
+- Set appropriate meta tags on game pages for social sharing
+
+---
+
+## What to Build First (Priority Order)
+
+1. Database schema + seed data
+2. Auth (player sign up/in, host login)
+3. Game creation form
+4. Games browse page
+5. Game detail page with pitch layout
+6. Stripe payment integration + booking flow
+7. Host dashboard + calendar
+8. Payouts page with bank details
+9. Auto-cancellation logic
+10. Arabic/RTL support
+11. Refund policy page
+12. OG image generation
+13. Rate limiting + security hardening
+
+---
+
+**Make everything production-ready: error handling, loading states, form validation, responsive design, and proper TypeScript types throughout. Use server components and server actions where possible. Keep the codebase clean and well-organized.**
