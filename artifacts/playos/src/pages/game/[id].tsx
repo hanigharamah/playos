@@ -19,7 +19,7 @@ export default function GameDetail() {
   const { toast } = useToast();
   
   const { data: game, isLoading } = useGetGame(id);
-  const bookSpot = useBookSpot(id);
+  const bookSpot = useBookSpot();
 
   const getPath = (path: string) => (language === "ar" ? `/ar${path}` : path);
 
@@ -53,7 +53,7 @@ export default function GameDetail() {
     if (isBooked) return;
 
     bookSpot.mutate(
-      { data: { team, slotIndex } },
+      { id, data: { team, slotIndex } },
       {
         onSuccess: (data) => {
           window.location.href = data.checkoutUrl;

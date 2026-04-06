@@ -1,0 +1,99 @@
+Got everything. Here are your two prompts:
+
+---
+
+## Prompt 1: Game Page ("Book Your Spot")
+
+**Rebuild the game detail page (`/game/[id]`) to match this exact design and layout, top to bottom:**
+
+**Sticky Navigation Bar (top):**
+- Sticky at top with blur backdrop (`backdrop-blur-md`), light background at 90% opacity
+- Bottom border (1px separator color)
+- Left: "PLAY" in dark navy + "OS" in blue, bold uppercase, tracked tight — this is the logo, text-only, no image
+- Right: Language toggle (EN/AR) and if the user is the game creator, a "Manage" link
+
+**Game Header Section:**
+- Left side: Game title (2xl bold, navy), pitch name below (base, gray), date + kickoff time below that (base, gray, formatted like "6 Apr 2026 · 8:00 PM")
+- Right side: A floating "SHARE" pill button — gradient background (pink → lavender → purple: `radial-gradient(120% 140% at 30% 20%, #ffd2f1 0%, #d5b6ff 55%, #9e89ff 100%)`), white text, uppercase, bold, 999px border radius, with a soft purple glow/shadow behind it and a white text-shadow glow. On hover it lifts up slightly and shadow intensifies.
+
+**Fill Bar (inside a white card below header):**
+- Label "BOOKED" (uppercase, xs, gray, tracking-widest) on left, "X / Y" count on right (sm, bold)
+- Below: thin progress bar (1.5px height, gray track, blue fill). Color changes: blue normally, orange when 80%+ full, red when completely full.
+
+**Interactive SVG Pitch Layout (inside a white card with border):**
+- A green football pitch (`#276B39`) with alternating darker stripes, white boundary lines, center line, center circle with dot, penalty boxes on both sides, and goal boxes (small rectangles at each end)
+- The pitch SVG viewBox is `0 0 400 260` with 12px margin inside
+- Divided into Team 1 (left half) and Team 2 (right half), labeled "TEAM 1" and "TEAM 2" at the top in faint white text
+- Player positions are predefined coordinate maps based on team size (e.g., 5v5 has specific x,y positions as percentages). Team 2 mirrors Team 1 (x position flipped)
+- **Filled slots**: Solid colored circles (radius 15) — Team 1 = blue (`#0A84FF`), Team 2 = red (`#FF3B30`), current user = yellow (`#FFD60A`). White 2px stroke. Player's initials in center (8px, bold, white text — or dark text for yellow).
+- **Empty slots**: Semi-transparent circles (`rgba(255,255,255,0.12)` fill), dashed white border (`strokeDasharray="4 3"`), with a "+" symbol in faint white. Clickable if game isn't full.
+- **Selected/pending slot**: Yellow-tinted fill (`rgba(255,214,10,0.35)`), solid yellow border, no dash
+- **Loading state**: Semi-transparent dark overlay over entire pitch
+
+**Pitch Legend (below SVG):**
+- Centered row of colored dots with labels: Blue dot "Team 1", Red dot "Team 2", Yellow dot "You" (only shown if user has a booking)
+
+**Guest Booking Flow (below pitch, if user not logged in):**
+- When no spot selected: "Tap a spot to book" hint text (centered, xs, gray)
+- When a spot is selected: Show a "Book Spot · SAR XX" button (blue bg, white text, rounded-xl, centered). Clicking it goes to `/auth?returnUrl=/game/[id]?team=X&slot=Y`
+
+**Game Info Card (white card with border, below pitch):**
+- 2-column grid:
+  - Date | Kickoff
+  - Pitch | Price
+- Each cell: small gray label on top (xs), bold navy value below (sm)
+- Divider line below the grid
+- "Service fee" row: left-aligned gray label, right-aligned "SAR 2" in gray
+- "Total" row below: left "Total" bold navy, right "SAR XX" bold navy
+
+**Map Section (below info card):**
+- If pitch has a Google Maps URL: Clickable card that opens the link. Shows a pin emoji (📍), "Open in Google Maps" in blue, and the location name in gray below. Light navy tinted background (`navy/5`)
+- If no maps URL: Same card but non-clickable, pin emoji, "Map" in navy bold, "Coming soon" in gray
+
+**Sticky Bottom CTA Bar:**
+- Fixed to bottom of screen, full width, blur backdrop, top border
+- Max-width 2xl centered content
+- States:
+  - Game cancelled → disabled "Game Cancelled" secondary button
+  - User already booked → disabled blue-tinted button "You're in · Team X"
+  - Game full → disabled "Game Full" button
+  - Guest (not logged in) → disabled hint "↑ Tap a spot on the pitch"
+  - Logged-in, can book → active booking button that initiates payment
+
+**Page container**: `min-h-screen pb-28` (padding bottom for sticky CTA). Content area: `max-w-2xl mx-auto` with `px-4 md:px-8 py-5`.
+
+---
+
+## Prompt 2: Design System & Colors
+
+**The app's color scheme and branding is wrong. Fix it to match this exact design system:**
+
+**Logo**: "PLAY" in dark navy (`#1D3557`) + "OS" in blue (`#0A84FF`). Bold, uppercase, extra-bold weight, tight letter-spacing. Text only — no image, no icon. This appears in navbars across the app.
+
+**Color palette — replace ALL existing colors with these exact values:**
+- `background`: `#F2F2F7` (light gray, the page background — NOT white)
+- `card`: `#FFFFFF` (white, used for cards and content containers)
+- `label`: `#1C1C1E` (near-black, primary text)
+- `secondary`: `#6C6C70` (gray, secondary text)
+- `tertiary`: `#AEAEB2` (lighter gray, tertiary/placeholder text)
+- `separator`: `#E5E5EA` (very light gray, all borders and dividers)
+- `blue`: `#0A84FF` (primary action color — buttons, links, active states, the "OS" in logo)
+- `navy`: `#1D3557` (dark navy — headings, the "PLAY" in logo, strong text)
+- `green`: `#30D158` (success states)
+- `orange`: `#FF9F0A` (warnings)
+- `red`: `#FF3B30` (errors, danger)
+
+**This is an iOS-inspired design language.** No green theme, no Material Design. Think Apple's Human Interface Guidelines.
+
+**Typography:**
+- Font stack: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif`
+- Antialiased rendering (`-webkit-font-smoothing: antialiased`)
+
+**Component styles:**
+- Cards: white background, 12px border radius, subtle shadow (`0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04)`), with 1px separator border
+- Primary buttons: blue (`#0A84FF`) background, white text, semibold, 10px radius, with blue glow shadow (`0 4px 12px rgba(10,132,255,0.25)`)
+- Secondary buttons: white background, blue text, semibold, 10px radius, 1px separator border
+- Inputs: white background, 1px separator border, 12px radius
+- Pill/badge radius: 100px (fully rounded)
+
+**Make sure EVERY page uses this color system. The primary brand color is blue `#0A84FF`, NOT green. The background is light gray `#F2F2F7`, NOT white.**
