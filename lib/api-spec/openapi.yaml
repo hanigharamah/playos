@@ -3,20 +3,31 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: PlayOS API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication
+  - name: games
+    description: Game operations
+  - name: bookings
+    description: Booking operations
+  - name: hosts
+    description: Host operations
+  - name: payment
+    description: Payment operations
+  - name: dashboard
+    description: Dashboard operations
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +35,546 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ==================== AUTH ====================
+  /auth/signup:
+    post:
+      operationId: signUp
+      tags: [auth]
+      summary: Sign up as a player
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SignUpBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login as a player (email + password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==================== HOST AUTH ====================
+  /host/login:
+    post:
+      operationId: hostLogin
+      tags: [hosts]
+      summary: Login as a host (phone + password)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostLoginBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthUser"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /host/apply:
+    post:
+      operationId: applyAsHost
+      tags: [hosts]
+      summary: Submit a host application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/HostApplicationBody"
+      responses:
+        "201":
+          description: Application submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==================== GAMES ====================
+  /games:
+    get:
+      operationId: listGames
+      tags: [games]
+      summary: List all public open games
+      parameters:
+        - name: city
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameSummary"
+
+    post:
+      operationId: createGame
+      tags: [games]
+      summary: Create a new game (organiser only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateGameBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/featured:
+    get:
+      operationId: getFeaturedGames
+      tags: [games]
+      summary: Get featured upcoming public games for the landing page
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GameSummary"
+
+  /games/{id}:
+    get:
+      operationId: getGame
+      tags: [games]
+      summary: Get game details including bookings/players
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameDetail"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    patch:
+      operationId: updateGame
+      tags: [games]
+      summary: Update game (organiser only, own game)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateGameBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Game"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    delete:
+      operationId: deleteGame
+      tags: [games]
+      summary: Delete game (organiser only, own game)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ==================== BOOKINGS ====================
+  /games/{id}/book:
+    post:
+      operationId: bookSpot
+      tags: [bookings]
+      summary: Initiate booking - creates Stripe checkout session
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookSpotBody"
+      responses:
+        "200":
+          description: Stripe checkout URL
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutResponse"
+        "400":
+          description: Validation error or slot unavailable
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Already booked
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment/verify:
+    get:
+      operationId: verifyPayment
+      tags: [payment]
+      summary: Verify a payment and confirm booking
+      parameters:
+        - name: session_id
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: gameId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Payment verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentVerifyResponse"
+        "400":
+          description: Payment not completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /payment/webhook:
+    post:
+      operationId: stripeWebhook
+      tags: [payment]
+      summary: Stripe webhook handler
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  # ==================== DASHBOARD ====================
+  /dashboard/games:
+    get:
+      operationId: getDashboardGames
+      tags: [dashboard]
+      summary: Get organiser's games for dashboard
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardGamesResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/payouts:
+    get:
+      operationId: getDashboardPayouts
+      tags: [dashboard]
+      summary: Get organiser's payout stats
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutsResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/payout-details:
+    post:
+      operationId: savePayoutDetails
+      tags: [dashboard]
+      summary: Save organiser bank payout details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PayoutDetailsBody"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /dashboard/payout-details/me:
+    get:
+      operationId: getPayoutDetails
+      tags: [dashboard]
+      summary: Get organiser's saved payout details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutDetails"
+        "404":
+          description: Not set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /games/{id}/manage:
+    get:
+      operationId: getGameManagement
+      tags: [games]
+      summary: Get full management view of a game (organiser only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GameManagement"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /pitches:
+    get:
+      operationId: listPitches
+      tags: [hosts]
+      summary: Get organiser's pitches
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Pitch"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+    post:
+      operationId: createPitch
+      tags: [hosts]
+      summary: Create a new pitch
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePitchBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Pitch"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +585,590 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    # ==================== AUTH SCHEMAS ====================
+    SignUpBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+        phone:
+          type: string
+        name:
+          type: string
+      required:
+        - email
+        - password
+        - phone
+        - name
+
+    LoginBody:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    HostLoginBody:
+      type: object
+      properties:
+        phone:
+          type: string
+        password:
+          type: string
+      required:
+        - phone
+        - password
+
+    HostApplicationBody:
+      type: object
+      properties:
+        name:
+          type: string
+        pitchName:
+          type: string
+        phone:
+          type: string
+        city:
+          type: string
+      required:
+        - name
+        - pitchName
+        - phone
+        - city
+
+    AuthUser:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        name:
+          type: string
+        role:
+          type: string
+          enum: [player, organiser]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - name
+        - role
+        - createdAt
+
+    # ==================== GAME SCHEMAS ====================
+    Game:
+      type: object
+      properties:
+        id:
+          type: string
+        organiserId:
+          type: string
+        title:
+          type: string
+        pitchName:
+          type: string
+        locationText:
+          type: ["string", "null"]
+        kickoffTime:
+          type: string
+          format: date-time
+        price:
+          type: number
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [open, full, cancelled]
+        autoCancelHours:
+          type: integer
+        durationMinutes:
+          type: integer
+        isPublic:
+          type: boolean
+        mapsUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - organiserId
+        - title
+        - pitchName
+        - kickoffTime
+        - price
+        - capacity
+        - status
+        - autoCancelHours
+        - durationMinutes
+        - isPublic
+        - createdAt
+
+    GameSummary:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        pitchName:
+          type: string
+        locationText:
+          type: ["string", "null"]
+        kickoffTime:
+          type: string
+          format: date-time
+        price:
+          type: number
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [open, full, cancelled]
+        bookedCount:
+          type: integer
+        durationMinutes:
+          type: integer
+        isPublic:
+          type: boolean
+        mapsUrl:
+          type: ["string", "null"]
+      required:
+        - id
+        - title
+        - pitchName
+        - kickoffTime
+        - price
+        - capacity
+        - status
+        - bookedCount
+        - durationMinutes
+        - isPublic
+
+    GameDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        organiserId:
+          type: string
+        title:
+          type: string
+        pitchName:
+          type: string
+        locationText:
+          type: ["string", "null"]
+        kickoffTime:
+          type: string
+          format: date-time
+        price:
+          type: number
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [open, full, cancelled]
+        autoCancelHours:
+          type: integer
+        durationMinutes:
+          type: integer
+        isPublic:
+          type: boolean
+        mapsUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingWithPlayer"
+        bookedCount:
+          type: integer
+      required:
+        - id
+        - organiserId
+        - title
+        - pitchName
+        - kickoffTime
+        - price
+        - capacity
+        - status
+        - autoCancelHours
+        - durationMinutes
+        - isPublic
+        - createdAt
+        - bookings
+        - bookedCount
+
+    GameManagement:
+      type: object
+      properties:
+        game:
+          $ref: "#/components/schemas/Game"
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingWithPlayer"
+        bookedCount:
+          type: integer
+        netPayout:
+          type: number
+        shareUrl:
+          type: string
+      required:
+        - game
+        - bookings
+        - bookedCount
+        - netPayout
+        - shareUrl
+
+    CreateGameBody:
+      type: object
+      properties:
+        title:
+          type: string
+        pitchName:
+          type: string
+        locationText:
+          type: ["string", "null"]
+        kickoffTime:
+          type: string
+        price:
+          type: number
+        capacity:
+          type: integer
+        autoCancelHours:
+          type: integer
+        durationMinutes:
+          type: integer
+        isPublic:
+          type: boolean
+        mapsUrl:
+          type: ["string", "null"]
+      required:
+        - title
+        - pitchName
+        - kickoffTime
+        - price
+        - capacity
+
+    UpdateGameBody:
+      type: object
+      properties:
+        title:
+          type: string
+        pitchName:
+          type: string
+        locationText:
+          type: ["string", "null"]
+        kickoffTime:
+          type: string
+        price:
+          type: number
+        capacity:
+          type: integer
+        isPublic:
+          type: boolean
+        status:
+          type: string
+          enum: [open, full, cancelled]
+        mapsUrl:
+          type: ["string", "null"]
+
+    # ==================== BOOKING SCHEMAS ====================
+    Booking:
+      type: object
+      properties:
+        id:
+          type: string
+        gameId:
+          type: string
+        userId:
+          type: string
+        team:
+          type: integer
+        slotIndex:
+          type: integer
+        paymentStatus:
+          type: string
+          enum: [pending, paid, refunded]
+        paymentId:
+          type: ["string", "null"]
+        bookedAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - gameId
+        - userId
+        - team
+        - slotIndex
+        - paymentStatus
+        - bookedAt
+
+    BookingWithPlayer:
+      type: object
+      properties:
+        id:
+          type: string
+        gameId:
+          type: string
+        userId:
+          type: string
+        team:
+          type: integer
+        slotIndex:
+          type: integer
+        paymentStatus:
+          type: string
+          enum: [pending, paid, refunded]
+        paymentId:
+          type: ["string", "null"]
+        bookedAt:
+          type: string
+          format: date-time
+        playerName:
+          type: string
+        playerPhone:
+          type: ["string", "null"]
+      required:
+        - id
+        - gameId
+        - userId
+        - team
+        - slotIndex
+        - paymentStatus
+        - bookedAt
+        - playerName
+
+    BookSpotBody:
+      type: object
+      properties:
+        team:
+          type: integer
+        slotIndex:
+          type: integer
+      required:
+        - team
+        - slotIndex
+
+    CheckoutResponse:
+      type: object
+      properties:
+        checkoutUrl:
+          type: string
+        sessionId:
+          type: string
+      required:
+        - checkoutUrl
+        - sessionId
+
+    PaymentVerifyResponse:
+      type: object
+      properties:
+        status:
+          type: string
+        booking:
+          $ref: "#/components/schemas/Booking"
+        gameId:
+          type: string
+      required:
+        - status
+        - gameId
+
+    # ==================== DASHBOARD SCHEMAS ====================
+    DashboardGame:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        pitchName:
+          type: string
+        kickoffTime:
+          type: string
+          format: date-time
+        price:
+          type: number
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [open, full, cancelled]
+        bookedCount:
+          type: integer
+        isPublic:
+          type: boolean
+        durationMinutes:
+          type: integer
+      required:
+        - id
+        - title
+        - pitchName
+        - kickoffTime
+        - price
+        - capacity
+        - status
+        - bookedCount
+        - isPublic
+        - durationMinutes
+
+    DashboardGamesResponse:
+      type: object
+      properties:
+        upcoming:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardGame"
+        past:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardGame"
+        totalUpcoming:
+          type: integer
+        totalPast:
+          type: integer
+      required:
+        - upcoming
+        - past
+        - totalUpcoming
+        - totalPast
+
+    WeeklyPayout:
+      type: object
+      properties:
+        weekStart:
+          type: string
+          format: date-time
+        weekEnd:
+          type: string
+          format: date-time
+        paidPlayerCount:
+          type: integer
+        netPayout:
+          type: number
+        nextPayoutDate:
+          type: string
+          format: date-time
+      required:
+        - weekStart
+        - weekEnd
+        - paidPlayerCount
+        - netPayout
+        - nextPayoutDate
+
+    PayoutsResponse:
+      type: object
+      properties:
+        weekly:
+          $ref: "#/components/schemas/WeeklyPayout"
+        allTimeGross:
+          type: number
+        upcomingGames:
+          type: array
+          items:
+            $ref: "#/components/schemas/DashboardGame"
+        payoutDetails:
+          $ref: "#/components/schemas/PayoutDetails"
+      required:
+        - weekly
+        - allTimeGross
+        - upcomingGames
+
+    PayoutDetailsBody:
+      type: object
+      properties:
+        accountHolder:
+          type: string
+        iban:
+          type: string
+        bankName:
+          type: ["string", "null"]
+        swift:
+          type: ["string", "null"]
+      required:
+        - accountHolder
+        - iban
+
+    PayoutDetails:
+      type: object
+      properties:
+        organiserId:
+          type: string
+        accountHolder:
+          type: string
+        iban:
+          type: string
+        bankName:
+          type: ["string", "null"]
+        swift:
+          type: ["string", "null"]
+        updatedAt:
+          type: string
+          format: date-time
+      required:
+        - organiserId
+        - accountHolder
+        - iban
+        - updatedAt
+
+    # ==================== PITCH SCHEMAS ====================
+    Pitch:
+      type: object
+      properties:
+        id:
+          type: string
+        organiserId:
+          type: string
+        name:
+          type: string
+        mapsUrl:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+          format: date-time
+      required:
+        - id
+        - organiserId
+        - name
+        - createdAt
+
+    CreatePitchBody:
+      type: object
+      properties:
+        name:
+          type: string
+        mapsUrl:
+          type: ["string", "null"]
+      required:
+        - name

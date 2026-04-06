@@ -1,0 +1,56 @@
+Here's your follow-up prompt:
+
+---
+
+**The host dashboard needs a proper interactive weekly calendar for game scheduling. Replace whatever you built with this:**
+
+The dashboard's main view is a Google Calendar-style weekly grid where hosts create games by clicking and dragging on time slots.
+
+**Calendar Grid:**
+- 7 columns (Sun–Sat), rows from 3 PM to 3 AM next day
+- Sticky day headers at top with day abbreviation + date number. Today's date in a blue circle
+- Time labels on the left column (3 PM, 4 PM... 2 AM, 3 AM)
+- 60px row height per hour
+- Red horizontal line + red dot showing the current time on today's column, updates every minute
+- Past time slots are dimmed (30% opacity) and not interactive
+
+**Pitch Filter Tabs (top right of toolbar):**
+- If the host has multiple pitches, show tabs: "All" | "Pitch 1" | "Pitch 2" etc.
+- Active tab = blue bg + white text, inactive = bordered + gray text
+- Filters which games display on the calendar
+- Single-pitch hosts auto-select their only pitch (no tabs shown)
+
+**Game Slots:**
+- Existing games render as colored rounded rectangles filling their time slot on the grid
+- Color by fill rate: Green = Full, Yellow = 50%+ filled, Orange = <50% filled, Red = 0 bookings
+- Clicking a game slot goes to that game's manage page
+- Show a color legend above the grid with small colored squares and labels
+
+**Drag-to-Create (this is critical):**
+- Mousedown on an empty cell starts a drag
+- Dragging vertically on the same day column extends the selection — show a semi-transparent red overlay with a time range label like "6:00 PM – 8:00 PM"
+- Minimum selection is 60 minutes
+- Mouseup opens a Create Game modal pre-filled with the selected day, time, and duration
+
+**Create Game Modal:**
+- Title: "New Game" with the selected date underneath (e.g. "Monday, 7 April")
+- Start time and end time as editable time inputs (30-min steps), shown as a range. Below: "Time zone · Riyadh"
+- Visibility toggle: a button that switches between "Public" (visible in Available Games) and "Private" (link only)
+- Pitch dropdown: only shown when "All" tab is active and host has multiple pitches. Otherwise use the selected pitch automatically
+- Players: number input, min 2, max 22
+- Price (SAR): number input
+- Auto-cancel hours: number input (1–24) with helper text "The game will be cancelled if all spots aren't taken by this time"
+- Cancel and Create Game buttons
+- Save price and capacity to localStorage so they persist as defaults next time
+
+**Week Navigation (toolbar above grid):**
+- "Today" button to jump back to current week
+- Left/right chevrons for prev/next week
+- Month label like "April 2026" or "Mar – April 2026" if the week spans two months
+- If today is Saturday, default to showing next week (Saudi weekend)
+
+Also make sure the Dashboard and Payouts pages have a centered toggle tab at the top of the page — two buttons side by side in a rounded container. The active page is highlighted in blue, the inactive one is plain text. This is the navigation between Dashboard and Payouts, not a browser tab.
+
+---
+
+That should get Replit to rebuild the calendar properly.
