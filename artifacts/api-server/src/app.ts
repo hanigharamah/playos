@@ -2,10 +2,18 @@ import express, { type Express } from "express";
 import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
 import router from "./routes";
 import { logger } from "./lib/logger";
 
+const PgSession = connectPgSimple(session);
+
 const app: Express = express();
+
+// Trust the Replit/reverse-proxy's X-Forwarded-Proto header so that
+// req.secure === true when the original client connection was HTTPS.
+// This is required for express-session to set Secure cookies behind a proxy.
+app.set("trust proxy", 1);
 
 app.use(
   pinoHttp({
@@ -56,6 +64,10 @@ app.use(
     secret: process.env.SESSION_SECRET || "playos_dev_secret_change_me",
     resave: false,
     saveUninitialized: false,
+    store: new PgSession({
+      conString: process.env.DATABASE_URL,
+      tableName: "user_sessions",
+    }),
     cookie: {
       httpOnly: true,
       secure: secureCookie,

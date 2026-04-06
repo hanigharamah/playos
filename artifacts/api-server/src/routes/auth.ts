@@ -79,13 +79,20 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
   // Set session cookie
   (req.session as any).userId = user.id;
 
-  res.status(201).json({
-    id: user.id,
-    email: user.email,
-    phone: user.phone,
-    name: user.name,
-    role: user.role,
-    createdAt: user.createdAt,
+  req.session.save((err) => {
+    if (err) {
+      logger.error({ err }, "Session save failed on signup");
+      res.status(500).json({ error: "Failed to create session" });
+      return;
+    }
+    res.status(201).json({
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+    });
   });
 });
 
@@ -121,13 +128,20 @@ router.post("/auth/login", async (req, res): Promise<void> => {
 
   (req.session as any).userId = user.id;
 
-  res.json({
-    id: user.id,
-    email: user.email,
-    phone: user.phone,
-    name: user.name,
-    role: user.role,
-    createdAt: user.createdAt,
+  req.session.save((err) => {
+    if (err) {
+      logger.error({ err }, "Session save failed on login");
+      res.status(500).json({ error: "Failed to create session" });
+      return;
+    }
+    res.json({
+      id: user.id,
+      email: user.email,
+      phone: user.phone,
+      name: user.name,
+      role: user.role,
+      createdAt: user.createdAt,
+    });
   });
 });
 
