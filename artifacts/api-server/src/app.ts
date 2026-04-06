@@ -3,8 +3,12 @@ import cors from "cors";
 import pinoHttp from "pino-http";
 import session from "express-session";
 import connectPgSimple from "connect-pg-simple";
+import path from "path";
+import { fileURLToPath } from "url";
 import router from "./routes";
 import { logger } from "./lib/logger";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PgSession = connectPgSimple(session);
 
@@ -75,5 +79,15 @@ app.use(
 );
 
 app.use("/api", router);
+
+// In production, serve the compiled Vite frontend and handle client-side routing.
+// The frontend is built into artifacts/playos/dist/public relative to the workspace root.
+if (process.env.NODE_ENV === "production") {
+  const frontendDist = path.resolve(__dirname, "../../../artifacts/playos/dist/public");
+  app.use(express.static(frontendDist));
+  app.get("*", (_req, res) => {
+    res.sendFile(path.join(frontendDist, "index.html"));
+  });
+}
 
 export default app;
