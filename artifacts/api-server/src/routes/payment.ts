@@ -5,13 +5,27 @@ import {
   BookSpotParams,
   BookSpotBody,
   BookSpotResponse,
+  VerifyPaymentQueryParams,
+  VerifyPaymentResponse,
 } from "@workspace/api-zod";
 import { generateId } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { stripe } from "../lib/stripe";
 
 const router: IRouter = Router();
 
-// POST /games/:id/book — payment bypassed, booking created immediately
+function getAppOrigin(): string {
+  const domains = process.env["REPLIT_DOMAINS"];
+  if (domains) {
+    const first = domains.split(",")[0]?.trim();
+    if (first) return `https://${first}`;
+  }
+  const devDomain = process.env["REPLIT_DEV_DOMAIN"];
+  if (devDomain) return `https://${devDomain}`;
+  return "http://localhost:26205";
+}
+
+// POST /api/games/:id/book — create Stripe Checkout session
 router.post("/games/:id/book", async (req, res): Promise<void> => {
   const userId = (req.session as any)?.userId;
   if (!userId) {
@@ -35,7 +49,6 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
 
   const { team, slotIndex } = parsed.data;
 
-  // Fetch game
   const [game] = await db.select().from(gamesTable).where(eq(gamesTable.id, gameId));
   if (!game) {
     res.status(404).json({ error: "Game not found" });
@@ -52,7 +65,7 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check if user already booked this game
+  // Check if user already has a confirmed spot
   const [existingBooking] = await db
     .select()
     .from(bookingsTable)
@@ -69,8 +82,8 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
     return;
   }
 
-  // Get existing paid bookings to check slot availability
-  const existingBookings = await db
+  // Find an available slot
+  const paidBookings = await db
     .select()
     .from(bookingsTable)
     .where(and(eq(bookingsTable.gameId, gameId), eq(bookingsTable.paymentStatus, "paid")));
@@ -79,16 +92,15 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
   let assignedTeam = team;
   let assignedSlot = slotIndex;
 
-  // If requested slot is taken, find next available one
-  const slotTaken = existingBookings.some(
+  const slotTaken = paidBookings.some(
     (b) => b.team === assignedTeam && b.slotIndex === assignedSlot
   );
 
   if (slotTaken) {
-    const teamBookings = existingBookings.filter((b) => b.team === assignedTeam);
-    const usedSlots = new Set(teamBookings.map((b) => b.slotIndex));
+    const usedSlots = new Set(
+      paidBookings.filter((b) => b.team === assignedTeam).map((b) => b.slotIndex)
+    );
     let found = false;
-
     for (let s = 0; s < slotsPerTeam; s++) {
       if (!usedSlots.has(s)) {
         assignedSlot = s;
@@ -96,22 +108,19 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
         break;
       }
     }
-
     if (!found) {
       const otherTeam = assignedTeam === 1 ? 2 : 1;
-      const otherUsedSlots = new Set(
-        existingBookings.filter((b) => b.team === otherTeam).map((b) => b.slotIndex)
+      const otherUsed = new Set(
+        paidBookings.filter((b) => b.team === otherTeam).map((b) => b.slotIndex)
       );
-
       for (let s = 0; s < slotsPerTeam; s++) {
-        if (!otherUsedSlots.has(s)) {
+        if (!otherUsed.has(s)) {
           assignedTeam = otherTeam;
           assignedSlot = s;
           found = true;
           break;
         }
       }
-
       if (!found) {
         res.status(400).json({ error: "No spots available" });
         return;
@@ -119,7 +128,7 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
     }
   }
 
-  // Create booking immediately (payment bypassed)
+  // Create a pending booking to hold the slot
   const bookingId = generateId();
   await db.insert(bookingsTable).values({
     id: bookingId,
@@ -127,18 +136,104 @@ router.post("/games/:id/book", async (req, res): Promise<void> => {
     userId,
     team: assignedTeam,
     slotIndex: assignedSlot,
-    paymentStatus: "paid",
-    paymentId: "bypassed",
+    paymentStatus: "pending",
+    paymentId: null,
   });
 
-  // Mark game full if capacity reached
-  if (existingBookings.length + 1 >= game.capacity) {
-    await db.update(gamesTable).set({ status: "full" }).where(eq(gamesTable.id, gameId));
+  // Create Stripe Checkout session
+  const origin = getAppOrigin();
+  const priceInHalalas = Math.round(Number(game.price) * 100);
+
+  const session = await stripe.checkout.sessions.create({
+    payment_method_types: ["card"],
+    line_items: [
+      {
+        price_data: {
+          currency: "sar",
+          product_data: {
+            name: game.title,
+            description: `${game.pitchName} · ${new Date(game.kickoffTime).toLocaleDateString("en-SA")}`,
+          },
+          unit_amount: priceInHalalas,
+        },
+        quantity: 1,
+      },
+    ],
+    mode: "payment",
+    success_url: `${origin}/payment/callback?session_id={CHECKOUT_SESSION_ID}&gameId=${gameId}`,
+    cancel_url: `${origin}/game/${gameId}`,
+    metadata: { bookingId, gameId, userId },
+  });
+
+  logger.info({ gameId, userId, sessionId: session.id, bookingId }, "Checkout session created");
+
+  res.json(BookSpotResponse.parse({ checkoutUrl: session.url!, sessionId: session.id }));
+});
+
+// GET /api/payment/verify?session_id=...&gameId=...
+router.get("/payment/verify", async (req, res): Promise<void> => {
+  const parsed = VerifyPaymentQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
   }
 
-  logger.info({ gameId, userId, assignedTeam, assignedSlot }, "Booking created (payment bypassed)");
+  const { session_id, gameId } = parsed.data;
 
-  res.json(BookSpotResponse.parse({ booked: true, bookingId }));
+  const session = await stripe.checkout.sessions.retrieve(session_id);
+
+  if (session.payment_status === "paid") {
+    const bookingId = session.metadata?.bookingId;
+    if (bookingId) {
+      // Confirm the pending booking
+      await db
+        .update(bookingsTable)
+        .set({ paymentStatus: "paid", paymentId: session.id })
+        .where(and(eq(bookingsTable.id, bookingId), eq(bookingsTable.paymentStatus, "pending")));
+
+      // Mark game full if at capacity
+      const [game] = await db.select().from(gamesTable).where(eq(gamesTable.id, gameId));
+      if (game) {
+        const paidCount = await db
+          .select()
+          .from(bookingsTable)
+          .where(and(eq(bookingsTable.gameId, gameId), eq(bookingsTable.paymentStatus, "paid")));
+
+        if (paidCount.length >= game.capacity) {
+          await db.update(gamesTable).set({ status: "full" }).where(eq(gamesTable.id, gameId));
+        }
+      }
+
+      const [booking] = await db
+        .select()
+        .from(bookingsTable)
+        .where(eq(bookingsTable.id, bookingId));
+
+      logger.info({ bookingId, gameId }, "Booking confirmed after payment");
+
+      res.json(
+        VerifyPaymentResponse.parse({
+          status: "paid",
+          booking: booking
+            ? {
+                id: booking.id,
+                gameId: booking.gameId,
+                userId: booking.userId,
+                team: booking.team,
+                slotIndex: booking.slotIndex,
+                paymentStatus: booking.paymentStatus,
+                paymentId: booking.paymentId,
+                bookedAt: booking.bookedAt,
+              }
+            : undefined,
+          gameId,
+        })
+      );
+      return;
+    }
+  }
+
+  res.json(VerifyPaymentResponse.parse({ status: session.payment_status ?? "unknown", gameId }));
 });
 
 export default router;

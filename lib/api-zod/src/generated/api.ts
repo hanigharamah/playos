@@ -243,8 +243,8 @@ export const BookSpotBody = zod.object({
 });
 
 export const BookSpotResponse = zod.object({
-  booked: zod.boolean(),
-  bookingId: zod.string(),
+  checkoutUrl: zod.string(),
+  sessionId: zod.string(),
 });
 
 /**

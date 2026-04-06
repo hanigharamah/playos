@@ -342,10 +342,14 @@ export default function GameDetail() {
     bookSpot.mutate(
       { id, data: { team: selectedSlot.team, slotIndex: selectedSlot.slot } },
       {
-        onSuccess: () => {
-          toast({ title: "Spot booked!", description: "You're in. See you on the pitch." });
-          setSelectedSlot(null);
-          queryClient.invalidateQueries({ queryKey: [`/api/games/${id}`] });
+        onSuccess: (data) => {
+          if (data?.checkoutUrl) {
+            window.location.href = data.checkoutUrl;
+          } else {
+            toast({ title: "Spot booked!", description: "You're in. See you on the pitch." });
+            setSelectedSlot(null);
+            queryClient.invalidateQueries({ queryKey: [`/api/games/${id}`] });
+          }
         },
         onError: (err: any) => {
           toast({
