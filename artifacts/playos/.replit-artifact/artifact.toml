@@ -18,13 +18,21 @@ localPort = 26205
 run = "pnpm --filter @workspace/playos run dev"
 
 [services.production]
-build = [ "pnpm", "--filter", "@workspace/playos", "run", "build" ]
-publicDir = "artifacts/playos/dist/public"
-serve = "static"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+[services.production.build]
+args = ["sh", "-c", "pnpm --filter @workspace/playos run build && pnpm --filter @workspace/api-server run build"]
+
+[services.production.build.env]
+NODE_ENV = "production"
+
+[services.production.run]
+args = ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]
+
+[services.production.run.env]
+NODE_ENV = "production"
+
+[services.production.health.startup]
+path = "/api/healthz"
 
 [services.env]
 PORT = "26205"
