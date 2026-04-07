@@ -58,8 +58,10 @@ export function Footer() {
             <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
               <img src="/pay-mada.png" alt="mada" className="h-[22px] w-auto object-contain" />
             </div>
-            {/* Apple Pay — image already has black background */}
-            <img src="/pay-applepay.png" alt="Apple Pay" className="h-[35px] w-auto object-contain rounded" />
+            {/* Apple Pay */}
+            <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
+              <img src="/pay-applepay.png" alt="Apple Pay" className="h-[20px] w-auto object-contain" />
+            </div>
             {/* STC Bank */}
             <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
               <img src="/pay-stcpay.png" alt="STC Pay" className="h-[24px] w-auto object-contain" />
