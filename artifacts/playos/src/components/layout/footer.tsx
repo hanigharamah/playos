@@ -54,14 +54,12 @@ export function Footer() {
             <img src="/pay-visa.svg" alt="Visa" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
             {/* Mastercard */}
             <img src="/pay-mastercard.svg" alt="Mastercard" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
-            {/* mada — extracted from official badge */}
+            {/* mada — transparent logo on white pill */}
             <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-mada.png" alt="mada" className="h-[18px] w-auto object-contain" />
+              <img src="/pay-mada.png" alt="mada" className="h-[22px] w-auto object-contain" />
             </div>
-            {/* Apple Pay — official logo */}
-            <div className="h-[35px] px-3 rounded bg-black flex items-center justify-center">
-              <img src="/pay-applepay.png" alt="Apple Pay" className="h-[20px] w-auto object-contain" />
-            </div>
+            {/* Apple Pay — image already has black background */}
+            <img src="/pay-applepay.png" alt="Apple Pay" className="h-[35px] w-auto object-contain rounded" />
             {/* STC Bank */}
             <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
               <img src="/pay-stcpay.png" alt="STC Pay" className="h-[24px] w-auto object-contain" />
