@@ -55,8 +55,8 @@ export function Footer() {
             {/* Mastercard */}
             <img src="/pay-mastercard.svg" alt="Mastercard" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
             {/* mada — transparent logo on white pill */}
-            <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-mada.png" alt="mada" className="h-[22px] w-auto object-contain" />
+            <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
+              <img src="/pay-mada.png" alt="mada" className="h-[28px] w-auto object-contain" />
             </div>
             {/* Apple Pay */}
             <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
@@ -64,7 +64,7 @@ export function Footer() {
             </div>
             {/* STC Bank */}
             <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-stcpay.png" alt="STC Pay" className="h-[24px] w-auto object-contain" />
+              <img src="/pay-stcpay.png" alt="STC Pay" className="h-[28px] w-auto object-contain" />
             </div>
           </div>
           <p className="text-xs text-[#8E8E93] mb-4">Payments secured by Amazon Payment Services</p>
