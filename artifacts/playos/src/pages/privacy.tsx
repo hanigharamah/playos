@@ -15,7 +15,7 @@ const sections = [
   },
   {
     title: "4. Data Security",
-    body: "PlayOS takes appropriate steps to ensure data privacy and security including through various hardware and software methodologies. However, playos.vercel.app cannot guarantee the security of any information that is disclosed online.",
+    body: "PlayOS takes appropriate steps to ensure data privacy and security including through various hardware and software methodologies. However, playos1.replit.app cannot guarantee the security of any information that is disclosed online.",
   },
   {
     title: "5. Third-Party Links",

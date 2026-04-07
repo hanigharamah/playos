@@ -20,7 +20,7 @@ const sections = [
   },
   {
     title: "OFAC Compliance",
-    body: "playos.vercel.app will NOT deal or provide any services or products to any of OFAC (Office of Foreign Assets Control) sanctions countries in accordance with the law of the Kingdom of Saudi Arabia.",
+    body: "playos1.replit.app will NOT deal or provide any services or products to any of OFAC (Office of Foreign Assets Control) sanctions countries in accordance with the law of the Kingdom of Saudi Arabia.",
   },
   {
     title: "Multiple Transactions",

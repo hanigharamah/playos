@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 const sections = [
   {
     title: "1. General",
-    body: "By accessing and using PlayOS (playos.vercel.app), you agree to be bound by these Terms and Conditions. PlayOS is owned and operated by E-vision technology services.",
+    body: "By accessing and using PlayOS (playos1.replit.app), you agree to be bound by these Terms and Conditions. PlayOS is owned and operated by E-vision technology services.",
   },
   {
     title: "2. Governing Law",
