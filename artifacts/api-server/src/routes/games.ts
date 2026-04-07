@@ -16,6 +16,7 @@ import {
   GetGameManagementResponse,
 } from "@workspace/api-zod";
 import { generateId } from "../lib/auth";
+import { getUserId } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -171,7 +172,7 @@ router.get("/games/:id", async (req, res): Promise<void> => {
 
 // POST /games
 router.post("/games", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -232,7 +233,7 @@ router.post("/games", async (req, res): Promise<void> => {
 
 // PATCH /games/:id
 router.patch("/games/:id", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -285,7 +286,7 @@ router.patch("/games/:id", async (req, res): Promise<void> => {
 
 // DELETE /games/:id
 router.delete("/games/:id", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -314,7 +315,7 @@ router.delete("/games/:id", async (req, res): Promise<void> => {
 
 // GET /games/:id/manage
 router.get("/games/:id/manage", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;

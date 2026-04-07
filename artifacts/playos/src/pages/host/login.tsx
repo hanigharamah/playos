@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useHostLogin, useApplyAsHost } from "@workspace/api-client-react";
+import { storeAuthToken } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ export default function HostLogin() {
       { data: loginForm },
       {
         onSuccess: (user) => {
+          if (user.token) storeAuthToken(user.token);
           queryClient.setQueryData(["/api/auth/me"], user);
           setLocation("/dashboard");
         },

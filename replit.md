@@ -15,7 +15,7 @@ PlayOS is a full-stack football pickup game booking platform for Saudi Arabia. B
 - **Validation**: Zod (`zod/v4`), `drizzle-zod`
 - **API codegen**: Orval (from OpenAPI spec)
 - **Build**: esbuild (CJS bundle)
-- **Auth**: Session-based (express-session, SHA-256 + salt)
+- **Auth**: JWT-based (jsonwebtoken, SHA-256 + salt; token stored in `localStorage` as `playos_auth_token`, sent as `Authorization: Bearer <token>` header on every API request via `setAuthTokenGetter`)
 - **Payments**: Stripe (SAR currency, +SAR 2 service fee per booking)
 - **i18n**: EN + AR (bilingual, RTL for Arabic)
 

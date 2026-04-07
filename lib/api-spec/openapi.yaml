@@ -729,7 +729,10 @@ components:
           type: string
         role:
           type: string
-          enum: [player, organiser]
+          enum: [player, organiser, host, admin]
+        token:
+          type: string
+          description: JWT auth token returned on login/signup only
         createdAt:
           type: string
           format: date-time

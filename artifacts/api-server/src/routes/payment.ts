@@ -11,6 +11,7 @@ import {
 import { generateId } from "../lib/auth";
 import { logger } from "../lib/logger";
 import { getUncachableStripeClient } from "../lib/stripe";
+import { getUserId } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -27,7 +28,7 @@ function getAppOrigin(): string {
 
 // POST /api/games/:id/book — create Stripe Checkout session
 router.post("/games/:id/book", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;

@@ -15,5 +15,7 @@ export interface AuthUser {
   phone?: string | null;
   name: string;
   role: AuthUserRole;
+  /** JWT auth token returned on login/signup only */
+  token?: string;
   createdAt: Date;
 }

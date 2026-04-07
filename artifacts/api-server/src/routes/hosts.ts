@@ -8,6 +8,8 @@ import {
   ListPitchesResponse,
 } from "@workspace/api-zod";
 import { verifyPassword, normalizePhone, generateId, validateSaudiPhone } from "../lib/auth";
+import { signToken } from "../lib/jwt";
+import { getUserId } from "../middleware/auth";
 
 const router: IRouter = Router();
 
@@ -56,8 +58,12 @@ router.post("/host/login", async (req, res): Promise<void> => {
   });
 
   (req.session as any).userId = user.id;
+  req.session.save(() => {});
+
+  const token = signToken(user.id);
 
   res.json({
+    token,
     id: user.id,
     email: user.email,
     phone: user.phone,
@@ -94,7 +100,7 @@ router.post("/host/apply", async (req, res): Promise<void> => {
 
 // Pitches
 router.get("/pitches", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -105,7 +111,7 @@ router.get("/pitches", async (req, res): Promise<void> => {
 });
 
 router.post("/pitches", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;

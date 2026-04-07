@@ -7,12 +7,13 @@ import {
   GetMyBookingsResponse,
 } from "@workspace/api-zod";
 import { logger } from "../lib/logger";
+import { getUserId } from "../middleware/auth";
 
 const router: IRouter = Router();
 
 // GET /api/bookings/my
 router.get("/bookings/my", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -102,7 +103,7 @@ router.get("/bookings/my", async (req, res): Promise<void> => {
 
 // POST /api/bookings/:id/cancel
 router.post("/bookings/:id/cancel", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;

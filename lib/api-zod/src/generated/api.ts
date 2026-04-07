@@ -37,7 +37,11 @@ export const LoginResponse = zod.object({
   email: zod.string().nullish(),
   phone: zod.string().nullish(),
   name: zod.string(),
-  role: zod.enum(["player", "organiser"]),
+  role: zod.enum(["player", "organiser", "host", "admin"]),
+  token: zod
+    .string()
+    .optional()
+    .describe("JWT auth token returned on login\/signup only"),
   createdAt: zod.coerce.date(),
 });
 
@@ -57,7 +61,11 @@ export const GetMeResponse = zod.object({
   email: zod.string().nullish(),
   phone: zod.string().nullish(),
   name: zod.string(),
-  role: zod.enum(["player", "organiser"]),
+  role: zod.enum(["player", "organiser", "host", "admin"]),
+  token: zod
+    .string()
+    .optional()
+    .describe("JWT auth token returned on login\/signup only"),
   createdAt: zod.coerce.date(),
 });
 
@@ -74,7 +82,11 @@ export const HostLoginResponse = zod.object({
   email: zod.string().nullish(),
   phone: zod.string().nullish(),
   name: zod.string(),
-  role: zod.enum(["player", "organiser"]),
+  role: zod.enum(["player", "organiser", "host", "admin"]),
+  token: zod
+    .string()
+    .optional()
+    .describe("JWT auth token returned on login\/signup only"),
   createdAt: zod.coerce.date(),
 });
 

@@ -47,6 +47,8 @@ export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
 export const AuthUserRole = {
   player: "player",
   organiser: "organiser",
+  host: "host",
+  admin: "admin",
 } as const;
 
 export interface AuthUser {
@@ -57,6 +59,8 @@ export interface AuthUser {
   phone?: string | null;
   name: string;
   role: AuthUserRole;
+  /** JWT auth token returned on login/signup only */
+  token?: string;
   createdAt: string;
 }
 

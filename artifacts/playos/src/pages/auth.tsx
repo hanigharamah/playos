@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useLogin, useSignUp } from "@workspace/api-client-react";
-import { useAuth } from "@/lib/auth";
+import { storeAuthToken } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,6 +31,7 @@ export default function AuthPage() {
       { data: loginForm },
       {
         onSuccess: (user) => {
+          if (user.token) storeAuthToken(user.token);
           queryClient.setQueryData(["/api/auth/me"], user);
           setLocation(returnUrl);
         },
@@ -47,6 +48,7 @@ export default function AuthPage() {
       { data: signupForm },
       {
         onSuccess: (user) => {
+          if (user.token) storeAuthToken(user.token);
           queryClient.setQueryData(["/api/auth/me"], user);
           setLocation(returnUrl);
         },

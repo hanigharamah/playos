@@ -7,10 +7,11 @@ import {
 } from "@workspace/api-zod";
 import { hashPassword, verifyPassword, normalizePhone, generateId, validateEmail, validateSaudiPhone } from "../lib/auth";
 import { logger } from "../lib/logger";
+import { signToken } from "../lib/jwt";
+import { getUserId } from "../middleware/auth";
 
 const router: IRouter = Router();
 
-// Rate limiting store (simple in-memory, sufficient for this use case)
 const rateLimitStore = new Map<string, { count: number; resetAt: number }>();
 
 function checkRateLimit(key: string, maxRequests: number, windowMs: number): boolean {
@@ -56,7 +57,6 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check email uniqueness
   const [existing] = await db.select().from(usersTable).where(eq(usersTable.email, email.toLowerCase()));
   if (existing) {
     res.status(409).json({ error: "Email already in use" });
@@ -76,23 +76,19 @@ router.post("/auth/signup", async (req, res): Promise<void> => {
     passwordHash,
   }).returning();
 
-  // Set session cookie
   (req.session as any).userId = user.id;
+  req.session.save(() => {});
 
-  req.session.save((err) => {
-    if (err) {
-      logger.error({ err }, "Session save failed on signup");
-      res.status(500).json({ error: "Failed to create session" });
-      return;
-    }
-    res.status(201).json({
-      id: user.id,
-      email: user.email,
-      phone: user.phone,
-      name: user.name,
-      role: user.role,
-      createdAt: user.createdAt,
-    });
+  const token = signToken(user.id);
+
+  res.status(201).json({
+    token,
+    id: user.id,
+    email: user.email,
+    phone: user.phone,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt,
   });
 });
 
@@ -118,7 +114,6 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
-  // Log login event
   await db.insert(loginEventsTable).values({
     id: generateId(),
     userId: user.id,
@@ -127,21 +122,68 @@ router.post("/auth/login", async (req, res): Promise<void> => {
   });
 
   (req.session as any).userId = user.id;
+  req.session.save(() => {});
 
-  req.session.save((err) => {
-    if (err) {
-      logger.error({ err }, "Session save failed on login");
-      res.status(500).json({ error: "Failed to create session" });
-      return;
-    }
-    res.json({
-      id: user.id,
-      email: user.email,
-      phone: user.phone,
-      name: user.name,
-      role: user.role,
-      createdAt: user.createdAt,
-    });
+  const token = signToken(user.id);
+
+  res.json({
+    token,
+    id: user.id,
+    email: user.email,
+    phone: user.phone,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt,
+  });
+});
+
+router.post("/auth/host-login", async (req, res): Promise<void> => {
+  const ip = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "unknown";
+
+  if (!checkRateLimit(`login:${ip}`, 10, 60000)) {
+    res.status(429).json({ error: "Too many requests. Please try again later." });
+    return;
+  }
+
+  const { phone, password } = req.body as { phone?: string; password?: string };
+
+  if (!phone || !password) {
+    res.status(400).json({ error: "Phone and password required" });
+    return;
+  }
+
+  const normalized = normalizePhone(phone);
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.phone, normalized));
+  if (!user || !user.passwordHash || !verifyPassword(password, user.passwordHash)) {
+    res.status(401).json({ error: "Invalid phone or password" });
+    return;
+  }
+
+  if (user.role !== "host" && user.role !== "admin") {
+    res.status(403).json({ error: "Host account required" });
+    return;
+  }
+
+  await db.insert(loginEventsTable).values({
+    id: generateId(),
+    userId: user.id,
+    ip,
+    userAgent: req.headers["user-agent"] || null,
+  });
+
+  (req.session as any).userId = user.id;
+  req.session.save(() => {});
+
+  const token = signToken(user.id);
+
+  res.json({
+    token,
+    id: user.id,
+    email: user.email,
+    phone: user.phone,
+    name: user.name,
+    role: user.role,
+    createdAt: user.createdAt,
   });
 });
 
@@ -152,7 +194,7 @@ router.post("/auth/logout", async (req, res): Promise<void> => {
 });
 
 router.get("/auth/me", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;

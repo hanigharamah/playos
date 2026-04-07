@@ -7,11 +7,12 @@ import {
   GetDashboardPayoutsResponse,
   GetPayoutDetailsResponse,
 } from "@workspace/api-zod";
+import { getUserId } from "../middleware/auth";
 
 const router: IRouter = Router();
 
 function requireOrganiser(req: any, res: any): string | null {
-  const userId = req.session?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return null;

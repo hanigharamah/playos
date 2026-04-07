@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { db, gamesTable, bookingsTable, pitchesTable } from "@workspace/db";
+import { getUserId } from "../middleware/auth";
 
 const CheckInParams = z.object({ pitchId: z.string() });
 const CheckInResponse = z.object({
@@ -14,7 +15,7 @@ const router: IRouter = Router();
 
 // POST /api/checkin/:pitchId — check in a player at a pitch
 router.post("/checkin/:pitchId", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
@@ -191,7 +192,7 @@ router.post("/checkin/:pitchId", async (req, res): Promise<void> => {
 
 // POST /api/checkin/:pitchId/game/:gameId — explicit check-in when multiple matches
 router.post("/checkin/:pitchId/game/:gameId", async (req, res): Promise<void> => {
-  const userId = (req.session as any)?.userId;
+  const userId = getUserId(req);
   if (!userId) {
     res.status(401).json({ error: "Not authenticated" });
     return;
