@@ -64,7 +64,7 @@ export function Footer() {
             </div>
             {/* STC Bank */}
             <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-stcpay.png" alt="STC Pay" className="h-[28px] w-auto object-contain" />
+              <img src="/pay-stcpay.png" alt="STC Pay" className="h-[22px] w-auto object-contain" />
             </div>
           </div>
           <p className="text-xs text-[#8E8E93] mb-4">Payments secured by Amazon Payment Services</p>
