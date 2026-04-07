@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 
 // Pages
 import Home from "@/pages/home";
@@ -18,9 +19,13 @@ import GameManage from "@/pages/game/manage";
 import CreateGame from "@/pages/game/new";
 import PaymentCallback from "@/pages/payment/callback";
 import CheckIn from "@/pages/checkin/[pitchId]";
+import About from "@/pages/about";
 import Contact from "@/pages/contact";
+import Terms from "@/pages/terms";
+import Privacy from "@/pages/privacy";
 import Complaints from "@/pages/complaints";
 import RefundPolicy from "@/pages/policies/refund";
+import DeliveryPolicy from "@/pages/policies/delivery";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -42,10 +47,14 @@ function AppContent() {
           <Route path="/dashboard/payouts" component={Payouts} />
           <Route path="/payment/callback" component={PaymentCallback} />
           <Route path="/checkin/:pitchId" component={CheckIn} />
+          <Route path="/about" component={About} />
           <Route path="/contact" component={Contact} />
+          <Route path="/terms" component={Terms} />
+          <Route path="/privacy" component={Privacy} />
           <Route path="/complaints" component={Complaints} />
           <Route path="/policies/refund" component={RefundPolicy} />
-          
+          <Route path="/policies/delivery" component={DeliveryPolicy} />
+
           {/* Arabic Routes */}
           <Route path="/ar" component={Home} />
           <Route path="/ar/games" component={Games} />
@@ -58,13 +67,18 @@ function AppContent() {
           <Route path="/ar/dashboard/payouts" component={Payouts} />
           <Route path="/ar/payment/callback" component={PaymentCallback} />
           <Route path="/ar/checkin/:pitchId" component={CheckIn} />
+          <Route path="/ar/about" component={About} />
           <Route path="/ar/contact" component={Contact} />
+          <Route path="/ar/terms" component={Terms} />
+          <Route path="/ar/privacy" component={Privacy} />
           <Route path="/ar/complaints" component={Complaints} />
           <Route path="/ar/policies/refund" component={RefundPolicy} />
-          
+          <Route path="/ar/policies/delivery" component={DeliveryPolicy} />
+
           <Route component={NotFound} />
         </Switch>
       </main>
+      <Footer />
     </div>
   );
 }

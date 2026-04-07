@@ -1,0 +1,182 @@
+You're right, I told you to "replace it in the prompt" but didn't give you the combined version. Here's the full prompt again with section 5 fixed — copy this entire thing:
+
+---
+
+**Add the following pages to comply with Amazon Payment Services onboarding requirements. These are mandatory legal/policy pages. Add links to all of them in the website footer.**
+
+---
+
+### 1. About Us Page (`/about`)
+
+Create an About Us page with the following content:
+
+**About PlayOS**
+
+PlayOS is a football game booking platform that connects players with pitch owners across Saudi Arabia. Players can discover, book, and pay for pickup football games instantly. Hosts can list their pitches, schedule games, track bookings, and receive automatic payouts.
+
+PlayOS is owned and managed by **E-vision technology services**.
+
+Our mission is to make organizing and joining football games as easy as booking a ride — no WhatsApp groups, no chasing payments, no confusion about who's playing.
+
+**What We Offer:**
+- For Players: Browse open games, pick your spot on the pitch, pay securely, and get instant confirmation
+- For Hosts: Schedule games, track bookings and payments in real time, and receive weekly payouts to your bank account
+
+---
+
+### 2. Contact Us Page (`/contact`)
+
+Replace the current contact page with a proper one containing ALL of the following:
+
+- **Company Name:** E-vision technology services
+- **Email:** hani.gharamah@evision-corp.org
+- **Phone:** +966 534478561
+- **Physical Address:** King Faisal Ibn Abdulaziz Saud, Riyadh, Saudi Arabia
+- **P.O. Box:** 12631
+- **Country:** Saudi Arabia
+
+Do not show "Available soon" for any field. All contact details must be visible.
+
+---
+
+### 3. Terms and Conditions Page (`/terms`)
+
+Create a Terms and Conditions page with the following sections. This is required word-for-word by the payment provider:
+
+**Terms and Conditions**
+
+Last updated: April 2026
+
+**1. General**
+By accessing and using PlayOS (playos.vercel.app), you agree to be bound by these Terms and Conditions. PlayOS is owned and operated by E-vision technology services.
+
+**2. Governing Law**
+Any dispute or claim arising out of or in connection with this website shall be governed and construed in accordance with the laws of the Kingdom of Saudi Arabia. The Kingdom of Saudi Arabia is our country of domicile and the governing law is the local law.
+
+**3. Age Requirement**
+Customers using the website who are minors or under the age of 18 shall not register as a User of the website and shall not transact on or use the website.
+
+**4. Payment Methods**
+We accept payments online using Visa, MasterCard, mada, Apple Pay, and STC Pay credit/debit cards in SAR (Saudi Riyal) and all other currencies supported by our payment provider, Amazon Payment Services.
+
+**5. Transaction Records**
+The cardholder must retain a copy of transaction records and Merchant policies and rules.
+
+**6. Account Security**
+The User is responsible for maintaining the confidentiality of his or her account.
+
+**7. Changes to Terms**
+The Website Policies and Terms & Conditions may be changed or updated occasionally to meet the requirements and standards. Therefore, Customers are encouraged to frequently visit these sections in order to be updated about the changes on the website. Modifications will be effective on the day they are posted.
+
+---
+
+### 4. Privacy Policy Page (`/privacy`)
+
+Create a Privacy Policy page with the following content. These statements are required word-for-word by the payment provider:
+
+**Privacy Policy**
+
+Last updated: April 2026
+
+PlayOS ("we", "us", "our") is committed to protecting your privacy. This Privacy Policy explains how we collect, use, and safeguard your personal information.
+
+**1. Payment Data**
+All credit/debit cards' details and personally identifiable information will NOT be stored, sold, shared, rented or leased to any third parties.
+
+**2. Secure Payments**
+If you make a payment for our products or services on our website, the details you are asked to submit will be provided directly to our payment provider via a secured connection.
+
+**3. Card Information**
+PlayOS will not pass any debit/credit card details to third parties.
+
+**4. Data Security**
+PlayOS takes appropriate steps to ensure data privacy and security including through various hardware and software methodologies. However, playos.vercel.app cannot guarantee the security of any information that is disclosed online.
+
+**5. Third-Party Links**
+PlayOS is not responsible for the privacy policies of websites to which it links. If you provide any information to such third parties, different rules regarding the collection and use of your personal information may apply. You should contact these entities directly if you have any questions about their use of the information that they collect.
+
+**6. Third-Party Advertising**
+Some of the advertisements you see on the Site are selected and delivered by third parties, such as ad networks, advertising agencies, advertisers, and audience segment providers. These third parties may collect information about you and your online activities, either on the Site or on other websites, through cookies, web beacons, and other technologies in an effort to understand your interests and deliver to you advertisements that are tailored to your interests. Please remember that we do not have access to, or control over, the information these third parties may collect. The information practices of these third parties are not covered by this privacy policy.
+
+---
+
+### 5. Refund & Cancellation Policy (`/policies/refund`)
+
+Create or replace the refund policy page with this complete content:
+
+**Refund & Cancellation Policy**
+
+**Player Cancellations:**
+- More than 12 hours before kickoff: 100% refund
+- 6 to 12 hours before kickoff: 50% refund
+- Less than 6 hours before kickoff: No refund
+
+**Game Cancellations by Host:**
+- More than 12 hours before kickoff: 100% refund to all players. Host pays processing fees.
+- 12 hours or less before kickoff: 100% refund to all players. Host pays processing fees plus SAR 20 late cancellation penalty.
+
+**Refund Processing:**
+Refunds will be made onto the original mode of payment and will be processed within 10 to 45 days depending on the issuing bank of the credit card.
+
+**No-Refund Notice:**
+If no cancellation or refund is applicable (e.g. less than 6 hours before kickoff for player cancellations), this will be clearly communicated to the cardholder before the purchase decision is made.
+
+**Conditions for Cancellation:**
+- The game was cancelled by the host
+- The game was auto-cancelled due to insufficient players
+- The player requests cancellation within the eligible time window (more than 6 hours before kickoff)
+
+---
+
+### 6. Service Delivery Policy (`/policies/delivery`)
+
+Create a Service Delivery policy page:
+
+**Service Delivery Policy**
+
+**Service Description:**
+PlayOS provides an online platform for booking spots in pickup football games. Upon successful payment, your spot in the selected game is immediately reserved.
+
+**Booking Confirmation:**
+Upon successful payment, you will receive an on-screen confirmation displaying your booking details including the game name, date, time, pitch, team assignment, and amount paid.
+
+**Service Access:**
+Your booked game spot is accessible immediately after payment confirmation through your PlayOS account. You can view your booking on the game page at any time before the game.
+
+**No Physical Delivery:**
+PlayOS is a digital service platform. There are no physical goods to ship or deliver. The service is the reservation of a spot in a football game at the specified pitch location.
+
+**OFAC Compliance:**
+playos.vercel.app will NOT deal or provide any services or products to any of OFAC (Office of Foreign Assets Control) sanctions countries in accordance with the law of the Kingdom of Saudi Arabia.
+
+**Multiple Transactions:**
+Multiple transactions may result in multiple postings to the cardholder's monthly statement.
+
+---
+
+### 7. Accepted Payment Logos on Homepage
+
+Add a row of accepted payment method logos in the **footer of every page** (not just the homepage). Show small logos/icons for:
+- Visa
+- Mastercard
+- mada
+- Apple Pay
+- STC Pay
+
+Below the logos, add small text: "Payments secured by Amazon Payment Services"
+
+---
+
+### 8. Footer Links
+
+Update the footer on all pages to include links to:
+- About Us (`/about`)
+- Contact Us (`/contact`)
+- Terms & Conditions (`/terms`)
+- Privacy Policy (`/privacy`)
+- Refund & Cancellation Policy (`/policies/refund`)
+- Service Delivery Policy (`/policies/delivery`)
+
+Organize them in two columns: "Company" (About, Contact) and "Legal" (Terms, Privacy, Refund, Delivery).
+
+---
