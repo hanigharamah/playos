@@ -5,8 +5,9 @@
  * PlayOS API specification
  * OpenAPI spec version: 0.1.0
  */
+import type { MyBooking } from "./myBooking";
 
-export interface CheckoutResponse {
-  checkoutUrl: string;
-  sessionId: string;
+export interface MyBookingsResponse {
+  upcoming: MyBooking[];
+  past: MyBooking[];
 }

@@ -6,6 +6,7 @@ import gamesRouter from "./games";
 import dashboardRouter from "./dashboard";
 import paymentRouter from "./payment";
 import checkinRouter from "./checkin";
+import bookingsRouter from "./bookings";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(gamesRouter);
 router.use(dashboardRouter);
 router.use(paymentRouter);
 router.use(checkinRouter);
+router.use(bookingsRouter);
 
 export default router;

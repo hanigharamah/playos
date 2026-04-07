@@ -11,7 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Globe, Menu, X, LogOut, LayoutDashboard } from "lucide-react";
+import { Globe, Menu, X, LogOut, LayoutDashboard, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 
 export function Navbar() {
@@ -30,6 +30,14 @@ export function Navbar() {
       >
         {t("nav.games")}
       </Link>
+      {user?.role === "player" && (
+        <Link
+          href={getPath("/my-games")}
+          className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
+        >
+          My Games
+        </Link>
+      )}
       {user?.role === "organiser" && (
         <Link
           href={getPath("/dashboard")}
@@ -106,6 +114,14 @@ export function Navbar() {
                   </p>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                {user.role === "player" && (
+                  <DropdownMenuItem asChild>
+                    <Link href={getPath("/my-games")} className="cursor-pointer w-full flex items-center">
+                      <Gamepad2 className="mr-2 h-4 w-4" />
+                      <span>My Games</span>
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 {user.role === "organiser" && (
                   <DropdownMenuItem asChild>
                     <Link href={getPath("/dashboard")} className="cursor-pointer w-full flex items-center">

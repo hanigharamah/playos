@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CancelBookingModal } from "@/components/CancelBookingModal";
 
 /* ─── PITCH POSITION MAPS ────────────────────────────────────── */
 // Absolute SVG coords for the LEFT team (viewBox 0 0 400 260, pitch 12px margin)
@@ -302,6 +303,7 @@ export default function GameDetail() {
   const bookSpot = useBookSpot();
 
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
+  const [showCancelModal, setShowCancelModal] = useState(false);
 
   const getPath = (path: string) => (language === "ar" ? `/ar${path}` : path);
 
@@ -565,6 +567,22 @@ export default function GameDetail() {
         )}
       </div>
 
+      {/* ── Cancel Booking Modal ── */}
+      {userBooking && showCancelModal && (
+        <CancelBookingModal
+          open={showCancelModal}
+          onClose={() => setShowCancelModal(false)}
+          bookingId={userBooking.id}
+          gameTitle={game.title}
+          kickoffTime={kickoff}
+          totalPaid={total}
+          onCancelled={() => {
+            setShowCancelModal(false);
+            queryClient.invalidateQueries({ queryKey: [`/api/games/${id}`] });
+          }}
+        />
+      )}
+
       {/* ── Sticky Bottom CTA ── */}
       <div
         className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E5E5EA] bg-white/90 backdrop-blur-md"
@@ -581,17 +599,25 @@ export default function GameDetail() {
             </button>
           )}
           {ctaState() === "booked" && (
-            <button
-              disabled
-              className="w-full py-3 rounded-[10px] text-sm font-semibold"
-              style={{
-                background: "rgba(10,132,255,0.1)",
-                color: "#0A84FF",
-                border: "1px solid rgba(10,132,255,0.2)",
-              }}
-            >
-              You're in · Team {userBooking?.team}
-            </button>
+            <div className="space-y-2">
+              <button
+                disabled
+                className="w-full py-3 rounded-[10px] text-sm font-semibold"
+                style={{
+                  background: "rgba(10,132,255,0.1)",
+                  color: "#0A84FF",
+                  border: "1px solid rgba(10,132,255,0.2)",
+                }}
+              >
+                You're in · Team {userBooking?.team}
+              </button>
+              <button
+                onClick={() => setShowCancelModal(true)}
+                className="w-full py-1.5 text-xs font-medium text-[#FF3B30] hover:underline"
+              >
+                Cancel Booking
+              </button>
+            </div>
           )}
           {ctaState() === "full" && (
             <button

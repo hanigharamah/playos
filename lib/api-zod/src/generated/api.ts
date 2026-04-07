@@ -108,8 +108,6 @@ export const ListGamesResponseItem = zod.object({
   durationMinutes: zod.number(),
   isPublic: zod.boolean(),
   mapsUrl: zod.string().nullish(),
-  latitude: zod.number().nullish(),
-  longitude: zod.number().nullish(),
 });
 export const ListGamesResponse = zod.array(ListGamesResponseItem);
 
@@ -245,6 +243,66 @@ export const BookSpotBody = zod.object({
 export const BookSpotResponse = zod.object({
   checkoutUrl: zod.string(),
   sessionId: zod.string(),
+});
+
+/**
+ * @summary Get current player's bookings with game details
+ */
+export const GetMyBookingsResponse = zod.object({
+  upcoming: zod.array(
+    zod.object({
+      id: zod.string(),
+      gameId: zod.string(),
+      team: zod.number(),
+      slotIndex: zod.number(),
+      paymentStatus: zod.enum(["pending", "paid", "refunded"]),
+      bookedAt: zod.coerce.date(),
+      game: zod.object({
+        id: zod.string(),
+        title: zod.string(),
+        pitchName: zod.string(),
+        kickoffTime: zod.coerce.date(),
+        price: zod.number(),
+        capacity: zod.number(),
+        status: zod.enum(["open", "full", "cancelled"]),
+        bookedCount: zod.number(),
+      }),
+    }),
+  ),
+  past: zod.array(
+    zod.object({
+      id: zod.string(),
+      gameId: zod.string(),
+      team: zod.number(),
+      slotIndex: zod.number(),
+      paymentStatus: zod.enum(["pending", "paid", "refunded"]),
+      bookedAt: zod.coerce.date(),
+      game: zod.object({
+        id: zod.string(),
+        title: zod.string(),
+        pitchName: zod.string(),
+        kickoffTime: zod.coerce.date(),
+        price: zod.number(),
+        capacity: zod.number(),
+        status: zod.enum(["open", "full", "cancelled"]),
+        bookedCount: zod.number(),
+      }),
+    }),
+  ),
+});
+
+/**
+ * @summary Cancel a booking
+ */
+export const CancelBookingParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const CancelBookingResponse = zod.object({
+  success: zod.boolean(),
+  refundTier: zod.enum(["full", "half", "none"]),
+  refundAmount: zod.number(),
+  message: zod.string(),
 });
 
 /**
@@ -417,8 +475,6 @@ export const GetGameManagementResponse = zod.object({
       bookedAt: zod.coerce.date(),
       playerName: zod.string(),
       playerPhone: zod.string().nullish(),
-      checkedIn: zod.boolean(),
-      checkedInAt: zod.coerce.date().nullish(),
     }),
   ),
   bookedCount: zod.number(),
@@ -445,56 +501,3 @@ export const CreatePitchBody = zod.object({
   name: zod.string(),
   mapsUrl: zod.string().nullish(),
 });
-
-/**
- * @summary Check in a player at a pitch
- */
-export const CheckInParams = zod.object({
-  pitchId: zod.string(),
-});
-
-export const CheckInGameMatch = zod.object({
-  bookingId: zod.string(),
-  gameId: zod.string(),
-  title: zod.string(),
-  kickoffTime: zod.coerce.date(),
-  team: zod.number(),
-  pitchName: zod.string(),
-});
-
-export const CheckInResponse = zod.discriminatedUnion("status", [
-  zod.object({
-    status: zod.literal("checked_in"),
-    bookingId: zod.string(),
-    gameId: zod.string(),
-    title: zod.string(),
-    kickoffTime: zod.coerce.date(),
-    team: zod.number(),
-    pitchName: zod.string(),
-    checkedInAt: zod.coerce.date(),
-    minutesLate: zod.number().nullable(),
-  }),
-  zod.object({
-    status: zod.literal("already_checked_in"),
-    bookingId: zod.string(),
-    gameId: zod.string(),
-    title: zod.string(),
-    team: zod.number(),
-    pitchName: zod.string(),
-    checkedInAt: zod.coerce.date(),
-  }),
-  zod.object({
-    status: zod.literal("multiple_matches"),
-    matches: zod.array(CheckInGameMatch),
-  }),
-  zod.object({
-    status: zod.literal("no_match"),
-    pitchName: zod.string().nullable(),
-  }),
-  zod.object({
-    status: zod.literal("outside_window"),
-    opensAt: zod.coerce.date(),
-    title: zod.string(),
-    pitchName: zod.string(),
-  }),
-]);

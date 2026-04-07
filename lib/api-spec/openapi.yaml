@@ -373,6 +373,62 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /bookings/my:
+    get:
+      operationId: getMyBookings
+      tags: [bookings]
+      summary: Get current player's bookings with game details
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyBookingsResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /bookings/{id}/cancel:
+    post:
+      operationId: cancelBooking
+      tags: [bookings]
+      summary: Cancel a booking
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Cancelled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CancelBookingResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "403":
+          description: Not your booking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Booking not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /payment/verify:
     get:
       operationId: verifyPayment
@@ -903,6 +959,99 @@ components:
           enum: [open, full, cancelled]
         mapsUrl:
           type: ["string", "null"]
+
+    # ==================== MY BOOKINGS SCHEMAS ====================
+    MyBookingGame:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        pitchName:
+          type: string
+        kickoffTime:
+          type: string
+          format: date-time
+        price:
+          type: number
+        capacity:
+          type: integer
+        status:
+          type: string
+          enum: [open, full, cancelled]
+        bookedCount:
+          type: integer
+      required:
+        - id
+        - title
+        - pitchName
+        - kickoffTime
+        - price
+        - capacity
+        - status
+        - bookedCount
+
+    MyBooking:
+      type: object
+      properties:
+        id:
+          type: string
+        gameId:
+          type: string
+        team:
+          type: integer
+        slotIndex:
+          type: integer
+        paymentStatus:
+          type: string
+          enum: [pending, paid, refunded]
+        bookedAt:
+          type: string
+          format: date-time
+        game:
+          $ref: "#/components/schemas/MyBookingGame"
+      required:
+        - id
+        - gameId
+        - team
+        - slotIndex
+        - paymentStatus
+        - bookedAt
+        - game
+
+    MyBookingsResponse:
+      type: object
+      properties:
+        upcoming:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyBooking"
+        past:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyBooking"
+      required:
+        - upcoming
+        - past
+
+    CancelBookingResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        refundTier:
+          type: string
+          enum: [full, half, none]
+        refundAmount:
+          type: number
+        message:
+          type: string
+      required:
+        - success
+        - refundTier
+        - refundAmount
+        - message
 
     # ==================== BOOKING SCHEMAS ====================
     Booking:

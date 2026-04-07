@@ -1,0 +1,92 @@
+---
+
+**Add a player bookings page, booking cancellation, and a proper post-payment confirmation screen.**
+
+---
+
+### 1. My Games Page (`/my-games`)
+
+Create a page where logged-in players can see all their bookings. Redirect to `/auth?returnUrl=/my-games` if not logged in.
+
+**Layout:**
+- Page title: "My Games"
+- Two tabs/sections: "Upcoming" and "Past"
+- Default to showing "Upcoming"
+
+**Each booking card shows:**
+- Game title
+- Pitch name
+- Date and kickoff time
+- Team assignment (Team 1 or Team 2)
+- Payment status (green "Paid" badge)
+- Spots filled (e.g. "7/10")
+- A "View Game" button that links to `/game/[id]`
+- A "Cancel Booking" button (only for upcoming games, see cancellation rules below)
+
+**Upcoming tab:** Games where kickoff_time is in the future, sorted by soonest first.
+
+**Past tab:** Games where kickoff_time has passed, sorted by most recent first. No cancel button on past games.
+
+**Empty state:** If the player has no bookings, show "No games yet" with a link to "Browse Games" (`/games`).
+
+---
+
+### 2. Cancel Booking Flow
+
+Add a "Cancel Booking" button on each upcoming booking card in the My Games page AND on the game detail page (`/game/[id]`) when the player has an active booking.
+
+**When the player clicks "Cancel Booking":**
+
+Show a confirmation modal/dialog that displays the refund tier based on how much time is left before kickoff:
+
+- **More than 12 hours before kickoff:** "You will receive a 100% refund of SAR [amount]."
+- **6 to 12 hours before kickoff:** "You will receive a 50% refund of SAR [amount]. SAR [other half] will not be refunded."
+- **Less than 6 hours before kickoff:** "No refund is available. Your booking cannot be cancelled less than 6 hours before kickoff."
+
+If no refund is available (<6 hours), still show the modal but make it a warning. Let the player decide whether to proceed — do NOT block cancellation entirely, just make the no-refund consequence very clear before they confirm.
+
+**Modal buttons:**
+- "Keep My Spot" (dismiss)
+- "Cancel Booking" (red button, proceeds with cancellation)
+
+**On confirmation:**
+- Update the booking's `payment_status` to `refunded` (or create a new status `cancelled` if you prefer)
+- If the game was previously `full`, update its status back to `open`
+- Free up the player's slot so other players can book it
+- Show a confirmation message: "Your booking has been cancelled. [Refund details based on tier]."
+- Redirect back to `/my-games`
+
+**Important:** The refund amount shown should be the game price + service fee (the total the player paid). The actual refund percentage applies to that total.
+
+---
+
+### 3. Post-Payment Confirmation Screen
+
+After a successful payment, before redirecting to the game page, show a confirmation screen at `/payment/callback` (or enhance the existing one):
+
+**Confirmation screen content:**
+- Large green checkmark icon at the top
+- "Booking Confirmed!" in large bold text
+- Game title
+- Date and kickoff time
+- Pitch name
+- Team assignment (Team 1 or Team 2)
+- Amount paid (SAR XX)
+- A "View Game" button linking to `/game/[id]`
+- A "My Games" button linking to `/my-games`
+
+This screen satisfies the Amazon Payment Services requirement that the customer receives an on-screen payment confirmation with booking details.
+
+---
+
+### 4. Navigation Update
+
+Add a "My Games" link to the navbar for logged-in players. Show it next to the language toggle or in a user menu. Do not show it for guests (not logged in) or for hosts/organisers.
+
+---
+
+### 5. Game Detail Page Update (`/game/[id]`)
+
+When a logged-in player has a paid booking for this game, show a "Cancel Booking" link or button somewhere on the page (e.g. below the "You're in · Team X" badge in the sticky bottom bar, or as a small text link). This opens the same cancellation modal described above.
+
+---

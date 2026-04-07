@@ -26,6 +26,7 @@ import Privacy from "@/pages/privacy";
 import Complaints from "@/pages/complaints";
 import RefundPolicy from "@/pages/policies/refund";
 import DeliveryPolicy from "@/pages/policies/delivery";
+import MyGames from "@/pages/my-games";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ function AppContent() {
           <Route path="/complaints" component={Complaints} />
           <Route path="/policies/refund" component={RefundPolicy} />
           <Route path="/policies/delivery" component={DeliveryPolicy} />
+          <Route path="/my-games" component={MyGames} />
 
           {/* Arabic Routes */}
           <Route path="/ar" component={Home} />
@@ -74,6 +76,7 @@ function AppContent() {
           <Route path="/ar/complaints" component={Complaints} />
           <Route path="/ar/policies/refund" component={RefundPolicy} />
           <Route path="/ar/policies/delivery" component={DeliveryPolicy} />
+          <Route path="/ar/my-games" component={MyGames} />
 
           <Route component={NotFound} />
         </Switch>

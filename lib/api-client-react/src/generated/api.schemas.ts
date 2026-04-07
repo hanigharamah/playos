@@ -213,6 +213,66 @@ export interface UpdateGameBody {
   mapsUrl?: string | null;
 }
 
+export type MyBookingGameStatus =
+  (typeof MyBookingGameStatus)[keyof typeof MyBookingGameStatus];
+
+export const MyBookingGameStatus = {
+  open: "open",
+  full: "full",
+  cancelled: "cancelled",
+} as const;
+
+export interface MyBookingGame {
+  id: string;
+  title: string;
+  pitchName: string;
+  kickoffTime: string;
+  price: number;
+  capacity: number;
+  status: MyBookingGameStatus;
+  bookedCount: number;
+}
+
+export type MyBookingPaymentStatus =
+  (typeof MyBookingPaymentStatus)[keyof typeof MyBookingPaymentStatus];
+
+export const MyBookingPaymentStatus = {
+  pending: "pending",
+  paid: "paid",
+  refunded: "refunded",
+} as const;
+
+export interface MyBooking {
+  id: string;
+  gameId: string;
+  team: number;
+  slotIndex: number;
+  paymentStatus: MyBookingPaymentStatus;
+  bookedAt: string;
+  game: MyBookingGame;
+}
+
+export interface MyBookingsResponse {
+  upcoming: MyBooking[];
+  past: MyBooking[];
+}
+
+export type CancelBookingResponseRefundTier =
+  (typeof CancelBookingResponseRefundTier)[keyof typeof CancelBookingResponseRefundTier];
+
+export const CancelBookingResponseRefundTier = {
+  full: "full",
+  half: "half",
+  none: "none",
+} as const;
+
+export interface CancelBookingResponse {
+  success: boolean;
+  refundTier: CancelBookingResponseRefundTier;
+  refundAmount: number;
+  message: string;
+}
+
 export type BookingPaymentStatus =
   (typeof BookingPaymentStatus)[keyof typeof BookingPaymentStatus];
 

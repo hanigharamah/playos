@@ -1,7 +1,14 @@
 import { Router, type IRouter } from "express";
 import { eq, and } from "drizzle-orm";
+import { z } from "zod";
 import { db, gamesTable, bookingsTable, pitchesTable } from "@workspace/db";
-import { CheckInParams, CheckInResponse } from "@workspace/api-zod";
+
+const CheckInParams = z.object({ pitchId: z.string() });
+const CheckInResponse = z.object({
+  success: z.boolean(),
+  playerName: z.string().nullable().optional(),
+  pitchName: z.string().nullable().optional(),
+});
 
 const router: IRouter = Router();
 
