@@ -1,9 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 50" role="img" aria-label="STC Pay">
-  <rect width="80" height="50" rx="6" fill="#7B2F8E"/>
-  <text x="50%" y="46%" dominant-baseline="middle" text-anchor="middle"
-    font-family="Arial, sans-serif" font-size="12" font-weight="800"
-    letter-spacing="0.5" fill="#fff">stc</text>
-  <text x="50%" y="72%" dominant-baseline="middle" text-anchor="middle"
-    font-family="Arial, sans-serif" font-size="12" font-weight="600"
-    fill="#fff">pay</text>
-</svg>

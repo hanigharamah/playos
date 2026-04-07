@@ -50,22 +50,22 @@ export function Footer() {
         {/* Payment logos */}
         <div className="border-t border-[#E5E5EA] pt-6">
           <div className="flex flex-wrap items-center gap-2 mb-2">
-            {[
-              { src: "/pay-visa.svg", alt: "Visa", w: 56 },
-              { src: "/pay-mastercard.svg", alt: "Mastercard", w: 56 },
-              { src: "/pay-mada.svg", alt: "mada", w: 56 },
-              { src: "/pay-applepay.svg", alt: "Apple Pay", w: 56 },
-              { src: "/pay-stcpay.svg", alt: "STC Pay", w: 56 },
-            ].map((logo) => (
-              <img
-                key={logo.alt}
-                src={logo.src}
-                alt={logo.alt}
-                width={logo.w}
-                height={35}
-                className="h-[35px] w-auto object-contain rounded"
-              />
-            ))}
+            {/* Visa */}
+            <img src="/pay-visa.svg" alt="Visa" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
+            {/* Mastercard */}
+            <img src="/pay-mastercard.svg" alt="Mastercard" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
+            {/* mada — extracted from official badge */}
+            <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
+              <img src="/pay-mada.png" alt="mada" className="h-[18px] w-auto object-contain" />
+            </div>
+            {/* Apple Pay — official logo */}
+            <div className="h-[35px] px-3 rounded bg-black flex items-center justify-center">
+              <img src="/pay-applepay.png" alt="Apple Pay" className="h-[20px] w-auto object-contain" />
+            </div>
+            {/* STC Bank */}
+            <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
+              <img src="/pay-stcpay.png" alt="STC Pay" className="h-[24px] w-auto object-contain" />
+            </div>
           </div>
           <p className="text-xs text-[#8E8E93] mb-4">Payments secured by Amazon Payment Services</p>
 
