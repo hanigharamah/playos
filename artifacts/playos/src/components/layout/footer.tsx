@@ -49,36 +49,23 @@ export function Footer() {
 
         {/* Payment logos */}
         <div className="border-t border-[#E5E5EA] pt-6">
-          <div className="flex flex-wrap items-center gap-3 mb-2">
-            {/* Visa */}
-            <div className="flex items-center justify-center h-8 px-3 rounded border border-[#E5E5EA] bg-white">
-              <svg viewBox="0 0 60 20" className="h-4 w-auto" aria-label="Visa">
-                <text x="0" y="16" fontFamily="Arial" fontSize="18" fontWeight="900" fill="#1A1F71">VISA</text>
-              </svg>
-            </div>
-            {/* Mastercard */}
-            <div className="flex items-center justify-center h-8 px-2 rounded border border-[#E5E5EA] bg-white gap-0.5">
-              <div className="w-5 h-5 rounded-full bg-[#EB001B] opacity-90" />
-              <div className="w-5 h-5 rounded-full bg-[#F79E1B] opacity-90 -ml-2.5" />
-            </div>
-            {/* mada */}
-            <div className="flex items-center justify-center h-8 px-3 rounded border border-[#E5E5EA] bg-white">
-              <svg viewBox="0 0 52 20" className="h-4 w-auto" aria-label="mada">
-                <text x="0" y="16" fontFamily="Arial" fontSize="15" fontWeight="700" fill="#00A651">mada</text>
-              </svg>
-            </div>
-            {/* Apple Pay */}
-            <div className="flex items-center justify-center h-8 px-3 rounded border border-[#E5E5EA] bg-black">
-              <svg viewBox="0 0 80 22" className="h-4 w-auto" aria-label="Apple Pay">
-                <text x="2" y="16" fontFamily="Arial" fontSize="13" fontWeight="500" fill="white">Apple Pay</text>
-              </svg>
-            </div>
-            {/* STC Pay */}
-            <div className="flex items-center justify-center h-8 px-3 rounded border border-[#E5E5EA] bg-[#7B2F8E]">
-              <svg viewBox="0 0 68 22" className="h-4 w-auto" aria-label="STC Pay">
-                <text x="2" y="16" fontFamily="Arial" fontSize="13" fontWeight="700" fill="white">STC Pay</text>
-              </svg>
-            </div>
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            {[
+              { src: "/pay-visa.svg", alt: "Visa", w: 56 },
+              { src: "/pay-mastercard.svg", alt: "Mastercard", w: 56 },
+              { src: "/pay-mada.svg", alt: "mada", w: 56 },
+              { src: "/pay-applepay.svg", alt: "Apple Pay", w: 56 },
+              { src: "/pay-stcpay.svg", alt: "STC Pay", w: 56 },
+            ].map((logo) => (
+              <img
+                key={logo.alt}
+                src={logo.src}
+                alt={logo.alt}
+                width={logo.w}
+                height={35}
+                className="h-[35px] w-auto object-contain rounded"
+              />
+            ))}
           </div>
           <p className="text-xs text-[#8E8E93] mb-4">Payments secured by Amazon Payment Services</p>
 

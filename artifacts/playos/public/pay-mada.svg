@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 50" role="img" aria-label="mada">
+  <rect width="80" height="50" rx="6" fill="#fff" stroke="#E5E5EA" stroke-width="1"/>
+  <!-- mada wordmark -->
+  <text x="50%" y="52%" dominant-baseline="middle" text-anchor="middle"
+    font-family="Arial, sans-serif" font-size="19" font-weight="800"
+    fill="#00A651">mada</text>
+  <!-- Arabic مدى -->
+  <text x="50%" y="80%" dominant-baseline="middle" text-anchor="middle"
+    font-family="Arial, sans-serif" font-size="9" font-weight="600"
+    fill="#00A651">مدى</text>
+</svg>
