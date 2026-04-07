@@ -1,0 +1,41 @@
+---
+
+**Replace Google Maps with Mapbox for the interactive map on the browse games page (`/games`).**
+
+**Setup:**
+- Create a free Mapbox account at mapbox.com (50,000 free map loads/month)
+- Get your public access token from your Mapbox account dashboard
+- Store it as an environment variable `NEXT_PUBLIC_MAPBOX_TOKEN`
+- Install `mapbox-gl` and `@types/mapbox-gl` packages
+
+**On the browse games page (`/games`), replace the map placeholder with a real interactive Mapbox map:**
+
+- Use `mapbox-gl` directly (not react-map-gl — keep it simple)
+- Map container: `h-40` on mobile, `md:h-64` on desktop, rounded-xl with 1px separator border, full width
+- Default center: Riyadh, Saudi Arabia (lat: 24.7136, lng: 46.6753), zoom level 11
+- Map style: `mapbox://styles/mapbox/streets-v12`
+
+**Markers/Pins:**
+- The `pitches` table has `latitude` and `longitude` columns (numeric, nullable). Add these columns if they don't exist.
+- Show a marker for each pitch that has coordinates AND has at least one open game
+- Use custom markers styled with the PlayOS blue color (`#0A84FF`) — a simple circle pin, not the default red Mapbox marker
+- Each marker shows the number of available games at that pitch as a white number inside the blue circle
+
+**Marker interaction:**
+- Clicking a marker shows a Mapbox popup with: pitch name, number of open games at that pitch, and a "View Games" link
+- Clicking "View Games" smooth-scrolls down to that pitch's section in the game listings below the map
+
+**Game listings below the map:**
+- Group games by pitch/location as they already are
+- Add an `id` attribute to each pitch group section (e.g. `id="pitch-[pitchId]"`) so the map popup can scroll to it
+
+**Fallback:**
+- If no pitches have coordinates, or if the Mapbox token is not set, show the existing placeholder card instead (pin emoji + "Coming soon" text)
+- If the map fails to load for any reason, gracefully fall back to the placeholder
+
+**Important:**
+- Import the Mapbox CSS: `import 'mapbox-gl/dist/mapbox-gl.css'`
+- Initialize the map inside a `useEffect` with proper cleanup (call `map.remove()` on unmount)
+- The map component must be a client component (`'use client'`)
+
+---
