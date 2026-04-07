@@ -22,4 +22,8 @@ export interface GameSummary {
   isPublic: boolean;
   /** @nullable */
   mapsUrl?: string | null;
+  /** @nullable */
+  latitude?: number | null;
+  /** @nullable */
+  longitude?: number | null;
 }

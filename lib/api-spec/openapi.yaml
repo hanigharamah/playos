@@ -817,6 +817,10 @@ components:
           type: boolean
         mapsUrl:
           type: ["string", "null"]
+        latitude:
+          type: ["number", "null"]
+        longitude:
+          type: ["number", "null"]
       required:
         - id
         - title
