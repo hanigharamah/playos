@@ -1,10 +1,19 @@
 import { Link } from "wouter";
+import { Lock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 
 export function Footer() {
   const { language } = useI18n();
   const isArabic = language === "ar";
   const p = (path: string) => (isArabic ? `/ar${path}` : path);
+
+  const logos = [
+    { src: "/pay-visa.svg",       alt: "Visa" },
+    { src: "/pay-mastercard.svg", alt: "Mastercard" },
+    { src: "/pay-mada.png",       alt: "mada" },
+    { src: "/pay-applepay.png",   alt: "Apple Pay" },
+    { src: "/pay-stcpay.png",     alt: "STC Pay" },
+  ];
 
   return (
     <footer className="border-t border-[#E5E5EA] bg-white mt-auto">
@@ -47,27 +56,31 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Payment logos */}
-        <div className="border-t border-[#E5E5EA] pt-6">
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            {/* Visa */}
-            <img src="/pay-visa.svg" alt="Visa" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA] rounded-tl-[4px] rounded-tr-[4px] rounded-br-[4px] rounded-bl-[4px]" />
-            {/* Mastercard */}
-            <img src="/pay-mastercard.svg" alt="Mastercard" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
-            {/* mada — transparent logo on white pill */}
-            <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-mada.png" alt="mada" className="h-[28px] w-auto object-contain" />
-            </div>
-            {/* Apple Pay */}
-            <div className="h-[35px] px-3 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-applepay.png" alt="Apple Pay" className="h-[20px] w-auto object-contain" />
-            </div>
-            {/* STC Bank */}
-            <div className="h-[35px] px-2 rounded border border-[#E5E5EA] bg-white flex items-center justify-center">
-              <img src="/pay-stcpay.png" alt="STC Pay" className="h-[22px] w-auto object-contain" />
-            </div>
+        {/* Payment section */}
+        <div className="border-t border-[#E5E5EA] pt-5">
+          {/* Single unified pill containing all logos */}
+          <div
+            className="inline-flex items-center gap-3 px-4 py-2.5 rounded-lg mb-2"
+            style={{ background: "#F8F9FA", border: "1px solid #E5E5EA" }}
+          >
+            {logos.map(({ src, alt }) => (
+              <img
+                key={alt}
+                src={src}
+                alt={alt}
+                className="h-[16px] w-auto object-contain transition-all duration-200"
+                style={{ filter: "grayscale(100%) opacity(0.55)" }}
+                onMouseEnter={(e) => (e.currentTarget.style.filter = "grayscale(0%) opacity(1)")}
+                onMouseLeave={(e) => (e.currentTarget.style.filter = "grayscale(100%) opacity(0.55)")}
+              />
+            ))}
           </div>
-          <p className="text-xs text-[#8E8E93] mb-4">Payments secured by Amazon Payment Services</p>
+
+          {/* Security text */}
+          <div className="flex items-center gap-1 mb-4">
+            <Lock className="h-3 w-3 text-[#AEAEB2]" />
+            <p style={{ fontSize: "11px", color: "#AEAEB2" }}>Payments secured by Amazon Payment Services</p>
+          </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-[#8E8E93]">
             <p>© {new Date().getFullYear()} E-vision technology services. All rights reserved.</p>

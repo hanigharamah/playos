@@ -31,15 +31,17 @@ function buildPitchGroups(games: MapGame[]): PitchGroup[] {
   const groups: PitchGroup[] = [];
   const seen = new Map<string, PitchGroup>();
   for (const g of games) {
-    if (!g.latitude || !g.longitude || g.status !== "open") continue;
+    const lat = Number(g.latitude);
+    const lng = Number(g.longitude);
+    if (!lat || !lng) continue;
     if (seen.has(g.pitchName)) {
       seen.get(g.pitchName)!.gameCount++;
     } else {
       const group: PitchGroup = {
         pitchName: g.pitchName,
         locationText: g.locationText,
-        lat: g.latitude,
-        lng: g.longitude,
+        lat,
+        lng,
         gameCount: 1,
       };
       seen.set(g.pitchName, group);
@@ -74,6 +76,7 @@ export function GamesMap({ games, onPitchClick }: GamesMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const markersRef = useRef<L.Marker[]>([]);
   const onPitchClickRef = useRef(onPitchClick);
+  const [mapReady, setMapReady] = useState(false);
   const [loadError, setLoadError] = useState(false);
 
   onPitchClickRef.current = onPitchClick;
@@ -100,7 +103,6 @@ export function GamesMap({ games, onPitchClick }: GamesMapProps) {
         attributionControl: true,
       });
 
-      // Mapbox Streets raster tiles — works without WebGL
       L.tileLayer(
         `https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token=${TOKEN}`,
         {
@@ -113,6 +115,7 @@ export function GamesMap({ games, onPitchClick }: GamesMapProps) {
       ).addTo(map);
 
       mapRef.current = map;
+      setMapReady(true);
     } catch (e) {
       console.error("Leaflet init error:", e);
       setLoadError(true);
@@ -123,13 +126,14 @@ export function GamesMap({ games, onPitchClick }: GamesMapProps) {
       markersRef.current = [];
       mapRef.current?.remove();
       mapRef.current = null;
+      setMapReady(false);
     };
   }, []);
 
-  // Sync markers whenever games change
+  // Sync markers whenever games change OR map becomes ready
   useEffect(() => {
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !mapReady) return;
 
     markersRef.current.forEach((m) => m.remove());
     markersRef.current = [];
@@ -166,7 +170,7 @@ export function GamesMap({ games, onPitchClick }: GamesMapProps) {
 
       markersRef.current.push(marker);
     });
-  }, [games]);
+  }, [games, mapReady]);
 
   if (loadError) {
     return (

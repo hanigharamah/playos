@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, desc, asc } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { db, gamesTable, bookingsTable } from "@workspace/db";
 import {
   CancelBookingParams,
@@ -45,16 +45,21 @@ router.get("/bookings/my", async (req, res): Promise<void> => {
       )
     );
 
-  // Get booked counts for each game
+  // Get booked counts for all games in a single aggregate query
   const gameIds = [...new Set(myBookings.map((b) => b.gameId))];
   const bookedCounts: Record<string, number> = {};
 
-  for (const gid of gameIds) {
-    const rows = await db
-      .select()
+  if (gameIds.length > 0) {
+    const countRows = await db
+      .select({ gameId: bookingsTable.gameId, cnt: count() })
       .from(bookingsTable)
-      .where(and(eq(bookingsTable.gameId, gid), eq(bookingsTable.paymentStatus, "paid")));
-    bookedCounts[gid] = rows.length;
+      .where(eq(bookingsTable.paymentStatus, "paid"))
+      .groupBy(bookingsTable.gameId);
+    for (const row of countRows) {
+      if (gameIds.includes(row.gameId)) {
+        bookedCounts[row.gameId] = Number(row.cnt);
+      }
+    }
   }
 
   const shaped = myBookings.map((b) => ({
