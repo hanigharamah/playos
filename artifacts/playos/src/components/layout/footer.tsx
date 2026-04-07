@@ -51,7 +51,7 @@ export function Footer() {
         <div className="border-t border-[#E5E5EA] pt-6">
           <div className="flex flex-wrap items-center gap-2 mb-2">
             {/* Visa */}
-            <img src="/pay-visa.svg" alt="Visa" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
+            <img src="/pay-visa.svg" alt="Visa" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA] rounded-tl-[10px] rounded-tr-[10px] rounded-br-[10px] rounded-bl-[10px]" />
             {/* Mastercard */}
             <img src="/pay-mastercard.svg" alt="Mastercard" className="h-[35px] w-auto object-contain rounded border border-[#E5E5EA]" />
             {/* mada — transparent logo on white pill */}
