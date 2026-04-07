@@ -11,11 +11,23 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Share2, Trash2, ArrowLeft, Users, MapPin, Clock, DollarSign } from "lucide-react";
+import { Share2, Trash2, ArrowLeft, Users, MapPin, Clock, DollarSign, CheckCircle, Circle } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
   params: { id: string };
+}
+
+function CheckInBadge({ checkedIn, checkedInAt }: { checkedIn: boolean; checkedInAt?: Date | null }) {
+  if (checkedIn && checkedInAt) {
+    return (
+      <span className="flex items-center gap-1 text-green-600 text-xs font-medium">
+        <CheckCircle className="w-3.5 h-3.5 flex-shrink-0" />
+        {format(new Date(checkedInAt), "h:mm a")}
+      </span>
+    );
+  }
+  return <Circle className="w-3.5 h-3.5 text-muted-foreground/40 flex-shrink-0" />;
 }
 
 export default function GameManage({ params }: Props) {
@@ -50,6 +62,8 @@ export default function GameManage({ params }: Props) {
   const { game, bookings, bookedCount, netPayout, shareUrl } = data;
   const team1 = bookings.filter((b) => b.team === 1 && b.paymentStatus === "paid");
   const team2 = bookings.filter((b) => b.team === 2 && b.paymentStatus === "paid");
+  const paidBookings = bookings.filter((b) => b.paymentStatus === "paid");
+  const checkedInCount = paidBookings.filter((b) => b.checkedIn).length;
 
   const handleToggleVisibility = () => {
     updateGame.mutate(
@@ -113,6 +127,12 @@ export default function GameManage({ params }: Props) {
         </Card>
         <Card>
           <CardContent className="pt-4 pb-3">
+            <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1"><CheckCircle className="h-3 w-3" />Checked In</div>
+            <div className="text-2xl font-bold text-green-600">{checkedInCount}/{bookedCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1"><DollarSign className="h-3 w-3" />Net Payout</div>
             <div className="text-2xl font-bold">SAR {netPayout.toFixed(0)}</div>
           </CardContent>
@@ -121,14 +141,6 @@ export default function GameManage({ params }: Props) {
           <CardContent className="pt-4 pb-3">
             <div className="flex items-center gap-2 text-muted-foreground text-xs mb-1"><Clock className="h-3 w-3" />Kickoff</div>
             <div className="text-sm font-medium">{format(new Date(game.kickoffTime), "MMM d, h:mm a")}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="pt-4 pb-3">
-            <div className="text-muted-foreground text-xs mb-1">Status</div>
-            <Badge variant={game.status === "open" ? "default" : game.status === "full" ? "secondary" : "destructive"}>
-              {game.status}
-            </Badge>
           </CardContent>
         </Card>
       </div>
@@ -166,21 +178,31 @@ export default function GameManage({ params }: Props) {
         </CardContent>
       </Card>
 
-      {/* Player Rosters */}
+      {/* Player Rosters with check-in */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("game.team1")} ({team1.length})</CardTitle>
+            <CardTitle className="text-base flex items-center justify-between">
+              <span>{t("game.team1")} ({team1.length})</span>
+              {team1.length > 0 && (
+                <span className="text-xs font-normal text-green-600">
+                  {team1.filter((b) => b.checkedIn).length}/{team1.length} in
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {team1.length === 0 ? (
               <p className="text-sm text-muted-foreground">No players yet.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {team1.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between text-sm">
-                    <div>{b.playerName}</div>
-                    <Badge variant={b.paymentStatus === "paid" ? "default" : "outline"} className="text-xs">
+                  <div key={b.id} className="flex items-center justify-between text-sm gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckInBadge checkedIn={b.checkedIn} checkedInAt={b.checkedInAt} />
+                      <span className="truncate">{b.playerName}</span>
+                    </div>
+                    <Badge variant={b.paymentStatus === "paid" ? "default" : "outline"} className="text-xs flex-shrink-0">
                       {b.paymentStatus}
                     </Badge>
                   </div>
@@ -191,17 +213,27 @@ export default function GameManage({ params }: Props) {
         </Card>
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">{t("game.team2")} ({team2.length})</CardTitle>
+            <CardTitle className="text-base flex items-center justify-between">
+              <span>{t("game.team2")} ({team2.length})</span>
+              {team2.length > 0 && (
+                <span className="text-xs font-normal text-green-600">
+                  {team2.filter((b) => b.checkedIn).length}/{team2.length} in
+                </span>
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {team2.length === 0 ? (
               <p className="text-sm text-muted-foreground">No players yet.</p>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-2.5">
                 {team2.map((b) => (
-                  <div key={b.id} className="flex items-center justify-between text-sm">
-                    <div>{b.playerName}</div>
-                    <Badge variant={b.paymentStatus === "paid" ? "default" : "outline"} className="text-xs">
+                  <div key={b.id} className="flex items-center justify-between text-sm gap-2">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <CheckInBadge checkedIn={b.checkedIn} checkedInAt={b.checkedInAt} />
+                      <span className="truncate">{b.playerName}</span>
+                    </div>
+                    <Badge variant={b.paymentStatus === "paid" ? "default" : "outline"} className="text-xs flex-shrink-0">
                       {b.paymentStatus}
                     </Badge>
                   </div>

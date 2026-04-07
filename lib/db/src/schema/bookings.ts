@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, integer } from "drizzle-orm/pg-core";
+import { pgTable, text, timestamp, integer, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -11,6 +11,8 @@ export const bookingsTable = pgTable("bookings", {
   paymentStatus: text("payment_status").notNull().default("pending"), // 'pending' | 'paid' | 'refunded'
   paymentId: text("payment_id"),
   bookedAt: timestamp("booked_at", { withTimezone: true }).notNull().defaultNow(),
+  checkedIn: boolean("checked_in").notNull().default(false),
+  checkedInAt: timestamp("checked_in_at", { withTimezone: true }),
 });
 
 export const insertBookingSchema = createInsertSchema(bookingsTable).omit({ bookedAt: true });

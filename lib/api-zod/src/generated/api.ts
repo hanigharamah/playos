@@ -417,6 +417,8 @@ export const GetGameManagementResponse = zod.object({
       bookedAt: zod.coerce.date(),
       playerName: zod.string(),
       playerPhone: zod.string().nullish(),
+      checkedIn: zod.boolean(),
+      checkedInAt: zod.coerce.date().nullish(),
     }),
   ),
   bookedCount: zod.number(),
@@ -443,3 +445,56 @@ export const CreatePitchBody = zod.object({
   name: zod.string(),
   mapsUrl: zod.string().nullish(),
 });
+
+/**
+ * @summary Check in a player at a pitch
+ */
+export const CheckInParams = zod.object({
+  pitchId: zod.string(),
+});
+
+export const CheckInGameMatch = zod.object({
+  bookingId: zod.string(),
+  gameId: zod.string(),
+  title: zod.string(),
+  kickoffTime: zod.coerce.date(),
+  team: zod.number(),
+  pitchName: zod.string(),
+});
+
+export const CheckInResponse = zod.discriminatedUnion("status", [
+  zod.object({
+    status: zod.literal("checked_in"),
+    bookingId: zod.string(),
+    gameId: zod.string(),
+    title: zod.string(),
+    kickoffTime: zod.coerce.date(),
+    team: zod.number(),
+    pitchName: zod.string(),
+    checkedInAt: zod.coerce.date(),
+    minutesLate: zod.number().nullable(),
+  }),
+  zod.object({
+    status: zod.literal("already_checked_in"),
+    bookingId: zod.string(),
+    gameId: zod.string(),
+    title: zod.string(),
+    team: zod.number(),
+    pitchName: zod.string(),
+    checkedInAt: zod.coerce.date(),
+  }),
+  zod.object({
+    status: zod.literal("multiple_matches"),
+    matches: zod.array(CheckInGameMatch),
+  }),
+  zod.object({
+    status: zod.literal("no_match"),
+    pitchName: zod.string().nullable(),
+  }),
+  zod.object({
+    status: zod.literal("outside_window"),
+    opensAt: zod.coerce.date(),
+    title: zod.string(),
+    pitchName: zod.string(),
+  }),
+]);

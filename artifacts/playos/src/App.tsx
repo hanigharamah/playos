@@ -17,6 +17,7 @@ import Payouts from "@/pages/dashboard/payouts";
 import GameManage from "@/pages/game/manage";
 import CreateGame from "@/pages/game/new";
 import PaymentCallback from "@/pages/payment/callback";
+import CheckIn from "@/pages/checkin/[pitchId]";
 import Contact from "@/pages/contact";
 import Complaints from "@/pages/complaints";
 import RefundPolicy from "@/pages/policies/refund";
@@ -40,6 +41,7 @@ function AppContent() {
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/dashboard/payouts" component={Payouts} />
           <Route path="/payment/callback" component={PaymentCallback} />
+          <Route path="/checkin/:pitchId" component={CheckIn} />
           <Route path="/contact" component={Contact} />
           <Route path="/complaints" component={Complaints} />
           <Route path="/policies/refund" component={RefundPolicy} />
@@ -55,6 +57,7 @@ function AppContent() {
           <Route path="/ar/dashboard" component={Dashboard} />
           <Route path="/ar/dashboard/payouts" component={Payouts} />
           <Route path="/ar/payment/callback" component={PaymentCallback} />
+          <Route path="/ar/checkin/:pitchId" component={CheckIn} />
           <Route path="/ar/contact" component={Contact} />
           <Route path="/ar/complaints" component={Complaints} />
           <Route path="/ar/policies/refund" component={RefundPolicy} />

@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useLocation } from "wouter";
 import { format, addDays, startOfWeek, isSameDay, isToday, isBefore } from "date-fns";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateGameModal } from "./CreateGameModal";
+import { PitchQrModal } from "./PitchQrModal";
 
 const HOUR_HEIGHT = 60; // px per hour
 const CAL_START_HOUR = 15; // 3 PM
@@ -87,6 +88,7 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
 
   const [weekStart, setWeekStart] = useState<Date>(getDefaultWeekStart);
   const [nowTick, setNowTick] = useState(new Date());
+  const [qrPitch, setQrPitch] = useState<{ id: string; name: string } | null>(null);
   const [modal, setModal] = useState<{
     open: boolean;
     date: Date;
@@ -258,30 +260,45 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
           </span>
         </div>
 
-        {/* Pitch Filter Tabs */}
-        {pitches.length > 1 && (
-          <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
-            <button
-              onClick={() => onPitchChange(null)}
-              className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${
-                activePitch === null
-                  ? "bg-blue-600 text-white"
-                  : "text-muted-foreground border border-border bg-background hover:bg-muted"
-              }`}
-            >
-              All
-            </button>
+        {/* Pitch Filter Tabs + QR Buttons */}
+        {pitches.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {pitches.length > 1 && (
+              <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                <button
+                  onClick={() => onPitchChange(null)}
+                  className={`text-xs px-3 py-1 rounded-md font-medium transition-colors ${
+                    activePitch === null
+                      ? "bg-blue-600 text-white"
+                      : "text-muted-foreground border border-border bg-background hover:bg-muted"
+                  }`}
+                >
+                  All
+                </button>
+                {pitches.map((p) => (
+                  <button
+                    key={p.id}
+                    onClick={() => onPitchChange(p.name)}
+                    className={`text-xs px-3 py-1 rounded-md font-medium transition-colors whitespace-nowrap ${
+                      activePitch === p.name
+                        ? "bg-blue-600 text-white"
+                        : "text-muted-foreground border border-border bg-background hover:bg-muted"
+                    }`}
+                  >
+                    {p.name}
+                  </button>
+                ))}
+              </div>
+            )}
             {pitches.map((p) => (
               <button
-                key={p.id}
-                onClick={() => onPitchChange(p.name)}
-                className={`text-xs px-3 py-1 rounded-md font-medium transition-colors whitespace-nowrap ${
-                  activePitch === p.name
-                    ? "bg-blue-600 text-white"
-                    : "text-muted-foreground border border-border bg-background hover:bg-muted"
-                }`}
+                key={`qr-${p.id}`}
+                onClick={() => setQrPitch(p)}
+                title={`Get QR code for ${p.name}`}
+                className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border border-border bg-background hover:bg-muted text-muted-foreground hover:text-foreground transition-colors whitespace-nowrap"
               >
-                {p.name}
+                <QrCode className="w-3.5 h-3.5" />
+                {pitches.length > 1 ? `QR · ${p.name}` : "QR Code"}
               </button>
             ))}
           </div>
@@ -437,6 +454,15 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
           defaultStartTime={modal.startTime}
           defaultEndTime={modal.endTime}
           activePitchName={activePitch}
+        />
+      )}
+
+      {/* QR Code Modal */}
+      {qrPitch && (
+        <PitchQrModal
+          pitch={qrPitch}
+          open={!!qrPitch}
+          onClose={() => setQrPitch(null)}
         />
       )}
     </div>

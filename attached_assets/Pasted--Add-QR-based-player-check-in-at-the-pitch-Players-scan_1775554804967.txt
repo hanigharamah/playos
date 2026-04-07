@@ -1,0 +1,57 @@
+---
+
+**Add QR-based player check-in at the pitch. Players scan a printed QR code at the venue with their phone camera to check in.**
+
+**How it works:**
+
+Each pitch has a permanent QR code printed and displayed at the venue. The QR is just a URL: `https://[your-app-url]/checkin/[pitchId]`. It never changes. Players scan it with their normal phone camera (not an in-app scanner), which opens the URL in their browser.
+
+**Database changes:**
+
+Add two columns to the `bookings` table:
+- `checked_in` — boolean, default false
+- `checked_in_at` — timestamp, nullable
+
+**New page: `/checkin/[pitchId]`**
+
+When a player opens this URL:
+
+1. Read their auth session to identify the player
+2. If not logged in, redirect to `/auth?returnUrl=/checkin/[pitchId]`
+3. Query for a matching booking:
+   - Player has a paid booking (`payment_status = 'paid'`)
+   - For a game at this pitch (`pitch_name` matches and `organiser_id` matches)
+   - Within the check-in window: game kickoff minus 15 minutes <= now <= kickoff + duration_minutes
+4. **One match found**:
+   - If already checked in: Show "Already checked in ✓" with the game name, team, and check-in time
+   - If not checked in: Mark `checked_in = true` and `checked_in_at = now()`. Show a big green confirmation screen: checkmark icon, "You're checked in!", game title, team assignment, and the time they checked in. If `checked_in_at > kickoff_time`, show a subtle note "Checked in X minutes late"
+5. **Multiple matches** (two games at the same pitch with overlapping windows — rare): Show a list of the matching games with title and kickoff time. Player taps which one they're checking into.
+6. **No match found**: Show a message — "No game found at this pitch right now." Below that, show possible reasons: "Your game hasn't started yet" or "You don't have a booking here." Include a link to browse available games.
+
+**Check-in window logic:**
+- Opens: **15 minutes** before kickoff
+- Closes: when the game ends (kickoff_time + duration_minutes)
+- Outside this window, the booking exists but check-in is not available. Show: "Check-in opens at [kickoff - 15 min]"
+
+**Update the game manage page (`/game/[id]/manage`):**
+
+On the player roster, show a check-in indicator next to each player:
+- Checked in: green checkmark ✓ with the time they checked in
+- Not checked in: gray empty circle
+- Show a counter at the top: "7/10 checked in"
+
+**QR code generation for hosts:**
+
+On the host dashboard or pitch settings, add a "Get QR Code" button for each pitch. When clicked:
+- Generate a QR code image for the URL `https://[your-app-url]/checkin/[pitchId]`
+- Use any QR library (like the `qrcode` npm package or a free API)
+- Display it on screen with a "Download" and "Print" button
+- Below the QR, show the pitch name and a note: "Print this and display it at your pitch entrance"
+
+**Design the check-in confirmation page to be bold and satisfying:**
+- Big green checkmark animation or icon
+- "You're checked in!" in large bold text
+- Game title, team number, pitch name below
+- The page should feel like a successful boarding pass scan — instant, clear, unmistakable
+
+---

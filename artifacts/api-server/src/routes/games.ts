@@ -349,6 +349,8 @@ router.get("/games/:id/manage", async (req, res): Promise<void> => {
       bookedAt: bookingsTable.bookedAt,
       playerName: usersTable.name,
       playerPhone: usersTable.phone,
+      checkedIn: bookingsTable.checkedIn,
+      checkedInAt: bookingsTable.checkedInAt,
     })
     .from(bookingsTable)
     .innerJoin(usersTable, eq(bookingsTable.userId, usersTable.id))
