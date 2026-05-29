@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
-import { getPath } from "@/lib/utils";
+import { performCheckIn } from "@/lib/supabase-api";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, AlertCircle, Clock, List } from "lucide-react";
 import { format } from "date-fns";
@@ -25,8 +25,6 @@ export default function CheckIn({ params }: Props) {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const base = import.meta.env.BASE_URL.replace(/\/$/, "");
-
   useEffect(() => {
     if (loading) return;
     if (!user) {
@@ -40,23 +38,10 @@ export default function CheckIn({ params }: Props) {
     setChecking(true);
     setError(null);
     try {
-      const url = gameId
-        ? `${base}/api/checkin/${pitchId}/game/${gameId}`
-        : `${base}/api/checkin/${pitchId}`;
-      const resp = await fetch(url, {
-        method: "POST",
-        credentials: "include",
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!resp.ok) {
-        const body = await resp.json().catch(() => ({}));
-        setError(body?.error || "Something went wrong");
-        return;
-      }
-      const data = await resp.json();
+      const data = await performCheckIn(pitchId, gameId);
       setResult(data);
     } catch {
-      setError("Network error — please try again");
+      setError("Something went wrong — please try again");
     } finally {
       setChecking(false);
     }
@@ -88,21 +73,18 @@ export default function CheckIn({ params }: Props) {
 
   if (!result) return null;
 
-  // ─── CHECKED IN ───────────────────────────────────────────────
   if (result.status === "checked_in") {
     const t = new Date(result.checkedInAt);
     return (
       <div className="min-h-screen flex items-center justify-center bg-green-50 dark:bg-green-950 px-4">
         <div className="text-center space-y-5 max-w-sm w-full">
           <div className="relative mx-auto w-24 h-24">
-            <div className="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/40 animate-[scale-in_0.35s_ease-out]">
+            <div className="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/40">
               <CheckCircle className="w-14 h-14 text-white stroke-[1.5]" />
             </div>
           </div>
           <div>
-            <h1 className="text-3xl font-extrabold text-green-700 dark:text-green-300 tracking-tight">
-              You're checked in!
-            </h1>
+            <h1 className="text-3xl font-extrabold text-green-700 dark:text-green-300 tracking-tight">You're checked in!</h1>
             <p className="text-muted-foreground mt-1 text-sm">{format(t, "h:mm a")}</p>
           </div>
           <div className="bg-white dark:bg-green-900/40 rounded-2xl shadow-sm border border-green-200 dark:border-green-800 p-5 space-y-2 text-left">
@@ -124,15 +106,12 @@ export default function CheckIn({ params }: Props) {
               Checked in {result.minutesLate} minute{result.minutesLate !== 1 ? "s" : ""} after kickoff
             </p>
           )}
-          <Button variant="outline" className="w-full" onClick={() => setLocation("/")}>
-            Back to home
-          </Button>
+          <Button variant="outline" className="w-full" onClick={() => setLocation("/")}>Back to home</Button>
         </div>
       </div>
     );
   }
 
-  // ─── ALREADY CHECKED IN ───────────────────────────────────────
   if (result.status === "already_checked_in") {
     const t = new Date(result.checkedInAt);
     return (
@@ -156,7 +135,6 @@ export default function CheckIn({ params }: Props) {
     );
   }
 
-  // ─── MULTIPLE MATCHES ─────────────────────────────────────────
   if (result.status === "multiple_matches") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background px-4">
@@ -185,7 +163,6 @@ export default function CheckIn({ params }: Props) {
     );
   }
 
-  // ─── OUTSIDE WINDOW ───────────────────────────────────────────
   if (result.status === "outside_window") {
     const opensAt = new Date(result.opensAt);
     return (
@@ -204,7 +181,6 @@ export default function CheckIn({ params }: Props) {
     );
   }
 
-  // ─── NO MATCH ─────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="text-center space-y-4 max-w-sm">

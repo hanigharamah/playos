@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { useVerifyPayment, getVerifyPaymentQueryKey } from "@workspace/api-client-react";
+import { useVerifyPayment, getVerifyPaymentQueryKey } from "@/lib/supabase-api";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2, CalendarDays, MapPin, Users, Trophy } from "lucide-react";

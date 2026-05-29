@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { useGetMyBookings, getGetMyBookingsQueryKey } from "@workspace/api-client-react";
+import { useGetMyBookings, getGetMyBookingsQueryKey } from "@/lib/supabase-api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";

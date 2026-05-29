@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetGame, useBookSpot } from "@workspace/api-client-react";
+import { useGetGame, useBookSpot } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { format } from "date-fns";

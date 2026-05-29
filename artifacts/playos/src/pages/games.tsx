@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useI18n } from "@/lib/i18n";
-import { useListGames } from "@workspace/api-client-react";
+import { useListGames } from "@/lib/supabase-api";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { GamesMap } from "@/components/GamesMap";

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { useLogin, useSignUp } from "@workspace/api-client-react";
+import { useLogin, useSignUp } from "@/lib/supabase-api";
 import { storeAuthToken } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";

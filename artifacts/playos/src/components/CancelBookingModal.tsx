@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useCancelBooking } from "@workspace/api-client-react";
+import { useCancelBooking } from "@/lib/supabase-api";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,

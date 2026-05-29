@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useCreateGame, useListPitches, getGetDashboardGamesQueryKey } from "@workspace/api-client-react";
+import { useCreateGame, useListPitches, getGetDashboardGamesQueryKey } from "@/lib/supabase-api";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";

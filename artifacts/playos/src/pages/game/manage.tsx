@@ -1,5 +1,5 @@
 import { useLocation, Link } from "wouter";
-import { useGetGameManagement, useUpdateGame, useDeleteGame, getGetGameManagementQueryKey, getGetGameQueryKey } from "@workspace/api-client-react";
+import { useGetGameManagement, useUpdateGame, useDeleteGame, getGetGameManagementQueryKey, getGetGameQueryKey } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";

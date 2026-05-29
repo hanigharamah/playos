@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
-import { useGetDashboardGames, useListPitches } from "@workspace/api-client-react";
+import { useGetDashboardGames, useListPitches } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
 import { WeeklyCalendar } from "@/components/dashboard/WeeklyCalendar";
 

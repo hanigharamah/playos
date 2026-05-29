@@ -18,6 +18,7 @@ import Payouts from "@/pages/dashboard/payouts";
 import GameManage from "@/pages/game/manage";
 import CreateGame from "@/pages/game/new";
 import PaymentCallback from "@/pages/payment/callback";
+import MockPayment from "@/pages/payment/mock";
 import CheckIn from "@/pages/checkin/[pitchId]";
 import About from "@/pages/about";
 import Contact from "@/pages/contact";
@@ -46,6 +47,7 @@ function AppContent() {
           <Route path="/host/login" component={HostLogin} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/dashboard/payouts" component={Payouts} />
+          <Route path="/payment/mock" component={MockPayment} />
           <Route path="/payment/callback" component={PaymentCallback} />
           <Route path="/checkin/:pitchId" component={CheckIn} />
           <Route path="/about" component={About} />
@@ -67,6 +69,7 @@ function AppContent() {
           <Route path="/ar/host/login" component={HostLogin} />
           <Route path="/ar/dashboard" component={Dashboard} />
           <Route path="/ar/dashboard/payouts" component={Payouts} />
+          <Route path="/ar/payment/mock" component={MockPayment} />
           <Route path="/ar/payment/callback" component={PaymentCallback} />
           <Route path="/ar/checkin/:pitchId" component={CheckIn} />
           <Route path="/ar/about" component={About} />
