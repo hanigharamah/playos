@@ -1,4 +1,5 @@
 {
+  "framework": null,
   "buildCommand": "pnpm --filter @workspace/playos run build",
   "outputDirectory": "artifacts/playos/dist/public",
   "installCommand": "pnpm install --frozen-lockfile",
