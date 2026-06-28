@@ -53,8 +53,8 @@ export default function Home() {
             {language === "ar" ? "المنصة الأولى لكرة القدم في السعودية" : "The #1 Football Platform in KSA"}
           </Badge>
           <h1
-            className="text-[1.6rem] leading-[1.15] sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-5 max-w-3xl mx-auto break-words"
-            style={{ color: "#1D3557" }}
+            className="font-extrabold tracking-tight mb-5 max-w-3xl mx-auto"
+            style={{ color: "#1D3557", fontSize: "clamp(1.5rem, 6vw, 3.75rem)", lineHeight: 1.12 }}
           >
             {t("hero.title")}
           </h1>
