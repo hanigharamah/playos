@@ -41,7 +41,7 @@ export default function Games() {
   const pitchList = Object.values(pitchGroups);
 
   return (
-    <div className="min-h-screen bg-[#F2F2F7]">
+    <div className="min-h-screen bg-transparent">
       <div className="max-w-5xl mx-auto px-4 md:px-8 py-6">
         <h1
           className="text-2xl font-extrabold mb-5"

@@ -22,10 +22,8 @@ import PaymentCallback from "@/pages/payment/callback";
 import Checkout from "@/pages/payment/checkout";
 import CheckIn from "@/pages/checkin/[pitchId]";
 import About from "@/pages/about";
-import Contact from "@/pages/contact";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
-import Complaints from "@/pages/complaints";
 import RefundPolicy from "@/pages/policies/refund";
 import DeliveryPolicy from "@/pages/policies/delivery";
 import MyGames from "@/pages/my-games";
@@ -35,7 +33,11 @@ const queryClient = new QueryClient();
 
 function AppContent() {
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
+    <div className="min-h-screen flex flex-col text-foreground overflow-x-hidden">
+      <div className="app-bg" aria-hidden="true">
+        <div className="app-bg__blob app-bg__blob--1" />
+        <div className="app-bg__blob app-bg__blob--2" />
+      </div>
       <WhatsAppBar />
       <Navbar />
       <main className="flex-1 flex flex-col">
@@ -53,10 +55,8 @@ function AppContent() {
           <Route path="/payment/callback" component={PaymentCallback} />
           <Route path="/checkin/:pitchId" component={CheckIn} />
           <Route path="/about" component={About} />
-          <Route path="/contact" component={Contact} />
           <Route path="/terms" component={Terms} />
           <Route path="/privacy" component={Privacy} />
-          <Route path="/complaints" component={Complaints} />
           <Route path="/policies/refund" component={RefundPolicy} />
           <Route path="/policies/delivery" component={DeliveryPolicy} />
           <Route path="/my-games" component={MyGames} />
@@ -75,10 +75,8 @@ function AppContent() {
           <Route path="/ar/payment/callback" component={PaymentCallback} />
           <Route path="/ar/checkin/:pitchId" component={CheckIn} />
           <Route path="/ar/about" component={About} />
-          <Route path="/ar/contact" component={Contact} />
           <Route path="/ar/terms" component={Terms} />
           <Route path="/ar/privacy" component={Privacy} />
-          <Route path="/ar/complaints" component={Complaints} />
           <Route path="/ar/policies/refund" component={RefundPolicy} />
           <Route path="/ar/policies/delivery" component={DeliveryPolicy} />
           <Route path="/ar/my-games" component={MyGames} />

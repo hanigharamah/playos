@@ -32,11 +32,9 @@ function getRefundTier(kickoffTime: Date, total: number) {
       severity: "info" as const,
     };
   } else if (hoursUntil >= 6) {
-    const half = (total * 0.5).toFixed(2);
-    const other = (total * 0.5).toFixed(2);
     return {
-      tier: "half" as const,
-      message: `You will receive a 50% refund of SAR ${half}. SAR ${other} will not be refunded.`,
+      tier: "credit" as const,
+      message: `You'll receive 1 credit token to use toward your next match. No cash refund applies in this window.`,
       severity: "warn" as const,
     };
   } else {

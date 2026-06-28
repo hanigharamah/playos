@@ -29,12 +29,13 @@ export default function PaymentCallback() {
       }, 8000);
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [data, gameId]);
 
   const booking = data?.booking;
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-[#F2F2F7]">
+    <div className="min-h-screen flex items-center justify-center px-4 bg-transparent">
       {isLoading ? (
         <div className="card-ios w-full max-w-sm text-center p-10 space-y-4">
           <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto" />

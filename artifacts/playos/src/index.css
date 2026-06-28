@@ -87,8 +87,8 @@
   --elevate-1: rgba(0,0,0, .03);
   --elevate-2: rgba(0,0,0, .08);
 
-  /* #F2F2F7 — light gray page bg */
-  --background: 240 24% 96%;
+  /* #FBF7F2 — warm cream page bg */
+  --background: 33 40% 97%;
   /* #1C1C1E — near-black */
   --foreground: 240 1% 11%;
 
@@ -193,10 +193,73 @@
     @apply border-border;
   }
   body {
-    @apply font-sans antialiased bg-background text-foreground;
+    @apply font-sans antialiased text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Four radial gradients (warm amber + peach, one cool blue) over a
+       cream base (#FBF7F2 -> #F4F0EB). */
+    background:
+      radial-gradient(circle at 12% 18%, rgba(255, 190, 120, 0.38), transparent 42%),
+      radial-gradient(circle at 88% 12%, rgba(255, 168, 145, 0.32), transparent 46%),
+      radial-gradient(circle at 78% 82%, rgba(255, 205, 165, 0.30), transparent 46%),
+      radial-gradient(circle at 16% 88%, rgba(150, 188, 255, 0.26), transparent 48%),
+      linear-gradient(155deg, #FBF7F2 0%, #F4F0EB 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+    /* The fixed blurred blobs sit off-screen; keep them from widening the page. */
+    overflow-x: hidden;
   }
+}
+
+/* Fixed full-viewport layer that clips the drifting blobs so they never
+   create horizontal overflow (fixed elements ignore body overflow-x). */
+.app-bg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.app-bg__blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.55;
+}
+.app-bg__blob--1 {
+  width: 44vw;
+  max-width: 460px;
+  aspect-ratio: 1;
+  top: -8vh;
+  left: -6vw;
+  background: radial-gradient(circle, rgba(255, 178, 110, 0.65), transparent 70%);
+  animation: blobDrift1 26s ease-in-out infinite alternate;
+}
+.app-bg__blob--2 {
+  width: 50vw;
+  max-width: 520px;
+  aspect-ratio: 1;
+  bottom: -12vh;
+  right: -8vw;
+  background: radial-gradient(circle, rgba(150, 188, 255, 0.55), transparent 70%);
+  animation: blobDrift2 34s ease-in-out infinite alternate;
+}
+@keyframes blobDrift1 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(7vw, 5vh) scale(1.08); }
+}
+@keyframes blobDrift2 {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-6vw, -4vh) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-bg__blob { animation: none; }
+}
+
+/* Handwriting accent for branding */
+.font-hand {
+  font-family: "Caveat", "Segoe Script", cursive;
+  letter-spacing: 0.01em;
 }
 
 /* Card style utility */

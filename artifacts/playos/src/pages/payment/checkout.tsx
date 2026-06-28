@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
-import { useGetSettings } from "@/lib/supabase-api";
+import { useGetSettings, useGetMyCredits, useRedeemCredit } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
-import { Loader2, Smartphone, Banknote, Copy, Check, MessageCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, Smartphone, Banknote, Copy, Check, MessageCircle, Ticket } from "lucide-react";
 
 type Method = "stcpay" | "cash";
 
@@ -18,6 +19,9 @@ export default function Checkout() {
   const gameId = params.get("gameId") ?? "";
 
   const { data: settings } = useGetSettings();
+  const { data: credits = 0 } = useGetMyCredits();
+  const redeemCredit = useRedeemCredit();
+  const { toast } = useToast();
   const fee = settings?.bookingFee ?? 0;
 
   const [method, setMethod] = useState<Method | null>(null);
@@ -45,9 +49,23 @@ export default function Checkout() {
     setDone(m);
   };
 
+  const handleRedeem = () => {
+    redeemCredit.mutate(
+      { bookingId, gameId },
+      {
+        onSuccess: () => {
+          toast({ title: "You're in!", description: "1 credit token used — spot confirmed." });
+          setLocation(getPath(`/game/${gameId}`));
+        },
+        onError: (err: any) =>
+          setError(err?.data?.error || "Could not redeem credit. Please try again."),
+      },
+    );
+  };
+
   if (!bookingId || !gameId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] px-4">
+      <div className="min-h-screen flex items-center justify-center bg-transparent px-4">
         <p className="text-[#6C6C70]">{isAr ? "رابط دفع غير صالح." : "Invalid payment link."}</p>
       </div>
     );
@@ -57,7 +75,7 @@ export default function Checkout() {
   if (done) {
     const waUrl = settings?.whatsappUrl;
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] px-4 py-10">
+      <div className="min-h-screen flex items-center justify-center bg-transparent px-4 py-10">
         <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg overflow-hidden text-center">
           <div className="bg-[#1D3557] px-6 py-6 text-white">
             <div className="mx-auto mb-3 w-12 h-12 rounded-full bg-white/15 flex items-center justify-center">
@@ -102,7 +120,7 @@ export default function Checkout() {
 
   // ── Method selection ──
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#F2F2F7] px-4 py-10">
+    <div className="min-h-screen flex items-center justify-center bg-transparent px-4 py-10">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="bg-[#1D3557] px-6 py-5 text-white">
           <p className="text-xs opacity-70 font-medium">{isAr ? "إتمام الحجز" : "Complete your booking"}</p>
@@ -110,8 +128,31 @@ export default function Checkout() {
         </div>
 
         <div className="px-6 py-5 space-y-3">
+          {credits > 0 && (
+            <button
+              onClick={handleRedeem}
+              disabled={redeemCredit.isPending}
+              className="w-full text-left rounded-xl border p-4 transition-colors disabled:opacity-60"
+              style={{ borderColor: "#0A84FF", background: "rgba(10,132,255,0.06)" }}
+            >
+              <div className="flex items-center gap-3">
+                <Ticket className="h-5 w-5" style={{ color: "#0A84FF" }} />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-[#1C1C1E]">
+                    {isAr ? "استخدم رصيد" : "Use a credit token"} {redeemCredit.isPending && "…"}
+                  </p>
+                  <p className="text-xs text-[#6C6C70]">
+                    {isAr ? `لديك ${credits} رصيد · مجاناً` : `You have ${credits} · books this match free`}
+                  </p>
+                </div>
+              </div>
+            </button>
+          )}
+
           <p className="text-sm font-semibold text-[#1C1C1E]">
-            {isAr ? "اختر طريقة الدفع" : "Choose how to pay"}
+            {credits > 0
+              ? (isAr ? "أو ادفع" : "Or pay")
+              : (isAr ? "اختر طريقة الدفع" : "Choose how to pay")}
           </p>
 
           {/* STC Pay */}

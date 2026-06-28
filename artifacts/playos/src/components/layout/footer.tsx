@@ -25,9 +25,6 @@ export function Footer() {
             <p className="text-sm text-[#6C6C70] max-w-xs leading-relaxed">
               The #1 football pickup game booking platform in Saudi Arabia. Book your spot, show up, play.
             </p>
-            <p className="text-xs text-[#8E8E93] mt-3">
-              Owned &amp; operated by <span className="font-medium">E-vision technology services</span>
-            </p>
           </div>
 
           {/* Company */}
@@ -35,8 +32,6 @@ export function Footer() {
             <div className="text-xs font-semibold text-[#1C1C1E] uppercase tracking-wider mb-3">Company</div>
             <ul className="space-y-2">
               <li><Link href={p("/about")} className="text-sm text-[#6C6C70] hover:text-[#0A84FF] transition-colors">About Us</Link></li>
-              <li><Link href={p("/contact")} className="text-sm text-[#6C6C70] hover:text-[#0A84FF] transition-colors">Contact Us</Link></li>
-              <li><Link href={p("/complaints")} className="text-sm text-[#6C6C70] hover:text-[#0A84FF] transition-colors">Complaints</Link></li>
             </ul>
           </div>
 
@@ -84,10 +79,6 @@ export function Footer() {
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-[#8E8E93]">
-            <p>© {new Date().getFullYear()} E-vision technology services. All rights reserved.</p>
-            <p>Riyadh, Saudi Arabia · P.O. Box 12631</p>
-          </div>
         </div>
       </div>
     </footer>

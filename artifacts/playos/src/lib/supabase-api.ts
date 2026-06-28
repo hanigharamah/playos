@@ -492,11 +492,42 @@ export function useCancelBooking() {
   return useMutation({
     mutationFn: async ({ id }: { id: string }): Promise<CancelBookingResponse> => {
       const { data: booking } = await supabase
-        .from("bookings").select("game_id").eq("id", id).single();
+        .from("bookings")
+        .select("game_id, user_id, games(kickoff_time)")
+        .eq("id", id)
+        .single();
 
+      // Free the spot regardless of refund outcome.
       const { error } = await supabase
         .from("bookings").update({ payment_status: "refunded" }).eq("id", id);
       if (error) throw error;
+
+      // Determine outcome by time-to-kickoff:
+      //   > 12h  → full refund
+      //   6–12h  → 1 credit token
+      //   < 6h   → nothing
+      const kickoff = (booking?.games as any)?.kickoff_time;
+      const hoursUntil = kickoff
+        ? (new Date(kickoff).getTime() - Date.now()) / 3_600_000
+        : 0;
+
+      let tier: "full" | "credit" | "none" = "none";
+      let message = "Booking cancelled. No refund applies this close to kickoff.";
+
+      if (hoursUntil > 12) {
+        tier = "full";
+        message = "Booking cancelled. You'll receive a full refund.";
+      } else if (hoursUntil >= 6) {
+        tier = "credit";
+        // Award 1 credit token (read-modify-write; fine for single-operator scale).
+        const uid = booking?.user_id;
+        if (uid) {
+          const { data: u } = await supabase.from("users").select("credits").eq("id", uid).single();
+          await supabase.from("users").update({ credits: (u?.credits ?? 0) + 1 }).eq("id", uid);
+          queryClient.invalidateQueries({ queryKey: getMyCreditsQueryKey() });
+        }
+        message = "Booking cancelled. 1 credit token added for your next match.";
+      }
 
       if (booking?.game_id) {
         // Reopen game if it was marked full
@@ -508,7 +539,58 @@ export function useCancelBooking() {
       }
       queryClient.invalidateQueries({ queryKey: getGetMyBookingsQueryKey() });
 
-      return { success: true, refundTier: "none", refundAmount: 0, message: "Booking cancelled" };
+      return { success: true, refundTier: tier as any, refundAmount: 0, message };
+    },
+  });
+}
+
+// ─── Credit tokens ──────────────────────────────────────────────────────────
+
+export const getMyCreditsQueryKey = () => ["/my-credits"] as const;
+
+export function useGetMyCredits() {
+  return useQuery({
+    queryKey: getMyCreditsQueryKey(),
+    queryFn: async (): Promise<number> => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return 0;
+      const { data } = await supabase.from("users").select("credits").eq("id", user.id).single();
+      return data?.credits ?? 0;
+    },
+  });
+}
+
+/** Redeem 1 credit token to pay for a booking (marks it paid, decrements credits). */
+export function useRedeemCredit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ bookingId, gameId }: { bookingId: string; gameId: string }): Promise<void> => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw { data: { error: "Not authenticated" } };
+
+      const { data: u } = await supabase.from("users").select("credits").eq("id", user.id).single();
+      if (!u || (u.credits ?? 0) < 1) throw { data: { error: "No credits available" } };
+
+      const { error } = await supabase
+        .from("bookings")
+        .update({ payment_status: "paid", payment_method: "credit", payment_id: `credit_${bookingId}` })
+        .eq("id", bookingId);
+      if (error) throw error;
+
+      await supabase.from("users").update({ credits: (u.credits ?? 0) - 1 }).eq("id", user.id);
+
+      // Mark game full if at capacity.
+      const { data: game } = await supabase
+        .from("games").select("capacity, bookings(id, payment_status)").eq("id", gameId).single();
+      if (game) {
+        const paidCount = (game.bookings as any[]).filter((b) => b.payment_status === "paid").length;
+        if (paidCount >= game.capacity) {
+          await supabase.from("games").update({ status: "full" }).eq("id", gameId);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: getMyCreditsQueryKey() });
+      queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(gameId) });
     },
   });
 }

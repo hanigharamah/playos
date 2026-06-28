@@ -42,3 +42,7 @@ create policy app_settings_write_admin
 -- ── Track how each booking is being paid ────────────────────────────────────
 alter table public.bookings
   add column if not exists payment_method text;  -- 'stcpay' | 'cash' | null
+
+-- ── Credit tokens (issued on 6–12h cancellations, redeemable at checkout) ────
+alter table public.users
+  add column if not exists credits int not null default 0;

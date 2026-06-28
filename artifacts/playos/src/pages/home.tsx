@@ -15,7 +15,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-24 lg:py-40 overflow-hidden bg-[#0a1626]">
+      <section className="relative pt-16 pb-24 sm:pt-20 lg:pt-28 lg:pb-36 overflow-hidden">
         {/* Background video */}
         <video
           className="absolute inset-0 w-full h-full object-cover"
@@ -28,38 +28,41 @@ export default function Home() {
           <source src="/hero-bg.mp4" type="video/mp4" />
         </video>
 
-        {/* Side gradients fading the video into the page edges */}
+        {/* Fade the video into the cream page on the sides */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to right, #0a1626 0%, rgba(10,22,38,0) 18%, rgba(10,22,38,0) 82%, #0a1626 100%)",
+              "linear-gradient(to right, #FBF7F2 0%, rgba(251,247,242,0) 22%, rgba(251,247,242,0) 78%, #FBF7F2 100%)",
           }}
         />
-        {/* Vertical scrim for text legibility */}
+        {/* Soft cream wash + strong fade to the page at the bottom */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(10,22,38,0.55) 0%, rgba(10,22,38,0.25) 45%, rgba(10,22,38,0.75) 100%)",
+              "linear-gradient(to bottom, rgba(251,247,242,0.35) 0%, rgba(251,247,242,0.5) 40%, rgba(251,247,242,0.92) 82%, #FBF7F2 100%)",
           }}
         />
 
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <Badge className="mb-4 bg-white/15 text-white border-0 backdrop-blur-sm" variant="secondary">
+          <p className="font-hand text-2xl sm:text-3xl mb-1" style={{ color: "#FF9F0A" }}>
+            {language === "ar" ? "يلا نلعب" : "yalla, let's play"}
+          </p>
+          <Badge className="mb-4 bg-white/70 text-[#1D3557] border-0 backdrop-blur-sm" variant="secondary">
             {language === "ar" ? "المنصة الأولى لكرة القدم في السعودية" : "The #1 Football Platform in KSA"}
           </Badge>
           <h1
-            className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 max-w-3xl mx-auto text-white"
-            style={{ textShadow: "0 2px 20px rgba(0,0,0,0.4)" }}
+            className="text-[1.6rem] leading-[1.15] sm:text-5xl md:text-6xl font-extrabold tracking-tight mb-5 max-w-3xl mx-auto break-words"
+            style={{ color: "#1D3557" }}
           >
             {t("hero.title")}
           </h1>
-          <p className="text-xl text-white/85 mb-10 max-w-2xl mx-auto" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.4)" }}>
+          <p className="text-base sm:text-xl text-[#4A5568] mb-9 max-w-2xl mx-auto text-balance">
             {t("hero.subtitle")}
           </p>
           <div className="flex justify-center">
-            <Button size="lg" className="text-lg px-8" asChild>
+            <Button size="lg" className="text-base sm:text-lg px-8" asChild>
               <Link href={getPath("/games")}>{t("hero.cta")}</Link>
             </Button>
           </div>
@@ -67,11 +70,16 @@ export default function Home() {
       </section>
 
       {/* Featured Games Section */}
-      <section className="py-16 container mx-auto px-4">
-        <div className="flex justify-between items-end mb-8">
-          <h2 className="text-3xl font-bold tracking-tight">
-            {language === "ar" ? "مباريات مميزة" : "Featured Games"}
-          </h2>
+      <section className="py-12 sm:py-16 container mx-auto px-4">
+        <div className="flex justify-between items-end mb-6 sm:mb-8 gap-4">
+          <div>
+            <p className="font-hand text-xl sm:text-2xl leading-none" style={{ color: "#FF9F0A" }}>
+              {language === "ar" ? "قادمة قريباً" : "coming up"}
+            </p>
+            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+              {language === "ar" ? "مباريات مميزة" : "Featured Games"}
+            </h2>
+          </div>
           <Button variant="ghost" asChild>
             <Link href={getPath("/games")}>
               {language === "ar" ? "عرض الكل" : "View All"}

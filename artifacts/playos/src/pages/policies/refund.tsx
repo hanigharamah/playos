@@ -1,6 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 
 export default function RefundPolicy() {
   return (
@@ -24,9 +23,9 @@ export default function RefundPolicy() {
           <div className="flex items-start justify-between gap-4 pb-4 border-b">
             <div>
               <div className="font-semibold">6 to 12 hours before kickoff</div>
-              <div className="text-sm text-muted-foreground">Partial refund to original payment method</div>
+              <div className="text-sm text-muted-foreground">1 credit token to use toward your next match</div>
             </div>
-            <Badge variant="secondary" className="shrink-0 bg-yellow-100 text-yellow-800 hover:bg-yellow-200">50% Refund</Badge>
+            <Badge variant="secondary" className="shrink-0 bg-yellow-100 text-yellow-800 hover:bg-yellow-200">1 Credit Token</Badge>
           </div>
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -68,10 +67,10 @@ export default function RefundPolicy() {
         </CardHeader>
         <CardContent className="text-sm text-muted-foreground space-y-3">
           <p>
-            Refunds will be made onto the original mode of payment and will be processed within <strong>10 to 45 days</strong> depending on the issuing bank of the credit card.
+            Cancellations are handled in the app. Full refunds are returned via your original payment method (STC Pay or cash). Credit tokens are added to your account instantly and can be applied at checkout on your next booking.
           </p>
           <p>
-            If no cancellation or refund is applicable (e.g. less than 6 hours before kickoff for player cancellations), this will be clearly communicated to the cardholder before the purchase decision is made.
+            If no refund or credit is applicable (e.g. less than 6 hours before kickoff), this is shown clearly before you confirm a booking.
           </p>
         </CardContent>
       </Card>
@@ -85,16 +84,10 @@ export default function RefundPolicy() {
           <ul className="list-disc list-inside space-y-1.5 text-sm text-muted-foreground">
             <li>The game was cancelled by the host</li>
             <li>The game was auto-cancelled due to insufficient players</li>
-            <li>The player requests cancellation within the eligible time window (more than 6 hours before kickoff)</li>
+            <li>The player cancels within the eligible time window (more than 6 hours before kickoff)</li>
           </ul>
         </CardContent>
       </Card>
-
-      <Separator className="my-8" />
-
-      <div className="text-sm text-muted-foreground space-y-2">
-        <p>To request a cancellation or refund, contact us at <a href="mailto:hani.gharamah@evision-corp.org" className="text-primary hover:underline">hani.gharamah@evision-corp.org</a>.</p>
-      </div>
     </div>
   );
 }

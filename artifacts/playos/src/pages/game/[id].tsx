@@ -369,7 +369,7 @@ export default function GameDetail() {
   /* Loading state */
   if (isLoading || !game) {
     return (
-      <div className="min-h-screen pb-28 bg-[#F2F2F7]">
+      <div className="min-h-screen pb-28 bg-transparent">
         <div className="max-w-2xl mx-auto px-4 md:px-8 py-5 space-y-4">
           <Skeleton className="h-8 w-3/4" />
           <Skeleton className="h-4 w-1/2" />
@@ -400,7 +400,7 @@ export default function GameDetail() {
   };
 
   return (
-    <div className="min-h-screen pb-28 bg-[#F2F2F7]">
+    <div className="min-h-screen pb-28 bg-transparent">
       <div className="max-w-2xl mx-auto px-4 md:px-8 py-5 space-y-4">
 
         {/* ── Game Header ── */}
