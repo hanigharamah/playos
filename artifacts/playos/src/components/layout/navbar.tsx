@@ -64,7 +64,13 @@ export function Navbar() {
             </span>
             <span
               className="text-xl font-extrabold uppercase select-none"
-              style={{ color: "#0A84FF", letterSpacing: "-0.03em" }}
+              style={{
+                background: "linear-gradient(120deg, #E8993B 0%, #FF8C6B 55%, #FFC59E 100%)",
+                WebkitBackgroundClip: "text",
+                backgroundClip: "text",
+                color: "transparent",
+                letterSpacing: "-0.03em",
+              }}
             >
               OS
             </span>

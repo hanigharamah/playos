@@ -16,9 +16,9 @@ export default function Home() {
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
       <section className="relative pt-16 pb-24 sm:pt-20 lg:pt-28 lg:pb-36 overflow-hidden">
-        {/* Background video */}
+        {/* Background video — masked so its edges fade into the cream gradient */}
         <video
-          className="absolute inset-0 w-full h-full object-cover"
+          className="hero-video absolute inset-0 w-full h-full object-cover"
           autoPlay
           muted
           loop
@@ -28,30 +28,19 @@ export default function Home() {
           <source src="/hero-bg.mp4" type="video/mp4" />
         </video>
 
-        {/* Fade the video into the cream page on the sides */}
+        {/* Soft centred light scrim for text legibility (transparent at edges) */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to right, #FBF7F2 0%, rgba(251,247,242,0) 22%, rgba(251,247,242,0) 78%, #FBF7F2 100%)",
-          }}
-        />
-        {/* Soft cream wash + strong fade to the page at the bottom */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(to bottom, rgba(251,247,242,0.35) 0%, rgba(251,247,242,0.5) 40%, rgba(251,247,242,0.92) 82%, #FBF7F2 100%)",
+              "radial-gradient(ellipse 80% 60% at 50% 55%, rgba(251,247,242,0.5), rgba(251,247,242,0) 75%)",
           }}
         />
 
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <p className="font-hand text-2xl sm:text-3xl mb-1" style={{ color: "#FF9F0A" }}>
+          <p className="font-hand text-2xl sm:text-3xl mb-3" style={{ color: "#FF9F0A" }}>
             {language === "ar" ? "يلا نلعب" : "yalla, let's play"}
           </p>
-          <Badge className="mb-4 bg-white/70 text-[#1D3557] border-0 backdrop-blur-sm" variant="secondary">
-            {language === "ar" ? "المنصة الأولى لكرة القدم في السعودية" : "The #1 Football Platform in KSA"}
-          </Badge>
           <h1
             className="font-extrabold tracking-tight mb-5 max-w-3xl mx-auto"
             style={{ color: "#1D3557", fontSize: "clamp(1.5rem, 6vw, 3.75rem)", lineHeight: 1.12 }}

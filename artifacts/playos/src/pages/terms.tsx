@@ -3,7 +3,7 @@ import { Separator } from "@/components/ui/separator";
 const sections = [
   {
     title: "1. General",
-    body: "By accessing and using PlayOS (playos1.replit.app), you agree to be bound by these Terms and Conditions. PlayOS is owned and operated by E-vision technology services.",
+    body: "By accessing and using PlayOS, you agree to be bound by these Terms and Conditions.",
   },
   {
     title: "2. Governing Law",
@@ -46,14 +46,6 @@ export default function Terms() {
           </div>
         ))}
       </div>
-
-      <p className="text-xs text-muted-foreground mt-8">
-        For questions about these terms, contact us at{" "}
-        <a href="mailto:hani.gharamah@evision-corp.org" className="text-primary hover:underline">
-          hani.gharamah@evision-corp.org
-        </a>
-        .
-      </p>
     </div>
   );
 }

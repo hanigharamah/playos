@@ -20,7 +20,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-2">
             <div className="flex items-center mb-3">
               <span className="text-xl font-extrabold uppercase" style={{ color: "#1D3557", letterSpacing: "-0.03em" }}>PLAY</span>
-              <span className="text-xl font-extrabold uppercase" style={{ color: "#0A84FF", letterSpacing: "-0.03em" }}>OS</span>
+              <span className="text-xl font-extrabold uppercase" style={{ background: "linear-gradient(120deg, #E8993B 0%, #FF8C6B 55%, #FFC59E 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", letterSpacing: "-0.03em" }}>OS</span>
             </div>
             <p className="text-sm text-[#6C6C70] max-w-xs leading-relaxed">
               The #1 football pickup game booking platform in Saudi Arabia. Book your spot, show up, play.
