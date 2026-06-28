@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -32,8 +33,29 @@ import NotFound from "@/pages/not-found";
 const queryClient = new QueryClient();
 
 function AppContent() {
+  // Pointer-tracked specular sheen for all .glass surfaces.
+  useEffect(() => {
+    const onMove = (e: PointerEvent) => {
+      const el = (e.target as HTMLElement | null)?.closest?.(".glass") as HTMLElement | null;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      el.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
+      el.style.setProperty("--my", `${((e.clientY - r.top) / r.height) * 100}%`);
+    };
+    window.addEventListener("pointermove", onMove, { passive: true });
+    return () => window.removeEventListener("pointermove", onMove);
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col text-foreground overflow-x-hidden">
+      {/* Liquid-glass edge-refraction filter (optional, referenced via url(#liquid-lens)) */}
+      <svg width="0" height="0" aria-hidden="true" style={{ position: "absolute" }}>
+        <filter id="liquid-lens">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves={2} seed={42} result="n" />
+          <feGaussianBlur in="n" stdDeviation="2.4" result="s" />
+          <feDisplacementMap in="SourceGraphic" in2="s" scale={58} xChannelSelector="R" yChannelSelector="G" />
+        </filter>
+      </svg>
       <div className="app-bg" aria-hidden="true">
         <div className="app-bg__blob app-bg__blob--1" />
         <div className="app-bg__blob app-bg__blob--2" />
