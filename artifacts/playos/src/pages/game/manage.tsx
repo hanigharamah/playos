@@ -1,6 +1,7 @@
 import { useLocation, Link } from "wouter";
-import { useGetGameManagement, useUpdateGame, useDeleteGame, getGetGameManagementQueryKey, getGetGameQueryKey } from "@/lib/supabase-api";
+import { useGetGameManagement, useUpdateGame, useDeleteGame, useMarkBookingPaid, useGetSettings, getGetGameManagementQueryKey, getGetGameQueryKey } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
+import { isOperator } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import { Separator } from "@/components/ui/separator";
 import { format } from "date-fns";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { Share2, Trash2, ArrowLeft, Users, MapPin, Clock, DollarSign, CheckCircle, Circle } from "lucide-react";
+import { Share2, Trash2, ArrowLeft, Users, MapPin, Clock, DollarSign, CheckCircle, Circle, MessageCircle, BadgeCheck } from "lucide-react";
 import { useState } from "react";
 
 interface Props {
@@ -45,9 +46,11 @@ export default function GameManage({ params }: Props) {
 
   const updateGame = useUpdateGame();
   const deleteGame = useDeleteGame();
+  const markPaid = useMarkBookingPaid();
+  const { data: settings } = useGetSettings();
 
-  if (!user || user.role !== "organiser") {
-    setLocation("/host/login");
+  if (!isOperator(user?.role)) {
+    setLocation("/");
     return null;
   }
 
@@ -63,7 +66,38 @@ export default function GameManage({ params }: Props) {
   const team1 = bookings.filter((b) => b.team === 1 && b.paymentStatus === "paid");
   const team2 = bookings.filter((b) => b.team === 2 && b.paymentStatus === "paid");
   const paidBookings = bookings.filter((b) => b.paymentStatus === "paid");
+  const pendingBookings = bookings.filter((b) => b.paymentStatus === "pending");
   const checkedInCount = paidBookings.filter((b) => b.checkedIn).length;
+  const fee = settings?.bookingFee ?? game.price;
+
+  const handleMarkPaid = (bookingId: string) => {
+    markPaid.mutate(
+      { id: bookingId, gameId: id },
+      {
+        onSuccess: () => toast({ title: "Marked paid", description: "Booking confirmed." }),
+        onError: (err: any) =>
+          toast({ title: "Error", description: err?.message || "Could not update", variant: "destructive" }),
+      },
+    );
+  };
+
+  // Open WhatsApp to the player with a prefilled STC Pay payment request.
+  const sendStcLink = (phone: string | null | undefined, playerName: string) => {
+    if (!phone) {
+      toast({ title: "No phone number", description: "This player has no phone on file.", variant: "destructive" });
+      return;
+    }
+    const digits = phone.replace(/\D/g, "");
+    const payInfo = settings?.stcpayLink
+      ? settings.stcpayLink
+      : settings?.stcpayNumber
+        ? `STC Pay number: ${settings.stcpayNumber}`
+        : "(STC Pay details to follow)";
+    const msg =
+      `Hi ${playerName}, to confirm your spot in "${game.title}" ` +
+      `please send SAR ${fee} via STC Pay.\n${payInfo}\n\nThanks!`;
+    window.open(`https://wa.me/${digits}?text=${encodeURIComponent(msg)}`, "_blank");
+  };
 
   const handleToggleVisibility = () => {
     updateGame.mutate(
@@ -177,6 +211,50 @@ export default function GameManage({ params }: Props) {
           </div>
         </CardContent>
       </Card>
+
+      {/* Pending payments — confirm STC Pay / cash */}
+      {pendingBookings.length > 0 && (
+        <Card className="mb-4 border-amber-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Clock className="h-4 w-4 text-amber-500" />
+              Awaiting payment ({pendingBookings.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {pendingBookings.map((b) => (
+              <div key={b.id} className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium truncate">{b.playerName}</p>
+                  <p className="text-xs text-muted-foreground">
+                    Team {b.team}
+                    {(b as any).paymentMethod ? ` · ${(b as any).paymentMethod}` : ""}
+                    {b.playerPhone ? ` · ${b.playerPhone}` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => sendStcLink(b.playerPhone, b.playerName)}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-1.5" />
+                    Send STC Pay
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={() => handleMarkPaid(b.id)}
+                    disabled={markPaid.isPending}
+                  >
+                    <BadgeCheck className="h-4 w-4 mr-1.5" />
+                    Mark paid
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Player Rosters with check-in */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

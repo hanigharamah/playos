@@ -15,23 +15,52 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative py-20 lg:py-32 overflow-hidden bg-primary/5">
+      <section className="relative py-24 lg:py-40 overflow-hidden bg-[#0a1626]">
+        {/* Background video */}
+        <video
+          className="absolute inset-0 w-full h-full object-cover"
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster="/hero-bg-poster.jpg"
+        >
+          <source src="/hero-bg.mp4" type="video/mp4" />
+        </video>
+
+        {/* Side gradients fading the video into the page edges */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to right, #0a1626 0%, rgba(10,22,38,0) 18%, rgba(10,22,38,0) 82%, #0a1626 100%)",
+          }}
+        />
+        {/* Vertical scrim for text legibility */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(10,22,38,0.55) 0%, rgba(10,22,38,0.25) 45%, rgba(10,22,38,0.75) 100%)",
+          }}
+        />
+
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <Badge className="mb-4" variant="secondary">
+          <Badge className="mb-4 bg-white/15 text-white border-0 backdrop-blur-sm" variant="secondary">
             {language === "ar" ? "المنصة الأولى لكرة القدم في السعودية" : "The #1 Football Platform in KSA"}
           </Badge>
-          <h1 className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 max-w-3xl mx-auto text-foreground">
+          <h1
+            className="text-4xl md:text-6xl font-extrabold tracking-tight mb-6 max-w-3xl mx-auto text-white"
+            style={{ textShadow: "0 2px 20px rgba(0,0,0,0.4)" }}
+          >
             {t("hero.title")}
           </h1>
-          <p className="text-xl text-muted-foreground mb-10 max-w-2xl mx-auto">
+          <p className="text-xl text-white/85 mb-10 max-w-2xl mx-auto" style={{ textShadow: "0 1px 12px rgba(0,0,0,0.4)" }}>
             {t("hero.subtitle")}
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex justify-center">
             <Button size="lg" className="text-lg px-8" asChild>
               <Link href={getPath("/games")}>{t("hero.cta")}</Link>
-            </Button>
-            <Button size="lg" variant="outline" className="text-lg px-8" asChild>
-              <Link href={getPath("/host/login")}>{t("hero.host_cta")}</Link>
             </Button>
           </div>
         </div>

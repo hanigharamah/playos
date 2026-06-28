@@ -478,9 +478,9 @@ export function useBookSpot() {
 
       queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(id) });
 
-      // Return a URL pointing to the mock payment page
+      // Return a URL pointing to the STC Pay / Cash checkout page
       return {
-        checkoutUrl: `/payment/mock?bookingId=${bookingId}&gameId=${id}`,
+        checkoutUrl: `/payment/checkout?bookingId=${bookingId}&gameId=${id}`,
         sessionId: bookingId,
       };
     },
@@ -713,6 +713,97 @@ export function useSavePayoutDetails() {
       });
       if (error) throw error;
       queryClient.invalidateQueries({ queryKey: getGetDashboardPayoutsQueryKey() });
+    },
+  });
+}
+
+// ─── App settings (global, operator-controlled) ───────────────────────────
+
+export interface AppSettings {
+  bookingFee: number;
+  whatsappUrl: string;
+  stcpayNumber: string;
+  stcpayLink: string;
+  guidelines: string;
+}
+
+import { DEFAULT_SETTINGS } from "./config";
+
+export const getSettingsQueryKey = () => ["/app-settings"] as const;
+
+function mapSettings(row: Record<string, any> | null): AppSettings {
+  return {
+    bookingFee: row?.booking_fee != null ? Number(row.booking_fee) : DEFAULT_SETTINGS.bookingFee,
+    whatsappUrl: row?.whatsapp_url ?? DEFAULT_SETTINGS.whatsappUrl,
+    stcpayNumber: row?.stcpay_number ?? DEFAULT_SETTINGS.stcpayNumber,
+    stcpayLink: row?.stcpay_link ?? DEFAULT_SETTINGS.stcpayLink,
+    guidelines: row?.guidelines ?? DEFAULT_SETTINGS.guidelines,
+  };
+}
+
+export function useGetSettings() {
+  return useQuery({
+    queryKey: getSettingsQueryKey(),
+    queryFn: async (): Promise<AppSettings> => {
+      // Fall back to defaults if the table is missing or unreadable so the
+      // public site never breaks on a settings error.
+      try {
+        const { data } = await supabase
+          .from("app_settings").select("*").eq("id", 1).single();
+        return mapSettings(data);
+      } catch {
+        return mapSettings(null);
+      }
+    },
+    staleTime: 60_000,
+  });
+}
+
+export function useUpdateSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ data }: { data: Partial<AppSettings> }): Promise<void> => {
+      const patch: Record<string, unknown> = { id: 1, updated_at: new Date().toISOString() };
+      if (data.bookingFee !== undefined) patch.booking_fee = data.bookingFee;
+      if (data.whatsappUrl !== undefined) patch.whatsapp_url = data.whatsappUrl;
+      if (data.stcpayNumber !== undefined) patch.stcpay_number = data.stcpayNumber;
+      if (data.stcpayLink !== undefined) patch.stcpay_link = data.stcpayLink;
+      if (data.guidelines !== undefined) patch.guidelines = data.guidelines;
+
+      const { error } = await supabase.from("app_settings").upsert(patch);
+      if (error) throw error;
+      queryClient.invalidateQueries({ queryKey: getSettingsQueryKey() });
+    },
+  });
+}
+
+/** Operator action: confirm a booking as paid (STC Pay received or cash). */
+export function useMarkBookingPaid() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      id,
+      gameId,
+      method,
+    }: { id: string; gameId: string; method?: "stcpay" | "cash" }): Promise<void> => {
+      const patch: Record<string, unknown> = { payment_status: "paid", payment_id: `manual_${id}` };
+      if (method) patch.payment_method = method;
+      const { error } = await supabase.from("bookings").update(patch).eq("id", id);
+      if (error) throw error;
+
+      // Mark the game full if it has reached capacity.
+      const { data: game } = await supabase
+        .from("games").select("capacity, bookings(id, payment_status)").eq("id", gameId).single();
+      if (game) {
+        const paidCount = (game.bookings as any[]).filter((b) => b.payment_status === "paid").length;
+        if (paidCount >= game.capacity) {
+          await supabase.from("games").update({ status: "full" }).eq("id", gameId);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: getGetGameManagementQueryKey(gameId) });
+      queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(gameId) });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardGamesQueryKey() });
     },
   });
 }

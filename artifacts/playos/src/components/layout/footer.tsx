@@ -8,11 +8,7 @@ export function Footer() {
   const p = (path: string) => (isArabic ? `/ar${path}` : path);
 
   const logos = [
-    { src: "/pay-visa.svg",       alt: "Visa" },
-    { src: "/pay-mastercard.svg", alt: "Mastercard" },
-    { src: "/pay-mada.png",       alt: "mada" },
-    { src: "/pay-applepay.png",   alt: "Apple Pay" },
-    { src: "/pay-stcpay.png",     alt: "STC Pay" },
+    { src: "/pay-stcpay.png", alt: "STC Pay" },
   ];
 
   return (
@@ -68,18 +64,24 @@ export function Footer() {
                 key={alt}
                 src={src}
                 alt={alt}
-                className="h-[16px] w-auto object-contain transition-all duration-200"
+                className="h-[16px] w-auto object-contain"
                 style={{ filter: "grayscale(100%) opacity(0.55)" }}
-                onMouseEnter={(e) => (e.currentTarget.style.filter = "grayscale(0%) opacity(1)")}
-                onMouseLeave={(e) => (e.currentTarget.style.filter = "grayscale(100%) opacity(0.55)")}
               />
             ))}
+            <span
+              className="text-[11px] font-semibold uppercase tracking-wide"
+              style={{ color: "#8E8E93" }}
+            >
+              {isArabic ? "نقداً" : "Cash"}
+            </span>
           </div>
 
           {/* Security text */}
           <div className="flex items-center gap-1 mb-4">
             <Lock className="h-3 w-3 text-[#AEAEB2]" />
-            <p style={{ fontSize: "11px", color: "#AEAEB2" }}>Payments secured by Amazon Payment Services</p>
+            <p style={{ fontSize: "11px", color: "#AEAEB2" }}>
+              {isArabic ? "ادفع عبر STC Pay أو نقداً" : "Pay by STC Pay or cash"}
+            </p>
           </div>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 text-xs text-[#8E8E93]">

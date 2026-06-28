@@ -2,7 +2,9 @@ import { useState, useEffect } from "react";
 import { useLocation, Link } from "wouter";
 import { useGetDashboardGames, useListPitches } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
+import { isOperator } from "@/lib/config";
 import { WeeklyCalendar } from "@/components/dashboard/WeeklyCalendar";
+import { OperatorSettings } from "@/components/dashboard/OperatorSettings";
 
 export default function Dashboard() {
   const [, setLocation] = useLocation();
@@ -12,6 +14,7 @@ export default function Dashboard() {
   const { data: pitches } = useListPitches();
 
   const [activePitch, setActivePitch] = useState<string | null>(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   // Auto-select pitch when single pitch host
   useEffect(() => {
@@ -21,12 +24,12 @@ export default function Dashboard() {
   }, [pitches]);
 
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== "organiser")) {
-      setLocation("/host/login");
+    if (!authLoading && !isOperator(user?.role)) {
+      setLocation("/");
     }
   }, [authLoading, user]);
 
-  if (authLoading || !user || user.role !== "organiser") {
+  if (authLoading || !isOperator(user?.role)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-pulse text-muted-foreground">Loading...</div>
@@ -53,12 +56,22 @@ export default function Dashboard() {
           >
             Payouts
           </Link>
+          <button
+            onClick={() => setShowSettings((s) => !s)}
+            className={`px-5 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              showSettings ? "bg-blue-600 text-white shadow-sm" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Settings
+          </button>
         </div>
       </div>
 
       {/* Calendar — takes remaining height */}
-      <div className="flex-1 min-h-0">
-        {gamesLoading ? (
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        {showSettings ? (
+          <OperatorSettings />
+        ) : gamesLoading ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Loading calendar...
           </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useGetDashboardPayouts, useSavePayoutDetails, getGetDashboardPayoutsQueryKey } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
+import { isOperator } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -31,12 +32,12 @@ export default function Payouts() {
   });
 
   useEffect(() => {
-    if (!authLoading && (!user || user.role !== "organiser")) {
-      setLocation("/host/login");
+    if (!authLoading && !isOperator(user?.role)) {
+      setLocation("/");
     }
   }, [authLoading, user]);
 
-  if (authLoading || !user || user.role !== "organiser") {
+  if (authLoading || !isOperator(user?.role)) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 

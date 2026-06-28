@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetGame, useBookSpot } from "@/lib/supabase-api";
+import { useGetGame, useBookSpot, useGetSettings } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
+import { isOperator } from "@/lib/config";
 import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -300,6 +301,7 @@ export default function GameDetail() {
 
   const queryClient = useQueryClient();
   const { data: game, isLoading } = useGetGame(id);
+  const { data: settings } = useGetSettings();
   const bookSpot = useBookSpot();
 
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
@@ -378,10 +380,15 @@ export default function GameDetail() {
   }
 
   const teamSize = game.capacity / 2;
-  const price = game.price;
-  const serviceFee = 2;
-  const total = price + serviceFee;
+  // Single constant booking fee set by the operator (falls back to the
+  // per-game price if settings haven't loaded).
+  const fee = settings?.bookingFee ?? game.price;
+  const total = fee;
   const kickoff = new Date(game.kickoffTime);
+  const guidelines = (settings?.guidelines ?? "")
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
 
   /* CTA bar state */
   const ctaState = () => {
@@ -410,7 +417,7 @@ export default function GameDetail() {
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            {user?.role === "organiser" && (user as any).id === game.organiserId && (
+            {isOperator(user?.role) && (user as any).id === game.organiserId && (
               <Link href={getPath(`/game/${id}/manage`)}>
                 <button
                   className="text-xs font-semibold px-3 py-1.5 rounded-[10px] border"
@@ -511,25 +518,22 @@ export default function GameDetail() {
                 {game.pitchName}
               </p>
             </div>
-            {/* Price */}
+            {/* Booking fee */}
             <div className="px-4 py-3 border-t border-[#E5E5EA]">
               <p className="text-[10px] font-semibold text-[#AEAEB2] uppercase tracking-widest mb-0.5">
-                Price
+                Booking fee
               </p>
               <p className="text-sm font-bold" style={{ color: "#1D3557" }}>
-                SAR {price}
+                SAR {fee}
               </p>
             </div>
           </div>
-          <div className="border-t border-[#E5E5EA] px-4 py-3 space-y-2">
-            <div className="flex justify-between items-center">
-              <span className="text-sm text-[#6C6C70]">Service fee</span>
-              <span className="text-sm text-[#6C6C70]">SAR {serviceFee}</span>
-            </div>
+          <div className="border-t border-[#E5E5EA] px-4 py-3">
             <div className="flex justify-between items-center">
               <span className="text-sm font-bold" style={{ color: "#1D3557" }}>Total</span>
               <span className="text-sm font-bold" style={{ color: "#1D3557" }}>SAR {total}</span>
             </div>
+            <p className="text-xs text-[#AEAEB2] mt-1">Pay by STC Pay or cash</p>
           </div>
         </div>
 
@@ -563,6 +567,23 @@ export default function GameDetail() {
               <p className="text-sm font-bold" style={{ color: "#1D3557" }}>Map</p>
               <p className="text-xs" style={{ color: "#6C6C70" }}>Coming soon</p>
             </div>
+          </div>
+        )}
+
+        {/* ── Pitch Guidelines ── */}
+        {guidelines.length > 0 && (
+          <div className="card-ios px-4 py-3">
+            <p className="text-[10px] font-semibold text-[#AEAEB2] uppercase tracking-widest mb-2">
+              {language === "ar" ? "إرشادات الملعب" : "Pitch Guidelines"}
+            </p>
+            <ul className="space-y-1.5">
+              {guidelines.map((g, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm" style={{ color: "#1C1C1E" }}>
+                  <span className="mt-0.5 flex-shrink-0" style={{ color: "#0A84FF" }}>•</span>
+                  <span>{g}</span>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

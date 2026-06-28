@@ -15,7 +15,7 @@ const sections = [
   },
   {
     title: "4. Payment Methods",
-    body: "We accept payments online using Visa, MasterCard, mada, Apple Pay, and STC Pay credit/debit cards in SAR (Saudi Riyal) and all other currencies supported by our payment provider, Amazon Payment Services.",
+    body: "Booking fees are paid in SAR (Saudi Riyal) via STC Pay or in cash at the pitch. STC Pay payments are confirmed by the operator once received.",
   },
   {
     title: "5. Transaction Records",

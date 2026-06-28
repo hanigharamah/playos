@@ -6,19 +6,20 @@ import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { WhatsAppBar } from "@/components/layout/whatsapp-bar";
 
 // Pages
 import Home from "@/pages/home";
 import Games from "@/pages/games";
 import GameDetail from "@/pages/game/[id]";
 import AuthPage from "@/pages/auth";
-import HostLogin from "@/pages/host/login";
+import OpsLogin from "@/pages/ops-login";
 import Dashboard from "@/pages/dashboard";
 import Payouts from "@/pages/dashboard/payouts";
 import GameManage from "@/pages/game/manage";
 import CreateGame from "@/pages/game/new";
 import PaymentCallback from "@/pages/payment/callback";
-import MockPayment from "@/pages/payment/mock";
+import Checkout from "@/pages/payment/checkout";
 import CheckIn from "@/pages/checkin/[pitchId]";
 import About from "@/pages/about";
 import Contact from "@/pages/contact";
@@ -35,6 +36,7 @@ const queryClient = new QueryClient();
 function AppContent() {
   return (
     <div className="min-h-screen flex flex-col bg-background text-foreground">
+      <WhatsAppBar />
       <Navbar />
       <main className="flex-1 flex flex-col">
         <Switch>
@@ -44,10 +46,10 @@ function AppContent() {
           <Route path="/game/:id/manage" component={GameManage} />
           <Route path="/game/:id" component={GameDetail} />
           <Route path="/auth" component={AuthPage} />
-          <Route path="/host/login" component={HostLogin} />
+          <Route path="/x/:token" component={OpsLogin} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/dashboard/payouts" component={Payouts} />
-          <Route path="/payment/mock" component={MockPayment} />
+          <Route path="/payment/checkout" component={Checkout} />
           <Route path="/payment/callback" component={PaymentCallback} />
           <Route path="/checkin/:pitchId" component={CheckIn} />
           <Route path="/about" component={About} />
@@ -66,10 +68,10 @@ function AppContent() {
           <Route path="/ar/game/:id/manage" component={GameManage} />
           <Route path="/ar/game/:id" component={GameDetail} />
           <Route path="/ar/auth" component={AuthPage} />
-          <Route path="/ar/host/login" component={HostLogin} />
+          <Route path="/ar/x/:token" component={OpsLogin} />
           <Route path="/ar/dashboard" component={Dashboard} />
           <Route path="/ar/dashboard/payouts" component={Payouts} />
-          <Route path="/ar/payment/mock" component={MockPayment} />
+          <Route path="/ar/payment/checkout" component={Checkout} />
           <Route path="/ar/payment/callback" component={PaymentCallback} />
           <Route path="/ar/checkin/:pitchId" component={CheckIn} />
           <Route path="/ar/about" component={About} />

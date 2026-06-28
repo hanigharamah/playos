@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useCreateGame, useListPitches, getListGamesQueryKey } from "@/lib/supabase-api";
+import { useCreateGame, useListPitches, getListGamesQueryKey, useGetSettings } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
+import { isOperator } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ export default function CreateGame() {
   const queryClient = useQueryClient();
 
   const { data: pitches } = useListPitches();
+  const { data: settings } = useGetSettings();
   const createGame = useCreateGame();
 
   const [form, setForm] = useState({
@@ -35,8 +37,15 @@ export default function CreateGame() {
     mapsUrl: "",
   });
 
-  if (!user || user.role !== "organiser") {
-    setLocation("/host/login");
+  // Keep the per-game price in sync with the global booking fee.
+  useEffect(() => {
+    if (settings?.bookingFee != null) {
+      setForm((f) => ({ ...f, price: settings.bookingFee }));
+    }
+  }, [settings?.bookingFee]);
+
+  if (!isOperator(user?.role)) {
+    setLocation("/");
     return null;
   }
 

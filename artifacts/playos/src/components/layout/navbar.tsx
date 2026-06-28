@@ -1,5 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/lib/auth";
+import { isOperator } from "@/lib/config";
 import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import {
@@ -38,20 +39,12 @@ export function Navbar() {
           My Games
         </Link>
       )}
-      {user?.role === "organiser" && (
+      {isOperator(user?.role) && (
         <Link
           href={getPath("/dashboard")}
           className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
         >
           {t("nav.dashboard")}
-        </Link>
-      )}
-      {!user && (
-        <Link
-          href={getPath("/host/login")}
-          className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
-        >
-          {t("nav.host")}
         </Link>
       )}
     </>
@@ -122,7 +115,7 @@ export function Navbar() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                {user.role === "organiser" && (
+                {isOperator(user.role) && (
                   <DropdownMenuItem asChild>
                     <Link href={getPath("/dashboard")} className="cursor-pointer w-full flex items-center">
                       <LayoutDashboard className="mr-2 h-4 w-4" />
