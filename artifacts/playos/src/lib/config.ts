@@ -38,7 +38,7 @@ export const isOperator = (role?: string | null): boolean =>
 /** Defaults used until the operator saves real values in the dashboard. */
 export const DEFAULT_SETTINGS = {
   bookingFee: 30,
-  whatsappUrl: "",
+  whatsappUrl: "https://chat.whatsapp.com/HCxwGYDtqyg0tabr8U5JEU?mode=gi_t",
   stcpayNumber: "",
   stcpayLink: "",
   guidelines:
