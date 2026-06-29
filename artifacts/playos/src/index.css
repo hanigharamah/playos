@@ -266,12 +266,12 @@
    (cream + radials) shows through and matches seamlessly. */
 .hero-video {
   -webkit-mask-image:
-    linear-gradient(to bottom, #000 48%, transparent 94%),
-    linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+    linear-gradient(to bottom, #000 86%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
   -webkit-mask-composite: source-in;
   mask-image:
-    linear-gradient(to bottom, #000 48%, transparent 94%),
-    linear-gradient(to right, transparent 0%, #000 14%, #000 86%, transparent 100%);
+    linear-gradient(to bottom, #000 86%, transparent 100%),
+    linear-gradient(to right, transparent 0%, #000 6%, #000 94%, transparent 100%);
   mask-composite: intersect;
 }
 
