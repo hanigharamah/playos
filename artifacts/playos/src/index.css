@@ -326,6 +326,17 @@
   .glass::after { transition: none; }
 }
 
+/* Glass button — the glass material tuned for CTAs (use with `.glass`). */
+.glass-btn {
+  border-radius: 14px;
+  color: #0A84FF;
+  font-weight: 600;
+  background: rgba(255, 255, 255, 0.62);
+  transition: background 0.2s ease, transform 0.15s ease;
+}
+.glass-btn:hover { background: rgba(255, 255, 255, 0.82); }
+.glass-btn:active { transform: translateY(0.5px) scale(0.99); }
+
 /* Card style utility — liquid glass */
 .card-ios {
   background: rgba(255, 255, 255, 0.66);

@@ -180,10 +180,7 @@ export default function MyGames() {
             </p>
             {tab === "upcoming" && (
               <Link href={getPath("/games")}>
-                <button
-                  className="text-sm font-semibold px-5 py-2 rounded-[10px]"
-                  style={{ background: "#0A84FF", color: "#fff" }}
-                >
+                <button className="glass glass-btn text-sm px-5 py-2">
                   Browse Games
                 </button>
               </Link>

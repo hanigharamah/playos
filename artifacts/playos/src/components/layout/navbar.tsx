@@ -140,14 +140,7 @@ export function Navbar() {
             </DropdownMenu>
           ) : (
             <Link href={getPath("/auth")} className="hidden md:block">
-              <button
-                className="text-sm font-semibold px-4 py-1.5 rounded-[10px] transition-all hover:-translate-y-px"
-                style={{
-                  background: "#0A84FF",
-                  color: "#fff",
-                  boxShadow: "0 4px 12px rgba(10,132,255,0.25)",
-                }}
-              >
+              <button className="glass glass-btn text-sm px-4 py-1.5">
                 {t("nav.login")}
               </button>
             </Link>
@@ -170,10 +163,7 @@ export function Navbar() {
             <NavLinks />
             {!user && (
               <Link href={getPath("/auth")} onClick={() => setIsMobileMenuOpen(false)}>
-                <button
-                  className="w-full text-sm font-semibold px-4 py-2.5 rounded-[10px]"
-                  style={{ background: "#0A84FF", color: "#fff" }}
-                >
+                <button className="glass glass-btn w-full text-sm px-4 py-2.5">
                   {t("nav.login")}
                 </button>
               </Link>

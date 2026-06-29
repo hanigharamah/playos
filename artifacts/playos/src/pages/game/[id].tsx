@@ -472,12 +472,7 @@ export default function GameDetail() {
               {selectedSlot ? (
                 <button
                   onClick={handleBook}
-                  className="text-sm font-semibold px-6 py-2.5 rounded-xl transition-all hover:-translate-y-px"
-                  style={{
-                    background: "#0A84FF",
-                    color: "#fff",
-                    boxShadow: "0 4px 12px rgba(10,132,255,0.25)",
-                  }}
+                  className="glass glass-btn text-sm px-6 py-2.5 transition-all hover:-translate-y-px"
                 >
                   Book Spot · SAR {total}
                 </button>
@@ -663,12 +658,7 @@ export default function GameDetail() {
             <button
               onClick={handleBook}
               disabled={bookSpot.isPending}
-              className="w-full py-3 rounded-[10px] text-sm font-semibold transition-all hover:-translate-y-px disabled:opacity-60"
-              style={{
-                background: "#0A84FF",
-                color: "#fff",
-                boxShadow: "0 4px 12px rgba(10,132,255,0.25)",
-              }}
+              className="glass glass-btn w-full py-3 text-sm transition-all hover:-translate-y-px disabled:opacity-60"
             >
               {bookSpot.isPending
                 ? "Processing..."

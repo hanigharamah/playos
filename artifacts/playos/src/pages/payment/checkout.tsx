@@ -107,8 +107,7 @@ export default function Checkout() {
             )}
             <button
               onClick={() => setLocation(getPath(`/game/${gameId}`))}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold"
-              style={{ background: "#0A84FF", color: "#fff" }}
+              className="glass glass-btn w-full py-2.5 text-sm"
             >
               {isAr ? "العودة للمباراة" : "Back to game"}
             </button>
@@ -223,8 +222,7 @@ export default function Checkout() {
           <button
             onClick={() => method && choose(method)}
             disabled={!method || saving}
-            className="w-full py-3 rounded-xl text-sm font-semibold transition-all disabled:opacity-50"
-            style={{ background: "#0A84FF", color: "#fff" }}
+            className="glass glass-btn w-full py-3 text-sm transition-all disabled:opacity-50"
           >
             {saving ? (
               <span className="flex items-center justify-center gap-2">
