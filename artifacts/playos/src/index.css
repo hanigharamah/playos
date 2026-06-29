@@ -321,15 +321,18 @@
   .glass::after { transition: none; }
 }
 
-/* Glass button — the glass material tuned for CTAs (use with `.glass`). */
+/* Glass button — frosted glass with gradient text (use with `.glass`). */
 .glass-btn {
   border-radius: 14px;
-  color: #0A84FF;
-  font-weight: 600;
-  background: rgba(255, 255, 255, 0.62);
-  transition: background 0.2s ease, transform 0.15s ease;
+  font-weight: 700;
+  /* Gradient label (matches the OS logo family, a touch more saturated to read) */
+  background: linear-gradient(120deg, #FF7A2F 0%, #FF3D8B 50%, #9B4DEB 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  transition: transform 0.15s ease;
 }
-.glass-btn:hover { background: rgba(255, 255, 255, 0.82); }
 .glass-btn:active { transform: translateY(0.5px) scale(0.99); }
 
 /* Card style utility — liquid glass */
