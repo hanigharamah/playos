@@ -59,7 +59,6 @@ function AppContent() {
       <div className="app-bg" aria-hidden="true">
         <div className="app-bg__blob app-bg__blob--1" />
         <div className="app-bg__blob app-bg__blob--2" />
-        <div className="app-bg__grain" />
       </div>
       <WhatsAppBar />
       <Navbar />
