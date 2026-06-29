@@ -33,7 +33,7 @@ export default function Home() {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(ellipse 80% 60% at 50% 55%, rgba(251,247,242,0.5), rgba(251,247,242,0) 75%)",
+              "radial-gradient(ellipse 75% 55% at 50% 50%, rgba(251,247,242,0.32), rgba(251,247,242,0) 72%)",
           }}
         />
 

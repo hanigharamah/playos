@@ -265,9 +265,9 @@
 /* Hero video: fade its own alpha at the edges so the real page gradient
    (cream + radials) shows through and matches seamlessly. */
 .hero-video {
-  /* Only a soft fade at the bottom; left/right run full-bleed. */
-  -webkit-mask-image: linear-gradient(to bottom, #000 86%, transparent 100%);
-  mask-image: linear-gradient(to bottom, #000 86%, transparent 100%);
+  /* Thin, clean fade at the very bottom; left/right run full-bleed. */
+  -webkit-mask-image: linear-gradient(to bottom, #000 95%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 95%, transparent 100%);
 }
 
 /* ── Liquid glass ──────────────────────────────────────────────────────────
