@@ -228,11 +228,11 @@ export function CreateGameModal({
             </div>
           )}
 
-          {/* Single pitch — show as text */}
-          {!showPitchDropdown && (activePitchName || (pitches && pitches.length === 1)) && (
+          {/* Free-text pitch/venue name (works even with zero saved pitches) */}
+          {!showPitchDropdown && (
             <div>
-              <Label>Pitch</Label>
-              <Input value={pitchName} onChange={(e) => setPitchName(e.target.value)} placeholder="Pitch name" className="mt-1" />
+              <Label>Pitch / venue</Label>
+              <Input value={pitchName} onChange={(e) => setPitchName(e.target.value)} placeholder="e.g. Al Rowad pitch" className="mt-1" />
             </div>
           )}
 
