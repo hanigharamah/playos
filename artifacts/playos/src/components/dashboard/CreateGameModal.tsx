@@ -60,6 +60,7 @@ export function CreateGameModal({
     return saved ? parseFloat(saved) : 50;
   });
   const [autoCancelHours, setAutoCancelHours] = useState(4);
+  const [mapsUrl, setMapsUrl] = useState("");
 
   useEffect(() => {
     setStartTime(defaultStartTime);
@@ -111,7 +112,7 @@ export function CreateGameModal({
           autoCancelHours,
           durationMinutes,
           isPublic,
-          mapsUrl: null,
+          mapsUrl: mapsUrl.trim() || null,
         },
       },
       {
@@ -279,6 +280,22 @@ export function CreateGameModal({
             />
             <p className="text-xs text-muted-foreground mt-1">
               The game will be cancelled if all spots aren't taken by this time
+            </p>
+          </div>
+
+          {/* Google Maps link */}
+          <div>
+            <Label htmlFor="modal-maps">Google Maps link</Label>
+            <Input
+              id="modal-maps"
+              type="url"
+              value={mapsUrl}
+              onChange={(e) => setMapsUrl(e.target.value)}
+              placeholder="https://maps.app.goo.gl/…"
+              className="mt-1"
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Shown as a "Open in Google Maps" button on the game page
             </p>
           </div>
 
