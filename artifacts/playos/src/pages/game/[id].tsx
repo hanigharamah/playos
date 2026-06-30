@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useLocation, Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { useGetGame, useBookSpot, useGetSettings } from "@/lib/supabase-api";
+import { useGetGame, useBookSpot, useGetSettings, useOperatorBookSpot } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth";
 import { isOperator } from "@/lib/config";
@@ -9,6 +9,10 @@ import { format } from "date-fns";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CancelBookingModal } from "@/components/CancelBookingModal";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 /* ─── PITCH POSITION MAPS ────────────────────────────────────── */
 // Absolute SVG coords for the LEFT team (viewBox 0 0 400 260, pitch 12px margin)
@@ -303,9 +307,14 @@ export default function GameDetail() {
   const { data: game, isLoading } = useGetGame(id);
   const { data: settings } = useGetSettings();
   const bookSpot = useBookSpot();
+  const operatorBook = useOperatorBookSpot();
+  const isOp = isOperator(user?.role);
 
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [opOpen, setOpOpen] = useState(false);
+  const [opName, setOpName] = useState("");
+  const [opPhone, setOpPhone] = useState("");
 
   const getPath = (path: string) => (language === "ar" ? `/ar${path}` : path);
 
@@ -328,6 +337,14 @@ export default function GameDetail() {
 
   const handleSlotClick = (team: number, slot: number) => {
     if (!game || game.status !== "open") return;
+    // Operator: clicking an empty slot opens the "book a person in" prompt.
+    if (isOp) {
+      setSelectedSlot({ team, slot });
+      setOpName("");
+      setOpPhone("");
+      setOpOpen(true);
+      return;
+    }
     if (selectedSlot?.team === team && selectedSlot?.slot === slot) {
       setSelectedSlot(null);
       return;
@@ -335,6 +352,28 @@ export default function GameDetail() {
     setSelectedSlot({ team, slot });
 
     if (!user) return; // guest sees the book-spot button below
+  };
+
+  const handleOperatorBook = () => {
+    if (!selectedSlot || !opName.trim()) return;
+    operatorBook.mutate(
+      { gameId: id, team: selectedSlot.team, slotIndex: selectedSlot.slot, guestName: opName, guestPhone: opPhone },
+      {
+        onSuccess: () => {
+          toast({ title: "Booked in", description: `${opName.trim()} added to Team ${selectedSlot.team}.` });
+          setOpOpen(false);
+          setSelectedSlot(null);
+          queryClient.invalidateQueries({ queryKey: [`/api/games/${id}`] });
+        },
+        onError: (err: any) => {
+          toast({
+            variant: "destructive",
+            title: "Could not book",
+            description: err?.message || err?.data?.error || "Please try again.",
+          });
+        },
+      },
+    );
   };
 
   const handleBook = () => {
@@ -597,6 +636,37 @@ export default function GameDetail() {
           }}
         />
       )}
+
+      {/* ── Operator: book a person into a slot ── */}
+      <Dialog open={opOpen} onOpenChange={setOpOpen}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Book a player in</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-[#6C6C70] -mt-1">
+            Team {selectedSlot?.team} · adds them as paid (cash).
+          </p>
+          <div className="space-y-3 mt-1">
+            <div>
+              <Label htmlFor="op-name">Player name</Label>
+              <Input id="op-name" autoFocus value={opName}
+                onChange={(e) => setOpName(e.target.value)} placeholder="e.g. Khalid" />
+            </div>
+            <div>
+              <Label htmlFor="op-phone">Phone (optional)</Label>
+              <Input id="op-phone" type="tel" value={opPhone}
+                onChange={(e) => setOpPhone(e.target.value)} placeholder="05XXXXXXXX" />
+            </div>
+            <Button
+              className="w-full"
+              disabled={!opName.trim() || operatorBook.isPending}
+              onClick={handleOperatorBook}
+            >
+              {operatorBook.isPending ? "Booking…" : "Book in"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Sticky Bottom CTA ── */}
       <div

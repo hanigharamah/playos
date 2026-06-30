@@ -46,3 +46,17 @@ alter table public.bookings
 -- ── Credit tokens (issued on 6–12h cancellations, redeemable at checkout) ────
 alter table public.users
   add column if not exists credits int not null default 0;
+
+-- ── Operator manual bookings (book a person in by name, no account) ─────────
+alter table public.bookings alter column user_id drop not null;
+alter table public.bookings add column if not exists guest_name  text;
+alter table public.bookings add column if not exists guest_phone text;
+
+-- Operators (role <> player) can insert/update bookings (incl. guest bookings).
+drop policy if exists bookings_insert_operator on public.bookings;
+create policy bookings_insert_operator on public.bookings for insert
+  with check (exists (select 1 from public.users u where u.id = auth.uid() and u.role <> 'player'));
+
+drop policy if exists bookings_update_operator on public.bookings;
+create policy bookings_update_operator on public.bookings for update
+  using (exists (select 1 from public.users u where u.id = auth.uid() and u.role <> 'player'));

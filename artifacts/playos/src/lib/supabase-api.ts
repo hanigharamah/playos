@@ -92,8 +92,8 @@ function mapBookingWithPlayer(b: Record<string, any>): BookingWithPlayer {
     paymentStatus: b.payment_status,
     paymentId: b.payment_id ?? null,
     bookedAt: b.booked_at,
-    playerName: (b.users as any)?.name ?? "Unknown",
-    playerPhone: (b.users as any)?.phone ?? null,
+    playerName: (b.users as any)?.name ?? b.guest_name ?? "Guest",
+    playerPhone: (b.users as any)?.phone ?? b.guest_phone ?? null,
     checkedIn: b.checked_in,
     checkedInAt: b.checked_in_at ? new Date(b.checked_in_at) : null,
   } as BookingWithPlayer;
@@ -483,6 +483,48 @@ export function useBookSpot() {
         checkoutUrl: `/payment/checkout?bookingId=${bookingId}&gameId=${id}`,
         sessionId: bookingId,
       };
+    },
+  });
+}
+
+/** Operator action: book a guest into a slot by name, instantly marked paid. */
+export function useOperatorBookSpot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      gameId, team, slotIndex, guestName, guestPhone, method,
+    }: {
+      gameId: string; team: number; slotIndex: number;
+      guestName: string; guestPhone?: string | null; method?: "cash" | "stcpay";
+    }): Promise<void> => {
+      const bookingId = uid();
+      const { error } = await supabase.from("bookings").insert({
+        id: bookingId,
+        game_id: gameId,
+        user_id: null,
+        team,
+        slot_index: slotIndex,
+        guest_name: guestName.trim(),
+        guest_phone: guestPhone?.trim() || null,
+        payment_status: "paid",
+        payment_method: method ?? "cash",
+        payment_id: `op_${bookingId}`,
+      });
+      if (error) throw error;
+
+      // Mark the game full if it has reached capacity.
+      const { data: game } = await supabase
+        .from("games").select("capacity, bookings(id, payment_status)").eq("id", gameId).single();
+      if (game) {
+        const paid = (game.bookings as any[]).filter((b) => b.payment_status === "paid").length;
+        if (paid >= game.capacity) {
+          await supabase.from("games").update({ status: "full" }).eq("id", gameId);
+        }
+      }
+
+      queryClient.invalidateQueries({ queryKey: getGetGameQueryKey(gameId) });
+      queryClient.invalidateQueries({ queryKey: getGetGameManagementQueryKey(gameId) });
+      queryClient.invalidateQueries({ queryKey: getGetDashboardGamesQueryKey() });
     },
   });
 }
