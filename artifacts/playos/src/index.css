@@ -196,29 +196,28 @@
     @apply font-sans antialiased text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    /* Four radial gradients (warm amber + peach, one cool blue) over a
-       cream base (#FBF7F2 -> #F4F0EB). */
-    background:
-      radial-gradient(circle at 12% 18%, rgba(255, 190, 120, 0.38), transparent 42%),
-      radial-gradient(circle at 88% 12%, rgba(255, 168, 145, 0.32), transparent 46%),
-      radial-gradient(circle at 78% 82%, rgba(255, 205, 165, 0.30), transparent 46%),
-      radial-gradient(circle at 16% 88%, rgba(150, 188, 255, 0.26), transparent 48%),
-      linear-gradient(155deg, #FBF7F2 0%, #F4F0EB 100%);
-    background-attachment: fixed;
+    /* Solid cream fallback. The gradient lives on the fixed .app-bg layer
+       below — iOS Safari doesn't support background-attachment: fixed. */
+    background: #FBF7F2;
     min-height: 100vh;
-    /* The fixed blurred blobs sit off-screen; keep them from widening the page. */
     overflow-x: hidden;
   }
 }
 
-/* Fixed full-viewport layer that clips the drifting blobs so they never
-   create horizontal overflow (fixed elements ignore body overflow-x). */
+/* Fixed full-viewport gradient layer (real position:fixed works on iOS,
+   unlike background-attachment:fixed). Also clips the drifting blobs. */
 .app-bg {
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(255, 190, 120, 0.38), transparent 42%),
+    radial-gradient(circle at 88% 12%, rgba(255, 168, 145, 0.32), transparent 46%),
+    radial-gradient(circle at 78% 82%, rgba(255, 205, 165, 0.30), transparent 46%),
+    radial-gradient(circle at 16% 88%, rgba(150, 188, 255, 0.26), transparent 48%),
+    linear-gradient(155deg, #FBF7F2 0%, #F4F0EB 100%);
 }
 .app-bg__blob {
   position: absolute;
