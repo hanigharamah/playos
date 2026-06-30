@@ -254,10 +254,13 @@ export function CreateGameModal({
               <Label>Price (SAR)</Label>
               <Input
                 type="number"
-                min={1}
-                step={5}
+                min={0}
+                step="any"
                 value={price}
-                onChange={(e) => setPrice(parseFloat(e.target.value) || 50)}
+                onChange={(e) => {
+                  const v = parseFloat(e.target.value);
+                  setPrice(isNaN(v) ? 0 : v);
+                }}
                 className="mt-1"
               />
             </div>

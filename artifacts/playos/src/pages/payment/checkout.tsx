@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
-import { useGetSettings, useGetMyCredits, useRedeemCredit } from "@/lib/supabase-api";
+import { useGetSettings, useGetMyCredits, useRedeemCredit, useGetGame } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Smartphone, Banknote, Copy, Check, MessageCircle, Ticket } from "lucide-react";
@@ -19,10 +19,11 @@ export default function Checkout() {
   const gameId = params.get("gameId") ?? "";
 
   const { data: settings } = useGetSettings();
+  const { data: game } = useGetGame(gameId);
   const { data: credits = 0 } = useGetMyCredits();
   const redeemCredit = useRedeemCredit();
   const { toast } = useToast();
-  const fee = settings?.bookingFee ?? 0;
+  const fee = game?.price ?? 0;
 
   const [method, setMethod] = useState<Method | null>(null);
   const [saving, setSaving] = useState(false);

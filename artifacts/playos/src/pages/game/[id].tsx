@@ -380,9 +380,8 @@ export default function GameDetail() {
   }
 
   const teamSize = game.capacity / 2;
-  // Single constant booking fee set by the operator (falls back to the
-  // per-game price if settings haven't loaded).
-  const fee = settings?.bookingFee ?? game.price;
+  // Each game sets its own price (what the player pays).
+  const fee = game.price;
   const total = fee;
   const kickoff = new Date(game.kickoffTime);
   const guidelines = (settings?.guidelines ?? "")

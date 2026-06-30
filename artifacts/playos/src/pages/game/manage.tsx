@@ -68,7 +68,7 @@ export default function GameManage({ params }: Props) {
   const paidBookings = bookings.filter((b) => b.paymentStatus === "paid");
   const pendingBookings = bookings.filter((b) => b.paymentStatus === "pending");
   const checkedInCount = paidBookings.filter((b) => b.checkedIn).length;
-  const fee = settings?.bookingFee ?? game.price;
+  const fee = game.price;
 
   const handleMarkPaid = (bookingId: string) => {
     markPaid.mutate(
