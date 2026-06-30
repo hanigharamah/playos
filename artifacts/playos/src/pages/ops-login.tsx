@@ -23,9 +23,10 @@ export default function OpsLogin() {
   const queryClient = useQueryClient();
   const { user, isLoading: authLoading } = useAuth();
 
+  const hasCreds = !!(OPERATOR_EMAIL && OPERATOR_PASSWORD);
   const [email, setEmail] = useState(OPERATOR_EMAIL);
   const [password, setPassword] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(hasCreds); // start in spinner when auto-login will run
   const [error, setError] = useState<string | null>(null);
   const autoTried = useRef(false);
 
@@ -34,28 +35,34 @@ export default function OpsLogin() {
   const signIn = async (e: string, p: string) => {
     setBusy(true);
     setError(null);
-    const { data: auth, error: authErr } = await supabase.auth.signInWithPassword({
-      email: e,
-      password: p,
-    });
-    if (authErr || !auth.user) {
+    try {
+      const { data: auth, error: authErr } = await supabase.auth.signInWithPassword({
+        email: e,
+        password: p,
+      });
+      if (authErr || !auth.user) {
+        setBusy(false);
+        setError(authErr?.message || "Sign-in failed.");
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("users").select("*").eq("id", auth.user.id).single();
+      if (!profile || !isOperator(profile.role)) {
+        await supabase.auth.signOut();
+        setBusy(false);
+        setError("This account is not an operator.");
+        return;
+      }
+      queryClient.setQueryData(getGetMeQueryKey(), {
+        id: profile.id, email: profile.email, phone: profile.phone,
+        name: profile.name, role: profile.role, createdAt: profile.created_at,
+      });
+      setLocation("/dashboard");
+    } catch (err: any) {
+      // Network/CORS/unreachable — never leave the spinner hanging.
       setBusy(false);
-      setError("Sign-in failed.");
-      return;
+      setError(`Could not reach the server (${err?.message || "network error"}).`);
     }
-    const { data: profile } = await supabase
-      .from("users").select("*").eq("id", auth.user.id).single();
-    if (!profile || !isOperator(profile.role)) {
-      await supabase.auth.signOut();
-      setBusy(false);
-      setError("This account is not an operator.");
-      return;
-    }
-    queryClient.setQueryData(getGetMeQueryKey(), {
-      id: profile.id, email: profile.email, phone: profile.phone,
-      name: profile.name, role: profile.role, createdAt: profile.created_at,
-    });
-    setLocation("/dashboard");
   };
 
   // Already signed in as operator on this device → straight to the dashboard.
@@ -76,8 +83,8 @@ export default function OpsLogin() {
 
   if (!tokenOk) return <NotFound />;
 
-  // Don't flash the form while we resolve the session or auto sign-in.
-  if ((busy || authLoading || (OPERATOR_EMAIL && OPERATOR_PASSWORD)) && !error) {
+  // Spinner only while actually working; on failure `error` reveals the form.
+  if ((busy || authLoading) && !error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
         <Loader2 className="h-6 w-6 animate-spin text-[#6C6C70]" />
