@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth";
 import { getGetMeQueryKey } from "@/lib/supabase-api";
 import { OPERATOR_SECRET, OPERATOR_EMAIL, OPERATOR_PASSWORD, isOperator } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ export default function OpsLogin() {
   const { token } = useParams<{ token: string }>();
   const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
+  const { user, isLoading: authLoading } = useAuth();
 
   const [email, setEmail] = useState(OPERATOR_EMAIL);
   const [password, setPassword] = useState("");
@@ -56,18 +58,26 @@ export default function OpsLogin() {
     setLocation("/dashboard");
   };
 
-  // Auto-login when env credentials are present.
+  // Already signed in as operator on this device → straight to the dashboard.
   useEffect(() => {
-    if (tokenOk && !autoTried.current && OPERATOR_EMAIL && OPERATOR_PASSWORD) {
+    if (tokenOk && isOperator(user?.role)) setLocation("/dashboard");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tokenOk, user]);
+
+  // Auto-login when env credentials are present (zero-typing access).
+  useEffect(() => {
+    if (tokenOk && !autoTried.current && !authLoading && !isOperator(user?.role)
+        && OPERATOR_EMAIL && OPERATOR_PASSWORD) {
       autoTried.current = true;
       signIn(OPERATOR_EMAIL, OPERATOR_PASSWORD);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tokenOk]);
+  }, [tokenOk, authLoading]);
 
   if (!tokenOk) return <NotFound />;
 
-  if (busy && !error) {
+  // Don't flash the form while we resolve the session or auto sign-in.
+  if ((busy || authLoading || (OPERATOR_EMAIL && OPERATOR_PASSWORD)) && !error) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-transparent">
         <Loader2 className="h-6 w-6 animate-spin text-[#6C6C70]" />
