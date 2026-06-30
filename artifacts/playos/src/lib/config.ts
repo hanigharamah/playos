@@ -24,9 +24,9 @@ export const operatorLoginPath = (lang: "en" | "ar" = "en") =>
  * is shown at the secret URL as a fallback.
  */
 export const OPERATOR_EMAIL =
-  (import.meta.env.VITE_OPERATOR_EMAIL as string | undefined) || "";
+  (import.meta.env.VITE_OPERATOR_EMAIL as string | undefined) || "operator@playos.sa";
 export const OPERATOR_PASSWORD =
-  (import.meta.env.VITE_OPERATOR_PASSWORD as string | undefined) || "";
+  (import.meta.env.VITE_OPERATOR_PASSWORD as string | undefined) || "Op_9x4Qm2Lt7Zr!2026";
 
 /**
  * Single-operator model: anyone who isn't a regular player is the operator.
