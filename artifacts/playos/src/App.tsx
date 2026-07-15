@@ -28,6 +28,7 @@ import Privacy from "@/pages/privacy";
 import RefundPolicy from "@/pages/policies/refund";
 import DeliveryPolicy from "@/pages/policies/delivery";
 import MyGames from "@/pages/my-games";
+import FlashcardPreview from "@/pages/flashcard";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,7 @@ function AppContent() {
           <Route path="/policies/refund" component={RefundPolicy} />
           <Route path="/policies/delivery" component={DeliveryPolicy} />
           <Route path="/my-games" component={MyGames} />
+          <Route path="/flashcard" component={FlashcardPreview} />
 
           {/* Arabic Routes */}
           <Route path="/ar" component={Home} />
