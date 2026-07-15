@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { X, Crown, MapPin } from "lucide-react";
 
 export interface FlashcardModalProps {
@@ -24,12 +25,35 @@ export function FlashcardModal({
   end = "North",
   isCaptain = true,
 }: FlashcardModalProps) {
+  const stackRef = useRef<HTMLDivElement>(null);
   if (!open) return null;
   const t = TEAMS[team];
 
+  const onMove = (e: React.MouseEvent) => {
+    const el = stackRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    const px = (e.clientX - r.left) / r.width - 0.5;
+    const py = (e.clientY - r.top) / r.height - 0.5;
+    el.style.setProperty("--ry", `${-11 + px * 18}deg`);
+    el.style.setProperty("--rx", `${7 - py * 18}deg`);
+  };
+  const onLeave = () => {
+    const el = stackRef.current;
+    if (!el) return;
+    el.style.removeProperty("--ry");
+    el.style.removeProperty("--rx");
+  };
+
   return (
     <div className="lg-backdrop" onClick={onClose}>
-      <div className="lg-stack" onClick={(e) => e.stopPropagation()}>
+      <div
+        ref={stackRef}
+        className="lg-stack"
+        onClick={(e) => e.stopPropagation()}
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+      >
         {/* depth */}
         <div className="lg-ghost lg-ghost--2" aria-hidden="true" />
         <div className="lg-ghost lg-ghost--1" aria-hidden="true" />

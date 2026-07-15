@@ -355,11 +355,18 @@
   position: relative;
   width: 100%;
   max-width: 340px;
-  animation: lg-pop 0.45s cubic-bezier(0.2, 0.9, 0.25, 1.1) both;
+  transform-style: preserve-3d;
+  transform:
+    perspective(1300px)
+    rotateX(var(--rx, 7deg))
+    rotateY(var(--ry, -11deg));
+  transition: transform 0.18s ease-out;
+  animation: lg-pop3d 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.1) backwards;
+  will-change: transform;
 }
-@keyframes lg-pop {
-  from { opacity: 0; transform: translateY(14px) scale(0.94); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+@keyframes lg-pop3d {
+  from { opacity: 0; transform: perspective(1300px) rotateX(20deg) rotateY(-22deg) translateY(26px) scale(0.9); }
+  to   { opacity: 1; transform: perspective(1300px) rotateX(7deg) rotateY(-11deg) translateY(0) scale(1); }
 }
 
 /* Offset ghost panels behind the card = depth */
@@ -373,8 +380,8 @@
   backdrop-filter: blur(10px);
   box-shadow: 0 30px 60px -22px rgba(28, 22, 48, 0.4);
 }
-.lg-ghost--1 { transform: translate(12px, 18px) rotate(0.6deg); opacity: 0.55; }
-.lg-ghost--2 { transform: translate(24px, 36px) rotate(1.2deg); opacity: 0.3; }
+.lg-ghost--1 { transform: translate3d(10px, 14px, -55px) rotate(0.6deg); opacity: 0.5; }
+.lg-ghost--2 { transform: translate3d(18px, 28px, -115px) rotate(1.2deg); opacity: 0.28; }
 
 /* Outer glass shell */
 .lg-shell {
@@ -389,9 +396,11 @@
   box-shadow:
     inset 0 1.5px 0 0 rgba(255, 255, 255, 0.95),
     inset 0 0 0 1px rgba(255, 255, 255, 0.22),
-    inset 0 -20px 40px -24px rgba(255, 255, 255, 0.6),
-    0 2px 4px rgba(28, 22, 48, 0.06),
-    0 22px 55px -14px rgba(28, 22, 48, 0.4);
+    inset 0 -22px 44px -24px rgba(255, 255, 255, 0.65),
+    inset 8px 0 24px -20px rgba(255, 255, 255, 0.5),
+    0 2px 4px rgba(28, 22, 48, 0.08),
+    0 18px 30px -18px rgba(28, 22, 48, 0.3),
+    0 40px 80px -24px rgba(28, 22, 48, 0.5);
 }
 
 /* Caustic / wavy liquid interior */
