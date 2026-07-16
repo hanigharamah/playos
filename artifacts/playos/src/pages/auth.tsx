@@ -153,11 +153,12 @@ export default function AuthPage() {
                     id="signup-password"
                     type="password"
                     required
-                    minLength={4}
+                    minLength={6}
                     value={signupForm.password}
                     onChange={(e) => setSignupForm({ ...signupForm, password: e.target.value })}
-                    placeholder="••••••••"
+                    placeholder="At least 6 characters"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">At least 6 characters</p>
                 </div>
                 <Button type="submit" className="w-full" disabled={signupMutation.isPending}>
                   {signupMutation.isPending ? "Creating account..." : t("auth.signup")}
