@@ -343,10 +343,12 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: clamp(14px, 4vw, 28px);
   background: rgba(24, 20, 34, 0.30);
   -webkit-backdrop-filter: blur(12px) saturate(115%);
   backdrop-filter: blur(12px) saturate(115%);
+  perspective: 1100px;
+  perspective-origin: 50% 42%;
   animation: lg-fade 0.35s ease both;
 }
 @keyframes lg-fade { from { opacity: 0; } to { opacity: 1; } }
@@ -354,25 +356,22 @@
 .lg-stack {
   position: relative;
   width: 100%;
-  max-width: 340px;
   transform-style: preserve-3d;
-  transform:
-    perspective(1300px)
-    rotateX(var(--rx, 7deg))
-    rotateY(var(--ry, -11deg));
-  transition: transform 0.18s ease-out;
-  animation: lg-pop3d 0.55s cubic-bezier(0.2, 0.9, 0.25, 1.1) backwards;
+  transform: rotateX(var(--rx, 6deg)) rotateY(var(--ry, -10deg));
+  transition: transform 0.08s linear;
+  animation: lg-pop3d 0.5s cubic-bezier(0.2, 0.9, 0.25, 1.1) backwards;
   will-change: transform;
 }
 @keyframes lg-pop3d {
-  from { opacity: 0; transform: perspective(1300px) rotateX(20deg) rotateY(-22deg) translateY(26px) scale(0.9); }
-  to   { opacity: 1; transform: perspective(1300px) rotateX(7deg) rotateY(-11deg) translateY(0) scale(1); }
+  from { opacity: 0; transform: rotateX(18deg) rotateY(-20deg) translateY(24px) scale(0.9); }
+  to   { opacity: 1; transform: rotateX(6deg) rotateY(-10deg) translateY(0) scale(1); }
 }
 
 /* Offset ghost panels behind the card = depth */
 .lg-ghost {
   position: absolute;
   inset: 0;
+  pointer-events: none;
   border-radius: 30px;
   background: rgba(255, 255, 255, 0.22);
   border: 0.5px solid rgba(255, 255, 255, 0.45);
@@ -460,6 +459,46 @@
   transition: transform 0.15s ease, background 0.2s ease;
 }
 .lg-tint-btn:active { transform: translateY(1px) scale(0.99); }
+.lg-tint-btn:disabled { opacity: 0.45; }
+
+/* ── Coin flip ─────────────────────────────────────────────────────────── */
+.coin-scene { perspective: 800px; width: 96px; height: 96px; margin: 0 auto; }
+.coin {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  transform-style: preserve-3d;
+  animation: coin-spin 2.2s cubic-bezier(0.25, 0.6, 0.2, 1) forwards;
+}
+.coin.coin--purple { animation-name: coin-spin-purple; }
+.coin__face {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  color: #fff;
+  backface-visibility: hidden;
+  box-shadow: inset 0 3px 0 rgba(255, 255, 255, 0.55), inset 0 -6px 12px rgba(0, 0, 0, 0.18), 0 14px 26px -8px rgba(28, 22, 48, 0.45);
+}
+.coin__face--back { transform: rotateY(180deg); }
+/* lands showing the front (Yellow) */
+@keyframes coin-spin {
+  from { transform: rotateY(0deg) translateY(0); }
+  60%  { transform: rotateY(1260deg) translateY(-26px); }
+  to   { transform: rotateY(1800deg) translateY(0); }
+}
+/* lands showing the back (Purple) */
+@keyframes coin-spin-purple {
+  from { transform: rotateY(0deg) translateY(0); }
+  60%  { transform: rotateY(1260deg) translateY(-26px); }
+  to   { transform: rotateY(1980deg) translateY(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .coin { animation-duration: 0.01s; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   .lg-backdrop, .lg-stack { animation: none; }
