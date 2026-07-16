@@ -61,6 +61,17 @@ export function CreateGameModal({
   });
   const [autoCancelHours, setAutoCancelHours] = useState(4);
   const [mapsUrl, setMapsUrl] = useState("");
+  const [coords, setCoords] = useState("");
+
+  /** Accepts what Google Maps copies, e.g. "24.7136, 46.6753". */
+  const parsedCoords = (() => {
+    const m = coords.trim().match(/^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/);
+    if (!m) return null;
+    const lat = parseFloat(m[1]);
+    const lng = parseFloat(m[2]);
+    if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+    return { lat, lng };
+  })();
 
   useEffect(() => {
     setStartTime(defaultStartTime);
@@ -113,6 +124,8 @@ export function CreateGameModal({
           durationMinutes,
           isPublic,
           mapsUrl: mapsUrl.trim() || null,
+          latitude: parsedCoords?.lat ?? null,
+          longitude: parsedCoords?.lng ?? null,
         },
       },
       {
@@ -295,7 +308,27 @@ export function CreateGameModal({
               className="mt-1"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Shown as a "Open in Google Maps" button on the game page
+              Shown as an "Open in Google Maps" button on the game page
+            </p>
+          </div>
+
+          {/* Coordinates → map pin */}
+          <div>
+            <Label htmlFor="modal-coords">Map pin (lat, lng)</Label>
+            <Input
+              id="modal-coords"
+              value={coords}
+              onChange={(e) => setCoords(e.target.value)}
+              placeholder="24.7136, 46.6753"
+              className="mt-1"
+            />
+            <p className="text-xs mt-1"
+              style={{ color: coords && !parsedCoords ? "#FF3B30" : undefined }}>
+              {coords && !parsedCoords
+                ? "Use the format: 24.7136, 46.6753"
+                : parsedCoords
+                  ? "✓ Pin will show on the Browse Games map"
+                  : "In Google Maps, right-click the pitch → click the coordinates to copy → paste here"}
             </p>
           </div>
 

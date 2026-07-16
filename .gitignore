@@ -41,6 +41,11 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Local env — never commit (holds API tokens / keys)
+.env
+.env.*
+!.env.example
+
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 

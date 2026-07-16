@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import { MAPBOX_TOKEN } from "@/lib/config";
 
 export interface MapGame {
   id: string;
@@ -25,7 +26,7 @@ interface GamesMapProps {
 }
 
 const RIYADH: L.LatLngTuple = [24.7136, 46.6753];
-const TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+const TOKEN = MAPBOX_TOKEN || undefined;
 
 function buildPitchGroups(games: MapGame[]): PitchGroup[] {
   const groups: PitchGroup[] = [];

@@ -348,7 +348,9 @@ export function useGetGameManagement(
 export function useCreateGame() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ data }: { data: CreateGameBody }): Promise<Game> => {
+    mutationFn: async ({
+      data,
+    }: { data: CreateGameBody & { latitude?: number | null; longitude?: number | null } }): Promise<Game> => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw { data: { error: "Not authenticated" } };
 
@@ -367,6 +369,8 @@ export function useCreateGame() {
           duration_minutes: data.durationMinutes ?? 60,
           is_public: data.isPublic ?? true,
           maps_url: data.mapsUrl ?? null,
+          latitude: data.latitude ?? null,
+          longitude: data.longitude ?? null,
         })
         .select()
         .single();

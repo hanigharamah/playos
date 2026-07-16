@@ -29,6 +29,13 @@ export const OPERATOR_PASSWORD =
   (import.meta.env.VITE_OPERATOR_PASSWORD as string | undefined) || "Op_9x4Qm2Lt7Zr!2026";
 
 /**
+ * Mapbox public token — set VITE_MAPBOX_TOKEN in Vercel (and .env.local for dev).
+ * Never hardcode it: GitHub push protection blocks Mapbox tokens in the repo.
+ * Without it, the browse map falls back to a "Map coming soon" placeholder.
+ */
+export const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN as string | undefined) || "";
+
+/**
  * Single-operator model: anyone who isn't a regular player is the operator.
  * Avoids the legacy organiser/host/admin role mismatch across pages.
  */
