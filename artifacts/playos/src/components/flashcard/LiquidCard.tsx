@@ -4,6 +4,8 @@ interface LiquidCardProps {
   children: ReactNode;
   onBackdrop?: () => void;
   maxWidth?: number;
+  /** Plays the flip-away animation before the next card arrives. */
+  exiting?: boolean;
 }
 
 const BASE_RX = 6;
@@ -13,7 +15,7 @@ const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(mi
 /** Layered liquid-glass popup: ghosts → outer shell → caustic → inner plate.
  *  Dims + blurs the page behind it. Tilts toward the pointer on desktop and
  *  with device motion on phones. */
-export function LiquidCard({ children, onBackdrop, maxWidth = 340 }: LiquidCardProps) {
+export function LiquidCard({ children, onBackdrop, maxWidth = 340, exiting = false }: LiquidCardProps) {
   const stackRef = useRef<HTMLDivElement>(null);
 
   const setTilt = (rx: number, ry: number) => {
@@ -57,7 +59,7 @@ export function LiquidCard({ children, onBackdrop, maxWidth = 340 }: LiquidCardP
     <div className="lg-backdrop" onClick={onBackdrop}>
       <div
         ref={stackRef}
-        className="lg-stack"
+        className={`lg-stack${exiting ? " lg-stack--out" : ""}`}
         style={{ maxWidth }}
         onClick={(e) => e.stopPropagation()}
       >
