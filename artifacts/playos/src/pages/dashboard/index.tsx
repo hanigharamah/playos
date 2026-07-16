@@ -44,8 +44,8 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col" style={{ height: "calc(100vh - 60px)" }}>
-      {/* Dashboard / Payouts toggle navigation */}
-      <div className="flex justify-center pt-4 pb-3 border-b bg-background flex-shrink-0">
+      {/* Dashboard / Payouts toggle navigation — floats on the cream background */}
+      <div className="flex justify-center pt-4 pb-3 flex-shrink-0">
         <div className="inline-flex items-center bg-muted rounded-xl p-1 gap-1">
           <span className="px-5 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm">
             Dashboard
@@ -67,10 +67,12 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Calendar — takes remaining height */}
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      {/* Calendar — a glass box floating on the cream, takes remaining height */}
+      <div className="flex-1 min-h-0 px-3 md:px-5 pb-4">
         {showSettings ? (
-          <OperatorSettings />
+          <div className="h-full overflow-y-auto">
+            <OperatorSettings />
+          </div>
         ) : gamesLoading ? (
           <div className="flex items-center justify-center h-full text-muted-foreground">
             Loading calendar...

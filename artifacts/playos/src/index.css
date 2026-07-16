@@ -394,6 +394,32 @@
 .lg-ghost--1 { transform: translate3d(10px, 14px, -55px) rotate(0.6deg); opacity: 0.5; }
 .lg-ghost--2 { transform: translate3d(18px, 28px, -115px) rotate(1.2deg); opacity: 0.28; }
 
+/* ── Static page-level glass panel ─────────────────────────────────────
+   Same liquid-glass material as .lg-shell, but as a big floating box for
+   page content (calendar, tables). Frostier than the modal shell so dense
+   text stays legible over the cream background. */
+.glass-panel {
+  position: relative;
+  border-radius: 26px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.52);
+  -webkit-backdrop-filter: blur(26px) saturate(180%) brightness(1.06);
+  backdrop-filter: blur(26px) saturate(180%) brightness(1.06);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow:
+    inset 0 2px 1px 0 rgba(255, 255, 255, 1),         /* top edge highlight */
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45),        /* inner rim (thickness) */
+    inset 0 -2px 1px 0 rgba(255, 255, 255, 0.55),     /* bottom edge */
+    inset 26px 0 52px -40px rgba(255, 255, 255, 0.6), /* left refraction */
+    inset -26px 0 52px -40px rgba(255, 255, 255, 0.6),/* right refraction */
+    0 26px 60px -24px rgba(28, 22, 48, 0.30),         /* lift off the cream */
+    0 3px 10px -3px rgba(28, 22, 48, 0.10);
+}
+
+/* Hairlines inside the glass — soft, not the default grey borders */
+.glass-panel .glass-divide { border-color: rgba(255, 255, 255, 0.7); }
+.glass-panel .glass-line { border-color: rgba(29, 53, 87, 0.07); }
+
 /* Outer glass shell — clear, thick glass with a bright refractive edge */
 .lg-shell {
   position: relative;

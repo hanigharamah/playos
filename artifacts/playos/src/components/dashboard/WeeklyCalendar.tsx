@@ -227,9 +227,9 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
   };
 
   return (
-    <div className="flex flex-col h-full min-h-0 select-none">
+    <div className="glass-panel flex flex-col h-full min-h-0 select-none">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-4 py-3 border-b flex-shrink-0 bg-background gap-4 flex-wrap">
+      <div className="flex items-center justify-between px-4 py-3 border-b glass-divide flex-shrink-0 gap-4 flex-wrap">
         {/* Week navigation */}
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={goToToday} className="text-xs h-8 px-3">
@@ -307,7 +307,7 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
 
       {/* Day headers — sticky */}
       <div
-        className="flex flex-shrink-0 border-b bg-background"
+        className="flex flex-shrink-0 border-b glass-divide"
         style={{ paddingLeft: TIME_COL_WIDTH }}
       >
         {weekDays.map((day, i) => {
@@ -369,13 +369,13 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
             return (
               <div
                 key={dayIndex}
-                className={`flex-1 border-l relative ${isPast ? "opacity-30 pointer-events-none" : ""}`}
+                className={`flex-1 border-l glass-line relative ${isPast ? "opacity-30 pointer-events-none" : ""}`}
               >
                 {/* Hour grid lines */}
                 {HOURS.map((h, i) => (
                   <div
                     key={h}
-                    className="border-b border-border/40"
+                    className="border-b glass-line"
                     style={{ height: HOUR_HEIGHT }}
                   />
                 ))}
