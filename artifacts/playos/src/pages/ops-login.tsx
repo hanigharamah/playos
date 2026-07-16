@@ -11,6 +11,19 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import NotFound from "@/pages/not-found";
 
+/** The Supabase project this build was compiled against (URL only — not a secret). */
+const SUPA_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || "(not set)";
+
+/** Reject instead of hanging forever when the database URL is wrong/paused. */
+function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T> {
+  return Promise.race([
+    p as Promise<T>,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`No response after ${ms / 1000}s`)), ms),
+    ),
+  ]);
+}
+
 /**
  * Hidden operator login, reached only via the secret URL /x/<secret>.
  * - If the token doesn't match, render the 404 page (no hint the route exists).
@@ -36,10 +49,12 @@ export default function OpsLogin() {
     setBusy(true);
     setError(null);
     try {
-      const { data: auth, error: authErr } = await supabase.auth.signInWithPassword({
-        email: e,
-        password: p,
-      });
+      // A wrong/paused Supabase URL makes this hang forever instead of failing,
+      // so race it against a timeout and report what we're actually pointed at.
+      const { data: auth, error: authErr } = await withTimeout(
+        supabase.auth.signInWithPassword({ email: e, password: p }),
+        10000,
+      );
       if (authErr || !auth.user) {
         setBusy(false);
         setError(authErr?.message || "Sign-in failed.");
@@ -109,7 +124,19 @@ export default function OpsLogin() {
           <Input id="op-pass" type="password" required value={password}
             onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
         </div>
-        {error && <p className="text-sm text-[#FF3B30]">{error}</p>}
+        {error && (
+          <div className="rounded-lg border border-[#FFD2CF] bg-[#FFF5F4] p-3 space-y-1">
+            <p className="text-sm font-semibold text-[#FF3B30]">{error}</p>
+            <p className="text-[11px] text-[#6C6C70] break-all">
+              This build is talking to:<br />
+              <span className="font-mono">{SUPA_URL}</span>
+            </p>
+            <p className="text-[11px] text-[#6C6C70]">
+              If that isn't your Supabase project, fix <span className="font-mono">VITE_SUPABASE_URL</span> in
+              Vercel and redeploy.
+            </p>
+          </div>
+        )}
         <Button type="submit" className="w-full" disabled={busy}>
           {busy ? "Signing in…" : "Sign in"}
         </Button>

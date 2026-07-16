@@ -39,10 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setUser(session?.user ? await fetchProfile(session.user.id) : null);
-      setIsLoading(false);
-    });
+    // Never hang: if Supabase is unreachable (wrong/paused URL) getSession()
+    // can stay pending forever, leaving the whole app on a spinner.
+    const failSafe = setTimeout(() => setIsLoading(false), 8000);
+
+    supabase.auth
+      .getSession()
+      .then(async ({ data: { session } }) => {
+        setUser(session?.user ? await fetchProfile(session.user.id) : null);
+      })
+      .catch((err) => {
+        console.error("Auth session lookup failed:", err);
+        setUser(null);
+      })
+      .finally(() => {
+        clearTimeout(failSafe);
+        setIsLoading(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, session) => {
