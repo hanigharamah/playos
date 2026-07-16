@@ -9,24 +9,34 @@
  * — keep the link private.
  */
 
-/** Long, unguessable token that gates the hidden operator login route. */
-export const OPERATOR_SECRET =
-  (import.meta.env.VITE_OPERATOR_SECRET as string | undefined) ||
-  "ops-7f3a9c2e8b1d4f60a5e7c9128d3b6f04a1";
+/**
+ * Token that gates the hidden operator login route (/x/<token>).
+ * Set VITE_OPERATOR_SECRET in Vercel. Unset ⇒ the route 404s for everyone.
+ *
+ * ⚠️ This is NOT a secret: Vite inlines VITE_* values into the public bundle,
+ * so anyone reading the shipped JS can find it. It only keeps the route out of
+ * players' faces. The real access control is Supabase auth + RLS.
+ */
+export const OPERATOR_SECRET = (import.meta.env.VITE_OPERATOR_SECRET as string | undefined) || "";
 
 /** Path to paste to reach the operator login, e.g. /x/<secret>. */
 export const operatorLoginPath = (lang: "en" | "ar" = "en") =>
   `${lang === "ar" ? "/ar" : ""}/x/${OPERATOR_SECRET}`;
 
 /**
- * Optional operator credentials. If both are set, visiting the secret URL
- * auto-signs the operator in (no password typing). Otherwise a login form
- * is shown at the secret URL as a fallback.
+ * Optional operator credentials for auto-sign-in at the secret URL.
+ * Set VITE_OPERATOR_EMAIL / VITE_OPERATOR_PASSWORD in Vercel.
+ * Unset ⇒ the secret URL shows a normal login form instead.
+ *
+ * ⚠️ Auto-login means the password is inlined into the PUBLIC bundle at build
+ * time — anyone reading the shipped JS can sign in as the operator. Env vars
+ * keep it out of git, they do NOT make it secret. Treat the link as the key,
+ * and rotate the password if it leaks. The secure option is to leave
+ * VITE_OPERATOR_PASSWORD unset and type it once (the session then persists).
  */
-export const OPERATOR_EMAIL =
-  (import.meta.env.VITE_OPERATOR_EMAIL as string | undefined) || "operator@playos.sa";
+export const OPERATOR_EMAIL = (import.meta.env.VITE_OPERATOR_EMAIL as string | undefined) || "";
 export const OPERATOR_PASSWORD =
-  (import.meta.env.VITE_OPERATOR_PASSWORD as string | undefined) || "Op_9x4Qm2Lt7Zr!2026";
+  (import.meta.env.VITE_OPERATOR_PASSWORD as string | undefined) || "";
 
 /**
  * Mapbox public token — set VITE_MAPBOX_TOKEN in Vercel (and .env.local for dev).
