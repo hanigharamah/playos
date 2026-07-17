@@ -273,6 +273,11 @@ function FillBar({ booked, capacity }: { booked: number; capacity: number }) {
 function ShareButton({ onShare }: { onShare: () => void }) {
   return (
     <button onClick={onShare} className="btn-pill btn-pill-share">
+      <span className="pill-liquid" aria-hidden="true">
+        <span className="pill-blob pill-blob--peach" />
+        <span className="pill-blob pill-blob--pink" />
+        <span className="pill-blob pill-blob--violet" />
+      </span>
       <Share className="h-4 w-4 relative z-10" strokeWidth={2.25} />
       <span className="relative z-10">Share</span>
     </button>
