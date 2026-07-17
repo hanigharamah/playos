@@ -38,18 +38,12 @@ export default function Home() {
         />
 
         <div className="container mx-auto px-4 relative z-10 text-center">
-          <p className="font-hand text-2xl sm:text-3xl mb-3" style={{ color: "#FF9F0A" }}>
-            {language === "ar" ? "يلا نلعب" : "yalla, let's play"}
-          </p>
           <h1
-            className="font-extrabold tracking-tight mb-5 max-w-3xl mx-auto"
-            style={{ color: "#1D3557", fontSize: "clamp(1.5rem, 6vw, 3.75rem)", lineHeight: 1.12 }}
+            className="font-hand mb-9 max-w-3xl mx-auto"
+            style={{ color: "#FF9F0A", fontSize: "clamp(2rem, 7vw, 4.5rem)", lineHeight: 1.12 }}
           >
             {t("hero.title")}
           </h1>
-          <p className="text-base sm:text-xl text-[#4A5568] mb-9 max-w-2xl mx-auto text-balance">
-            {t("hero.subtitle")}
-          </p>
           <div className="flex justify-center">
             <Button size="lg" className="text-base sm:text-lg px-8" asChild>
               <Link href={getPath("/games")}>{t("hero.cta")}</Link>
