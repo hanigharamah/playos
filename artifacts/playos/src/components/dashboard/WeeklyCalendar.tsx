@@ -164,7 +164,9 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
     return Math.min(6, Math.floor(adjustedX / colW));
   };
 
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+  // Pointer (not mouse) events: the operator works from a phone at the pitch,
+  // and mouse-only handlers never fire for touch.
+  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!gridRef.current) return;
     const rect = gridRef.current.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -180,10 +182,12 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
     const slot = yToSlot(y);
 
     drag.current = { dayIndex, startSlot: slot, endSlot: slot, active: true };
-    e.preventDefault();
+    // Only suppress the browser default for mouse: on touch it would also kill
+    // the scroll gesture, leaving the grid stuck.
+    if (e.pointerType === "mouse") e.preventDefault();
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+  const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!drag.current?.active || !gridRef.current) return;
     const rect = gridRef.current.getBoundingClientRect();
     const y = e.clientY - rect.top;
@@ -202,7 +206,9 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
     });
   };
 
-  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
+  // A plain tap never moves, so endSlot stays at startSlot and the game opens
+  // as a default 1-hour slot; dragging (mouse) picks the range explicitly.
+  const handlePointerUp = () => {
     if (!drag.current?.active) return;
     const { dayIndex, startSlot, endSlot } = drag.current;
     drag.current = null;
@@ -219,7 +225,8 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
     });
   };
 
-  const handleMouseLeave = () => {
+  // Pointer left the grid, or the browser claimed the gesture for scrolling.
+  const handlePointerAbort = () => {
     if (drag.current?.active) {
       drag.current = null;
       setDragOverlay(null);
@@ -337,10 +344,11 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
           ref={gridRef}
           className="relative flex cursor-crosshair"
           style={{ height: TOTAL_HOURS * HOUR_HEIGHT }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseLeave}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerAbort}
+          onPointerLeave={handlePointerAbort}
         >
           {/* Time labels column */}
           <div className="flex-shrink-0" style={{ width: TIME_COL_WIDTH }}>
