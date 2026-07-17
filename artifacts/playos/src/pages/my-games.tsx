@@ -40,9 +40,15 @@ function BookingCard({
             <span className="truncate">{booking.game.pitchName}</span>
           </div>
         </div>
-        <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex-shrink-0">
-          Paid
-        </span>
+        {booking.paymentStatus === "paid" ? (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-green-100 text-green-700 flex-shrink-0">
+            Paid
+          </span>
+        ) : (
+          <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 flex-shrink-0 whitespace-nowrap">
+            Payment pending
+          </span>
+        )}
       </div>
 
       <div className="grid grid-cols-3 gap-2">

@@ -648,11 +648,15 @@ export function useGetMyBookings() {
       const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) return { upcoming: [], past: [] };
 
+      // Include pending: a cash booking sits at "pending" until the operator
+      // marks it paid, and filtering to paid-only made the player's own booking
+      // vanish from their list the moment they made it. Cancelling sets
+      // "refunded", which stays excluded.
       const { data, error } = await supabase
         .from("bookings")
         .select("*, games(id, title, pitch_name, kickoff_time, price, capacity, status)")
         .eq("user_id", user.id)
-        .eq("payment_status", "paid")
+        .in("payment_status", ["paid", "pending"])
         .order("booked_at", { ascending: false });
       if (error) throw error;
 
