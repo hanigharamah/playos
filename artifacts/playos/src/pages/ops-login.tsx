@@ -63,7 +63,9 @@ export default function OpsLogin() {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
       });
-      setLocation("/dashboard");
+      // Navigating here would race AuthProvider: it hasn't loaded the profile
+      // yet, so /dashboard's operator guard would bounce us straight back home.
+      // The effect below moves us once auth has actually caught up.
     } catch (err: any) {
       // Network/CORS/unreachable — never leave the spinner hanging.
       setBusy(false);
@@ -71,11 +73,22 @@ export default function OpsLogin() {
     }
   };
 
-  // Already signed in as operator on this device → straight to the dashboard.
+  // Signed in as operator (now, or already on this device) → the dashboard.
   useEffect(() => {
     if (tokenOk && isOperator(user?.role)) setLocation("/dashboard");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tokenOk, user]);
+
+  // Sign-in can succeed while the profile lookup behind it fails, which would
+  // otherwise leave the spinner up with nothing left to resolve it.
+  useEffect(() => {
+    if (!busy) return;
+    const t = setTimeout(() => {
+      setBusy(false);
+      setError("Signed in, but your profile didn't load. Reload to try again.");
+    }, 15000);
+    return () => clearTimeout(t);
+  }, [busy]);
 
   // Auto-login when env credentials are present (zero-typing access).
   useEffect(() => {
