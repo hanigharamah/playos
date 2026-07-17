@@ -46,7 +46,6 @@ export function CreateGameModal({
   const { data: pitches } = useListPitches();
   const createGame = useCreateGame();
 
-  const [title, setTitle] = useState("");
   const [startTime, setStartTime] = useState(defaultStartTime);
   const [endTime, setEndTime] = useState(defaultEndTime);
   const [isPublic, setIsPublic] = useState(true);
@@ -114,7 +113,7 @@ export function CreateGameModal({
     createGame.mutate(
       {
         data: {
-          title: title || `Game – ${format(defaultDate, "MMM d")}`,
+          title: `${pitchName} – ${format(defaultDate, "MMM d")}`,
           pitchName,
           locationText: null,
           kickoffTime: kickoffDatetime,
@@ -133,7 +132,6 @@ export function CreateGameModal({
           queryClient.invalidateQueries({ queryKey: getGetDashboardGamesQueryKey() });
           toast({ title: "Game Created!", description: "Your game has been added to the calendar." });
           onClose();
-          setTitle("");
         },
         onError: (err: any) => {
           toast({ title: "Error", description: err?.data?.error || "Failed to create game", variant: "destructive" });
@@ -155,17 +153,36 @@ export function CreateGameModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-          {/* Title */}
-          <div>
-            <Label htmlFor="modal-title">Title</Label>
-            <Input
-              id="modal-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={`Game – ${format(defaultDate, "MMM d")}`}
-              autoFocus
-            />
-          </div>
+          {/* Pitch (only if multiple pitches and no filter active) */}
+          {showPitchDropdown && (
+            <div>
+              <Label>Pitch</Label>
+              <Select value={pitchName} onValueChange={setPitchName}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Select pitch" />
+                </SelectTrigger>
+                <SelectContent>
+                  {pitches?.map((p) => (
+                    <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+
+          {/* Free-text pitch/venue name (works even with zero saved pitches) */}
+          {!showPitchDropdown && (
+            <div>
+              <Label>Pitch / venue</Label>
+              <Input
+                value={pitchName}
+                onChange={(e) => setPitchName(e.target.value)}
+                placeholder="e.g. Al Rowad pitch"
+                className="mt-1"
+                autoFocus
+              />
+            </div>
+          )}
 
           {/* Time range */}
           <div>
@@ -224,31 +241,6 @@ export function CreateGameModal({
               {isPublic ? "Visible in Available Games" : "Link only"}
             </p>
           </div>
-
-          {/* Pitch (only if multiple pitches and no filter active) */}
-          {showPitchDropdown && (
-            <div>
-              <Label>Pitch</Label>
-              <Select value={pitchName} onValueChange={setPitchName}>
-                <SelectTrigger className="mt-1">
-                  <SelectValue placeholder="Select pitch" />
-                </SelectTrigger>
-                <SelectContent>
-                  {pitches?.map((p) => (
-                    <SelectItem key={p.id} value={p.name}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Free-text pitch/venue name (works even with zero saved pitches) */}
-          {!showPitchDropdown && (
-            <div>
-              <Label>Pitch / venue</Label>
-              <Input value={pitchName} onChange={(e) => setPitchName(e.target.value)} placeholder="e.g. Al Rowad pitch" className="mt-1" />
-            </div>
-          )}
 
           {/* Players + Price */}
           <div className="grid grid-cols-2 gap-3">
