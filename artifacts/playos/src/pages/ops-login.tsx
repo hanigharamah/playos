@@ -3,6 +3,7 @@ import { useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth";
+import { withTimeout } from "@/lib/with-timeout";
 import { getGetMeQueryKey } from "@/lib/supabase-api";
 import { OPERATOR_SECRET, OPERATOR_EMAIL, OPERATOR_PASSWORD, isOperator } from "@/lib/config";
 import { Button } from "@/components/ui/button";
@@ -13,16 +14,6 @@ import NotFound from "@/pages/not-found";
 
 /** The Supabase project this build was compiled against (URL only — not a secret). */
 const SUPA_URL = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || "(not set)";
-
-/** Reject instead of hanging forever when the database URL is wrong/paused. */
-function withTimeout<T>(p: PromiseLike<T>, ms: number): Promise<T> {
-  return Promise.race([
-    p as Promise<T>,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new Error(`No response after ${ms / 1000}s`)), ms),
-    ),
-  ]);
-}
 
 /**
  * Hidden operator login, reached only via the secret URL /x/<secret>.

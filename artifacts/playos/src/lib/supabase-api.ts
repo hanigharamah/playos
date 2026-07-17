@@ -4,6 +4,7 @@
  */
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
+import { withTimeout } from "./with-timeout";
 import type {
   AuthUser,
   GameSummary,
@@ -117,7 +118,7 @@ export function useGetMe(options?: { query?: { retry?: boolean } }) {
   return useQuery({
     queryKey: getGetMeQueryKey(),
     queryFn: async (): Promise<AuthUser | null> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) return null;
       const { data } = await supabase.from("users").select("*").eq("id", user.id).single();
       if (!data) return null;
@@ -138,10 +139,9 @@ export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ data }: { data: { email: string; password: string } }): Promise<AuthUser> => {
-      const { data: auth, error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const { data: auth, error } = await withTimeout(
+        supabase.auth.signInWithPassword({ email: data.email, password: data.password }),
+      );
       if (error) throw { data: { error: error.message } };
 
       const { data: profile } = await supabase
@@ -351,7 +351,7 @@ export function useCreateGame() {
     mutationFn: async ({
       data,
     }: { data: CreateGameBody & { latitude?: number | null; longitude?: number | null } }): Promise<Game> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const { data: game, error } = await supabase
@@ -427,7 +427,7 @@ export function useBookSpot() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, data }: { id: string; data: BookSpotBody }): Promise<CheckoutResponse> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const { data: game, error: gameErr } = await supabase
@@ -598,7 +598,7 @@ export function useGetMyCredits() {
   return useQuery({
     queryKey: getMyCreditsQueryKey(),
     queryFn: async (): Promise<number> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) return 0;
       const { data } = await supabase.from("users").select("credits").eq("id", user.id).single();
       return data?.credits ?? 0;
@@ -611,7 +611,7 @@ export function useRedeemCredit() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ bookingId, gameId }: { bookingId: string; gameId: string }): Promise<void> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const { data: u } = await supabase.from("users").select("credits").eq("id", user.id).single();
@@ -645,7 +645,7 @@ export function useGetMyBookings() {
   return useQuery({
     queryKey: getGetMyBookingsQueryKey(),
     queryFn: async (): Promise<MyBookingsResponse> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) return { upcoming: [], past: [] };
 
       const { data, error } = await supabase
@@ -714,7 +714,7 @@ export function useGetDashboardGames() {
   return useQuery({
     queryKey: getGetDashboardGamesQueryKey(),
     queryFn: async (): Promise<DashboardGamesResponse> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const { data, error } = await supabase
@@ -748,7 +748,7 @@ export function useGetDashboardPayouts() {
   return useQuery({
     queryKey: getGetDashboardPayoutsQueryKey(),
     queryFn: async (): Promise<PayoutsResponse> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const [{ data: games }, { data: payoutDetails }] = await Promise.all([
@@ -828,7 +828,7 @@ export function useSavePayoutDetails() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ data }: { data: PayoutDetailsBody }) => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const { error } = await supabase.from("host_payout_details").upsert({
@@ -942,7 +942,7 @@ export function useListPitches() {
   return useQuery({
     queryKey: ["/api/pitches"],
     queryFn: async (): Promise<Pitch[]> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) return [];
 
       const { data, error } = await supabase
@@ -962,7 +962,7 @@ export function useCreatePitch() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ data }: { data: CreatePitchBody }): Promise<Pitch> => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await withTimeout(supabase.auth.getUser());
       if (!user) throw { data: { error: "Not authenticated" } };
 
       const { data: pitch, error } = await supabase
@@ -1010,7 +1010,7 @@ export async function performCheckIn(
   | { status: "no_match"; pitchName: string | null }
   | { status: "outside_window"; opensAt: string; title: string; pitchName: string }
 > {
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = await withTimeout(supabase.auth.getUser());
   if (!user) throw new Error("Not authenticated");
 
   // Resolve pitch name from ID
