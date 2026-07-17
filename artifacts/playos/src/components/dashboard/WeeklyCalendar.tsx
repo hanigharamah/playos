@@ -365,6 +365,10 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
 
           {/* Day columns */}
           {weekDays.map((day, dayIndex) => {
+            // Past days can't take a new game — handlePointerDown enforces that.
+            // They're marked with a cursor rather than pointer-events-none: that
+            // swallowed the event so silently the grid's crosshair still invited
+            // a click that could never land.
             const isPast = isBefore(day, new Date(new Date().setHours(0, 0, 0, 0)));
             const isT = isToday(day);
 
@@ -377,7 +381,7 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
             return (
               <div
                 key={dayIndex}
-                className={`flex-1 border-l glass-line relative ${isPast ? "opacity-30 pointer-events-none" : ""}`}
+                className={`flex-1 border-l glass-line relative ${isPast ? "opacity-40 cursor-not-allowed" : ""}`}
               >
                 {/* Hour grid lines */}
                 {HOURS.map((h, i) => (
