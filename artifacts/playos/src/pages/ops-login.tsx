@@ -135,6 +135,12 @@ export default function OpsLogin() {
               If that isn't your Supabase project, fix <span className="font-mono">VITE_SUPABASE_URL</span> in
               Vercel and redeploy.
             </p>
+            {hasCreds && (
+              <p className="text-[11px] text-[#6C6C70] font-mono">
+                Baked-in auto-login: email {OPERATOR_EMAIL.length} chars, password {OPERATOR_PASSWORD.length} chars.
+                Compare these to what you typed in Vercel — a stray space/newline changes the count.
+              </p>
+            )}
           </div>
         )}
         <Button type="submit" className="w-full" disabled={busy}>
