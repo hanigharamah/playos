@@ -12,6 +12,7 @@ import { CancelBookingModal } from "@/components/CancelBookingModal";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { List, Share } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 /* ─── PITCH POSITION MAPS ────────────────────────────────────── */
@@ -273,22 +274,23 @@ function ShareButton({ onShare }: { onShare: () => void }) {
   return (
     <button
       onClick={onShare}
-      className="transition-all duration-200 hover:-translate-y-0.5"
+      className="inline-flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
       style={{
-        background: "radial-gradient(120% 140% at 30% 20%, #ffd2f1 0%, #d5b6ff 55%, #9e89ff 100%)",
+        background: "linear-gradient(100deg, #FBDCE9 0%, #E9C4F5 38%, #B99BF8 72%, #A78BFA 100%)",
         color: "#fff",
-        fontWeight: 700,
-        fontSize: 11,
-        letterSpacing: "0.1em",
-        textTransform: "uppercase",
+        fontWeight: 600,
+        fontSize: 14,
         borderRadius: 999,
-        padding: "8px 20px",
-        border: "none",
-        boxShadow: "0 4px 16px rgba(158,137,255,0.45), 0 0 0 0 transparent",
-        textShadow: "0 0 12px rgba(255,255,255,0.6)",
+        padding: "9px 20px",
+        border: "1px solid rgba(255,255,255,0.6)",
+        // Top highlight + a deeper rim under the edge reads as a solid slab,
+        // then the glow lifts it off the cream.
+        boxShadow:
+          "inset 0 1px 0 rgba(255,255,255,0.75), 0 3px 0 rgba(139,108,240,0.45), 0 10px 22px rgba(167,139,250,0.4)",
         cursor: "pointer",
       }}
     >
+      <Share className="h-4 w-4" strokeWidth={2.25} />
       Share
     </button>
   );
@@ -458,9 +460,23 @@ export default function GameDetail() {
             {isOperator(user?.role) && (user as any).id === game.organiserId && (
               <Link href={getPath(`/game/${id}/manage`)}>
                 <button
-                  className="text-xs font-semibold px-3 py-1.5 rounded-[10px] border"
-                  style={{ color: "#0A84FF", borderColor: "#0A84FF", background: "transparent" }}
+                  className="inline-flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
+                  style={{
+                    background: "rgba(255,253,251,0.72)",
+                    backdropFilter: "blur(12px)",
+                    WebkitBackdropFilter: "blur(12px)",
+                    color: "#1C1C1E",
+                    fontWeight: 600,
+                    fontSize: 14,
+                    borderRadius: 999,
+                    padding: "9px 20px",
+                    border: "1px solid rgba(255,255,255,0.9)",
+                    boxShadow:
+                      "inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px rgba(120,90,70,0.10)",
+                    cursor: "pointer",
+                  }}
                 >
+                  <List className="h-4 w-4" strokeWidth={2.25} style={{ color: "#6C6C70" }} />
                   Manage
                 </button>
               </Link>
