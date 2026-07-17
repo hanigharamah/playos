@@ -607,14 +607,41 @@
 }
 .btn-pill-manage::after { border: 1px solid rgba(255,255,255,0.75); }
 
+/* Gradient positions aren't animatable until they're registered types — this
+   is what lets the light actually drift inside the pill instead of snapping.
+   Every var() below keeps a literal fallback, so if @property is unsupported
+   the button just renders static rather than losing its background. */
+@property --share-glow-x { syntax: "<percentage>"; initial-value: 15%; inherits: false; }
+@property --share-glow-y { syntax: "<percentage>"; initial-value: 6%;  inherits: false; }
+@property --share-bloom-x { syntax: "<percentage>"; initial-value: 86%; inherits: false; }
+@property --share-bloom-y { syntax: "<percentage>"; initial-value: 88%; inherits: false; }
+
+/* Two drifts on deliberately mismatched durations (13s vs 17s) so the pair
+   never resolves into a visible loop — it reads as liquid, not as a cycle. */
+@keyframes shareGlowDrift {
+  0%   { --share-glow-x: 12%; --share-glow-y: 4%;  }
+  30%  { --share-glow-x: 33%; --share-glow-y: 20%; }
+  60%  { --share-glow-x: 20%; --share-glow-y: 34%; }
+  100% { --share-glow-x: 40%; --share-glow-y: 10%; }
+}
+@keyframes shareBloomDrift {
+  0%   { --share-bloom-x: 88%; --share-bloom-y: 92%; }
+  50%  { --share-bloom-x: 62%; --share-bloom-y: 64%; }
+  100% { --share-bloom-x: 94%; --share-bloom-y: 78%; }
+}
+
 .btn-pill-share {
   color: #fff;
   /* Warm peach pooling into the top-left corner over a pink→violet sweep that
      hands over to violet by halfway. A single flat linear gradient is what
      made this read washed out and too magenta before. */
   background:
-    radial-gradient(68% 135% at 15% 6%, rgba(255,236,208,0.95) 0%, rgba(255,208,190,0.55) 30%, rgba(255,255,255,0) 66%),
+    radial-gradient(68% 135% at var(--share-glow-x, 15%) var(--share-glow-y, 6%), rgba(255,236,208,0.95) 0%, rgba(255,208,190,0.55) 30%, rgba(255,255,255,0) 66%),
+    radial-gradient(60% 110% at var(--share-bloom-x, 86%) var(--share-bloom-y, 88%), rgba(150,110,240,0.5) 0%, rgba(150,110,240,0.18) 45%, rgba(150,110,240,0) 72%),
     linear-gradient(102deg, #F6C4CD 0%, #F0A8D2 18%, #CD9BF0 46%, #AA88F9 74%, #9878F7 100%);
+  animation:
+    shareGlowDrift 13s ease-in-out infinite alternate,
+    shareBloomDrift 17s ease-in-out infinite alternate;
   box-shadow:
     inset 0 1.5px 0 rgba(255,255,255,0.95),
     inset 0 0 14px rgba(255,255,255,0.28),
@@ -625,6 +652,12 @@
   text-shadow: 0 0 10px rgba(255,255,255,0.45);
 }
 .btn-pill-share::after { border: 1px solid rgba(255,255,255,0.5); }
+
+/* Drifting light is decorative — honour a reduced-motion preference and let
+   the fallback positions stand. */
+@media (prefers-reduced-motion: reduce) {
+  .btn-pill-share { animation: none; }
+}
 .btn-pill-share:hover {
   box-shadow:
     inset 0 1.5px 0 rgba(255,255,255,0.95),
