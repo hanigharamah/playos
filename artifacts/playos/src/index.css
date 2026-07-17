@@ -562,3 +562,75 @@
 .btn-primary-glow {
   box-shadow: 0 4px 12px rgba(10,132,255,0.25);
 }
+
+/* ── Manage / Share pills ──────────────────────────────────────────────────
+   Both are glass slabs: a face, a lit rim inset from the edge (::after — the
+   thick-glass read), a specular top edge, and a diffuse glow underneath.
+   The rim is what sells it, and it needs its own layer, so these can't be
+   inline styles. */
+.btn-pill {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px;
+  border-radius: 999px;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.btn-pill::after {
+  content: "";
+  position: absolute;
+  inset: 1.5px;
+  border-radius: 999px;
+  pointer-events: none;
+}
+.btn-pill:hover { transform: translateY(-1px); }
+.btn-pill:active { transform: translateY(0); }
+
+.btn-pill-manage {
+  color: #17171A;
+  background:
+    radial-gradient(120% 150% at 8% 6%, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0) 60%),
+    rgba(255,253,250,0.78);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -6px 14px -8px rgba(255,255,255,0.9),
+    0 1px 1px rgba(40,28,8,0.03),
+    0 8px 20px -6px rgba(120,90,70,0.14);
+}
+.btn-pill-manage::after { border: 1px solid rgba(255,255,255,0.75); }
+
+.btn-pill-share {
+  color: #fff;
+  /* Warm peach pooling into the top-left corner over a pink→violet sweep that
+     hands over to violet by halfway. A single flat linear gradient is what
+     made this read washed out and too magenta before. */
+  background:
+    radial-gradient(68% 135% at 15% 6%, rgba(255,236,208,0.95) 0%, rgba(255,208,190,0.55) 30%, rgba(255,255,255,0) 66%),
+    linear-gradient(102deg, #F6C4CD 0%, #F0A8D2 18%, #CD9BF0 46%, #AA88F9 74%, #9878F7 100%);
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.95),
+    inset 0 0 14px rgba(255,255,255,0.28),
+    inset 0 -7px 14px -6px rgba(150,110,240,0.3),
+    0 2px 0 rgba(146,112,240,0.5),
+    0 3px 8px rgba(167,139,250,0.32),
+    0 10px 24px -2px rgba(167,139,250,0.5);
+  text-shadow: 0 0 10px rgba(255,255,255,0.45);
+}
+.btn-pill-share::after { border: 1px solid rgba(255,255,255,0.5); }
+.btn-pill-share:hover {
+  box-shadow:
+    inset 0 1.5px 0 rgba(255,255,255,0.95),
+    inset 0 0 14px rgba(255,255,255,0.28),
+    inset 0 -7px 14px -6px rgba(150,110,240,0.3),
+    0 2px 0 rgba(146,112,240,0.5),
+    0 4px 10px rgba(167,139,250,0.38),
+    0 14px 30px -2px rgba(167,139,250,0.6);
+}

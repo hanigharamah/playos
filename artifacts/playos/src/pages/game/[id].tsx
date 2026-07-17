@@ -272,26 +272,9 @@ function FillBar({ booked, capacity }: { booked: number; capacity: number }) {
 /* ─── SHARE BUTTON ───────────────────────────────────────────── */
 function ShareButton({ onShare }: { onShare: () => void }) {
   return (
-    <button
-      onClick={onShare}
-      className="inline-flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-      style={{
-        background: "linear-gradient(100deg, #FBDCE9 0%, #E9C4F5 38%, #B99BF8 72%, #A78BFA 100%)",
-        color: "#fff",
-        fontWeight: 600,
-        fontSize: 14,
-        borderRadius: 999,
-        padding: "9px 20px",
-        border: "1px solid rgba(255,255,255,0.6)",
-        // Top highlight + a deeper rim under the edge reads as a solid slab,
-        // then the glow lifts it off the cream.
-        boxShadow:
-          "inset 0 1px 0 rgba(255,255,255,0.75), 0 3px 0 rgba(139,108,240,0.45), 0 10px 22px rgba(167,139,250,0.4)",
-        cursor: "pointer",
-      }}
-    >
-      <Share className="h-4 w-4" strokeWidth={2.25} />
-      Share
+    <button onClick={onShare} className="btn-pill btn-pill-share">
+      <Share className="h-4 w-4 relative z-10" strokeWidth={2.25} />
+      <span className="relative z-10">Share</span>
     </button>
   );
 }
@@ -459,25 +442,9 @@ export default function GameDetail() {
           <div className="flex items-center gap-2 flex-shrink-0">
             {isOperator(user?.role) && (user as any).id === game.organiserId && (
               <Link href={getPath(`/game/${id}/manage`)}>
-                <button
-                  className="inline-flex items-center gap-2 transition-all duration-200 hover:-translate-y-0.5 active:translate-y-0"
-                  style={{
-                    background: "rgba(255,253,251,0.72)",
-                    backdropFilter: "blur(12px)",
-                    WebkitBackdropFilter: "blur(12px)",
-                    color: "#1C1C1E",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    borderRadius: 999,
-                    padding: "9px 20px",
-                    border: "1px solid rgba(255,255,255,0.9)",
-                    boxShadow:
-                      "inset 0 1px 0 rgba(255,255,255,0.9), 0 6px 18px rgba(120,90,70,0.10)",
-                    cursor: "pointer",
-                  }}
-                >
-                  <List className="h-4 w-4" strokeWidth={2.25} style={{ color: "#6C6C70" }} />
-                  Manage
+                <button className="btn-pill btn-pill-manage">
+                  <List className="h-4 w-4 relative z-10" strokeWidth={2.25} style={{ color: "#57575C" }} />
+                  <span className="relative z-10">Manage</span>
                 </button>
               </Link>
             )}
