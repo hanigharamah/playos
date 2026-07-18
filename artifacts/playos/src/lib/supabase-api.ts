@@ -379,6 +379,26 @@ export function useCreateGame() {
         .single();
       if (error) throw error;
 
+      // The "Pitch / venue" field on create-game is free text and doesn't
+      // require picking from the operator's saved pitches list. Register
+      // this name as a pitch if it's new — otherwise the calendar's
+      // per-pitch tab filter has nothing to show the game under, and it
+      // silently disappears even though it saved correctly.
+      const { data: existingPitch } = await supabase
+        .from("pitches")
+        .select("id")
+        .eq("organiser_id", user.id)
+        .eq("name", data.pitchName)
+        .maybeSingle();
+      if (!existingPitch) {
+        await supabase.from("pitches").insert({
+          id: uid(),
+          organiser_id: user.id,
+          name: data.pitchName,
+        });
+        queryClient.invalidateQueries({ queryKey: ["/api/pitches"] });
+      }
+
       queryClient.invalidateQueries({ queryKey: ["/api/games"] });
       queryClient.invalidateQueries({ queryKey: getGetDashboardGamesQueryKey() });
       return mapGame(game);

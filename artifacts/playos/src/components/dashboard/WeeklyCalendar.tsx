@@ -466,6 +466,7 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
           defaultStartTime={modal.startTime}
           defaultEndTime={modal.endTime}
           activePitchName={activePitch}
+          onCreated={onPitchChange}
         />
       )}
 

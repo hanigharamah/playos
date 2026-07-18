@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "./supabase";
 import type { AuthUser } from "@workspace/api-client-react";
 
@@ -38,6 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Tracks whose profile we've already resolved, so routine re-validation
+  // events (token refresh, tab-focus session recheck) don't re-fetch the
+  // profile — and can't null the user if that redundant fetch happens to
+  // fail transiently. Only a real account change or explicit sign-out
+  // should ever touch this.
+  const resolvedUserId = useRef<string | null>(null);
+
   useEffect(() => {
     // Never hang: if Supabase is unreachable (wrong/paused URL) getSession()
     // can stay pending forever, leaving the whole app on a spinner.
@@ -46,7 +53,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth
       .getSession()
       .then(async ({ data: { session } }) => {
-        setUser(session?.user ? await fetchProfile(session.user.id) : null);
+        if (session?.user) {
+          setUser(await fetchProfile(session.user.id));
+          resolvedUserId.current = session.user.id;
+        } else {
+          setUser(null);
+        }
       })
       .catch((err) => {
         console.error("Auth session lookup failed:", err);
@@ -70,19 +82,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // and wiped whatever the user was mid-typing, like an open create-game
     // form. Real sign-outs always carry the SIGNED_OUT event; other events
     // with no session yet are just noise to ignore.
+    //
+    // Also: if we've already resolved this exact user id, skip re-fetching
+    // their profile entirely on subsequent events (token refresh fires this
+    // callback routinely, including right when a backgrounded tab wakes back
+    // up). That redundant fetch was the second way the same tab-switch bug
+    // could still null the user — a transient failure on that unnecessary
+    // network call fell into the same "profile lookup failed" catch below.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         if (event === "SIGNED_OUT") {
+          resolvedUserId.current = null;
           setUser(null);
           return;
         }
         const userId = session?.user?.id;
         if (!userId) return;
+        if (resolvedUserId.current === userId) return;
+        resolvedUserId.current = userId;
         setTimeout(() => {
           fetchProfile(userId)
             .then(setUser)
             .catch((err) => {
               console.error("Profile lookup failed:", err);
+              resolvedUserId.current = null;
               setUser(null);
             });
         }, 0);

@@ -22,6 +22,7 @@ interface CreateGameModalProps {
   defaultStartTime: string;
   defaultEndTime: string;
   activePitchName?: string | null;
+  onCreated?: (pitchName: string) => void;
 }
 
 const LS_PRICE_KEY = "playos_default_price";
@@ -40,6 +41,7 @@ export function CreateGameModal({
   defaultStartTime,
   defaultEndTime,
   activePitchName,
+  onCreated,
 }: CreateGameModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -131,6 +133,7 @@ export function CreateGameModal({
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetDashboardGamesQueryKey() });
           toast({ title: "Game Created!", description: "Your game has been added to the calendar." });
+          onCreated?.(pitchName);
           onClose();
         },
         onError: (err: any) => {
