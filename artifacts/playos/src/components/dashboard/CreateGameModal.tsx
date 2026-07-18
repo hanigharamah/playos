@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useCreateGame, useListPitches, getGetDashboardGamesQueryKey } from "@/lib/supabase-api";
+import { loadCreateGameDraft, saveCreateGameDraft, clearCreateGameDraft, type CreateGameDraft } from "@/lib/create-game-draft";
 import { useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
@@ -48,21 +49,31 @@ export function CreateGameModal({
   const { data: pitches } = useListPitches();
   const createGame = useCreateGame();
 
-  const [startTime, setStartTime] = useState(defaultStartTime);
-  const [endTime, setEndTime] = useState(defaultEndTime);
-  const [isPublic, setIsPublic] = useState(true);
-  const [pitchName, setPitchName] = useState(activePitchName || "");
+  // Loaded once per mount — if the tab reloaded mid-draft (auth blip, or the
+  // browser discarding a backgrounded tab), this restores exactly what was
+  // typed. Consumed by the reset effect below so it doesn't get clobbered.
+  const draftRef = useRef<CreateGameDraft | null | undefined>(undefined);
+  if (draftRef.current === undefined) {
+    draftRef.current = loadCreateGameDraft();
+  }
+
+  const [startTime, setStartTime] = useState(() => draftRef.current?.startTime ?? defaultStartTime);
+  const [endTime, setEndTime] = useState(() => draftRef.current?.endTime ?? defaultEndTime);
+  const [isPublic, setIsPublic] = useState(() => draftRef.current?.isPublic ?? true);
+  const [pitchName, setPitchName] = useState(() => draftRef.current?.pitchName ?? (activePitchName || ""));
   const [capacity, setCapacity] = useState<number>(() => {
+    if (draftRef.current) return draftRef.current.capacity;
     const saved = localStorage.getItem(LS_CAPACITY_KEY);
     return saved ? parseInt(saved) : 10;
   });
   const [price, setPrice] = useState<number>(() => {
+    if (draftRef.current) return draftRef.current.price;
     const saved = localStorage.getItem(LS_PRICE_KEY);
     return saved ? parseFloat(saved) : 50;
   });
-  const [autoCancelHours, setAutoCancelHours] = useState(4);
-  const [mapsUrl, setMapsUrl] = useState("");
-  const [coords, setCoords] = useState("");
+  const [autoCancelHours, setAutoCancelHours] = useState(() => draftRef.current?.autoCancelHours ?? 4);
+  const [mapsUrl, setMapsUrl] = useState(() => draftRef.current?.mapsUrl ?? "");
+  const [coords, setCoords] = useState(() => draftRef.current?.coords ?? "");
 
   /** Accepts what Google Maps copies, e.g. "24.7136, 46.6753". */
   const parsedCoords = (() => {
@@ -75,6 +86,13 @@ export function CreateGameModal({
   })();
 
   useEffect(() => {
+    // A restored draft already has the right values for this mount — skip
+    // this one reset so it doesn't immediately overwrite them, then let
+    // future genuine prop changes reset normally.
+    if (draftRef.current) {
+      draftRef.current = null;
+      return;
+    }
     setStartTime(defaultStartTime);
     setEndTime(defaultEndTime);
     setPitchName(activePitchName || (pitches && pitches.length > 0 ? pitches[0].name : ""));
@@ -85,6 +103,20 @@ export function CreateGameModal({
       setPitchName(pitches[0].name);
     }
   }, [pitches, activePitchName]);
+
+  // Keep the draft current as the operator types, so a reload never loses it.
+  useEffect(() => {
+    saveCreateGameDraft({
+      date: defaultDate.toISOString(),
+      startTime, endTime, pitchName, isPublic,
+      capacity, price, autoCancelHours, mapsUrl, coords,
+    });
+  }, [defaultDate, startTime, endTime, pitchName, isPublic, capacity, price, autoCancelHours, mapsUrl, coords]);
+
+  const handleClose = () => {
+    clearCreateGameDraft();
+    onClose();
+  };
 
   const durationMinutes = (() => {
     const [sh, sm] = startTime.split(":").map(Number);
@@ -134,7 +166,7 @@ export function CreateGameModal({
           queryClient.invalidateQueries({ queryKey: getGetDashboardGamesQueryKey() });
           toast({ title: "Game Created!", description: "Your game has been added to the calendar." });
           onCreated?.(pitchName);
-          onClose();
+          handleClose();
         },
         onError: (err: any) => {
           toast({ title: "Error", description: err?.data?.error || "Failed to create game", variant: "destructive" });
@@ -146,7 +178,7 @@ export function CreateGameModal({
   const showPitchDropdown = !activePitchName && pitches && pitches.length > 1;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => !v && handleClose()}>
       <DialogContent className="max-w-sm w-full">
         <DialogHeader>
           <DialogTitle className="text-lg font-semibold">New Game</DialogTitle>
@@ -329,7 +361,7 @@ export function CreateGameModal({
 
           {/* Actions */}
           <div className="flex gap-2 pt-1">
-            <Button type="button" variant="outline" className="flex-1" onClick={onClose}>
+            <Button type="button" variant="outline" className="flex-1" onClick={handleClose}>
               Cancel
             </Button>
             <Button type="submit" className="flex-1 bg-blue-600 hover:bg-blue-700" disabled={createGame.isPending}>

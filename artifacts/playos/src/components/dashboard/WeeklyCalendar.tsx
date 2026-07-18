@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CreateGameModal } from "./CreateGameModal";
 import { PitchQrModal } from "./PitchQrModal";
+import { loadCreateGameDraft } from "@/lib/create-game-draft";
 
 const HOUR_HEIGHT = 60; // px per hour
 const CAL_START_HOUR = 15; // 3 PM
@@ -95,6 +96,16 @@ export function WeeklyCalendar({ games, activePitch, pitches, onPitchChange }: W
     startTime: string;
     endTime: string;
   } | null>(null);
+
+  // Reopen the create-game form automatically if the tab reloaded mid-draft
+  // (auth blip, or the browser discarding a backgrounded tab under memory
+  // pressure) — CreateGameModal restores the typed field values itself.
+  useEffect(() => {
+    const draft = loadCreateGameDraft();
+    if (draft) {
+      setModal({ open: true, date: new Date(draft.date), startTime: draft.startTime, endTime: draft.endTime });
+    }
+  }, []);
 
   // Drag state
   const drag = useRef<{
