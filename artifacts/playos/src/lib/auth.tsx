@@ -61,13 +61,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // while holding its auth lock, and any call made here queues for that same
     // lock — deadlocking this and every later auth call. Defer off the callback
     // so the lock releases first.
+    //
+    // Only clear the user on an explicit SIGNED_OUT. Switching tabs makes
+    // supabase-js re-validate the session on refocus, which can fire this
+    // callback with a momentarily-empty session before the real refresh
+    // lands — treating that as a sign-out nulled the user for an instant,
+    // which unmounted every role-gated page (e.g. the operator dashboard)
+    // and wiped whatever the user was mid-typing, like an open create-game
+    // form. Real sign-outs always carry the SIGNED_OUT event; other events
+    // with no session yet are just noise to ignore.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        const userId = session?.user?.id;
-        if (!userId) {
+      (event, session) => {
+        if (event === "SIGNED_OUT") {
           setUser(null);
           return;
         }
+        const userId = session?.user?.id;
+        if (!userId) return;
         setTimeout(() => {
           fetchProfile(userId)
             .then(setUser)
