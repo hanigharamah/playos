@@ -1,15 +1,23 @@
 import { useLocation, Link } from "wouter";
 import { useVerifyPayment, getVerifyPaymentQueryKey } from "@/lib/supabase-api";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, XCircle, Loader2, CalendarDays, MapPin, Users, Trophy } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, CalendarDays, MapPin, Users, Trophy, Bell } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/lib/auth";
+import { canRequestPush, isIOS, isStandalone } from "@/lib/pwa";
+import { subscribeToPush, hasNotificationPermission } from "@/lib/push";
 
 export default function PaymentCallback() {
   const [, setLocation] = useLocation();
+  const { user } = useAuth();
   const params = new URLSearchParams(window.location.search);
   const sessionId = params.get("session_id") || "";
   const gameId = params.get("gameId") || "";
+
+  const [pushState, setPushState] = useState<"idle" | "subscribing" | "done" | "hidden">(
+    hasNotificationPermission() ? "hidden" : "idle",
+  );
 
   const { data, isLoading, isError } = useVerifyPayment(
     { session_id: sessionId, gameId },
@@ -21,6 +29,13 @@ export default function PaymentCallback() {
       },
     }
   );
+
+  async function enableReminder() {
+    if (!user?.id) return;
+    setPushState("subscribing");
+    const result = await subscribeToPush(user.id);
+    setPushState(result === "subscribed" ? "done" : "hidden");
+  }
 
   useEffect(() => {
     if (data?.status === "paid" && gameId) {
@@ -87,6 +102,27 @@ export default function PaymentCallback() {
           <p className="text-center text-xs text-[#AEAEB2]">
             Redirecting to game page in a moment…
           </p>
+
+          {pushState !== "hidden" && pushState !== "done" && canRequestPush() && (
+            <button
+              onClick={enableReminder}
+              disabled={pushState === "subscribing"}
+              className="w-full flex items-center gap-2.5 rounded-xl border border-[#E5E5EA] px-3.5 py-3 text-left disabled:opacity-60"
+            >
+              <Bell className="h-4 w-4 shrink-0 text-[#FF9F0A]" />
+              <span className="text-sm font-medium text-[#1D3557] flex-1">
+                {pushState === "subscribing" ? "Enabling…" : "Get a reminder 20 min before kickoff"}
+              </span>
+            </button>
+          )}
+          {pushState !== "hidden" && pushState !== "done" && isIOS() && !isStandalone() && (
+            <p className="text-center text-xs text-[#6C6C70] px-2">
+              Add PlayOS to your Home Screen to get match reminders on iPhone.
+            </p>
+          )}
+          {pushState === "done" && (
+            <p className="text-center text-xs text-green-600 font-medium">Reminder enabled ✓</p>
+          )}
 
           {/* Buttons */}
           <div className="flex flex-col gap-2">

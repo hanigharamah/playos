@@ -1204,16 +1204,21 @@ export function useClaimSide() {
   });
 }
 
-// ─── Flashcard: lock teams and run coin flip once ─────────────────────────
+// ─── Flashcard: start the match — balance unpicked players + guests, flip ──
+// Supersedes the old flip-only lock_teams_and_flip RPC. Called both by the
+// auto-lock effect (when both sides fill naturally) and the hold-to-start
+// button (when kickoff arrives and sides are still short).
 
-export function useLockTeams() {
+export type StartMatchResult = "ok" | "already_locked" | "not_found" | "too_few";
+
+export function useStartMatch() {
   return useMutation({
-    mutationFn: async ({ gameId }: { gameId: string }): Promise<"ok" | "already_locked" | "not_found"> => {
-      const { data, error } = await supabase.rpc("lock_teams_and_flip", {
+    mutationFn: async ({ gameId }: { gameId: string }): Promise<StartMatchResult> => {
+      const { data, error } = await supabase.rpc("start_match", {
         p_game_id: gameId,
       });
       if (error) throw error;
-      return data as "ok" | "already_locked" | "not_found";
+      return data as StartMatchResult;
     },
   });
 }

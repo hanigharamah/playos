@@ -74,7 +74,7 @@ export default function CheckIn({ params }: Props) {
   if (!result) return null;
 
   if (result.status === "checked_in" || result.status === "already_checked_in") {
-    setLocation(`/flashcard/${result.gameId}`);
+    setLocation(`/game/${result.gameId}?matchday=1`);
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-3">

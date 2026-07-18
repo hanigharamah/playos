@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { useParams, useLocation, Link } from "wouter";
+import { useParams, useLocation, useSearch, Link } from "wouter";
+import { MatchDayFlow } from "@/components/flashcard/MatchDayFlow";
+import { Zap } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useGetGame, useBookSpot, useGetSettings, useOperatorBookSpot } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
@@ -288,10 +290,14 @@ function ShareButton({ onShare }: { onShare: () => void }) {
 export default function GameDetail() {
   const params = useParams<{ id: string }>();
   const id = params.id!;
+  const search = useSearch();
   const { language } = useI18n();
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const isMatchDayParam = new URLSearchParams(search).get("matchday") === "1";
+  const [showMatchDay, setShowMatchDay] = useState(isMatchDayParam);
 
   const queryClient = useQueryClient();
   const { data: game, isLoading } = useGetGame(id);
@@ -456,6 +462,28 @@ export default function GameDetail() {
             <ShareButton onShare={handleShare} />
           </div>
         </div>
+
+        {/* ── Match Day banner ── */}
+        {userBooking && (() => {
+          const now = Date.now();
+          const checkInOpens = kickoff.getTime() - 15 * 60 * 1000;
+          const windowEnd = kickoff.getTime() + 90 * 60 * 1000;
+          const isLive = now >= checkInOpens && now <= windowEnd;
+          if (!isLive) return null;
+          return (
+            <button
+              onClick={() => setShowMatchDay(true)}
+              className="w-full flex items-center gap-2.5 rounded-xl px-4 py-3 text-left"
+              style={{ background: "rgba(255,159,10,0.12)" }}
+            >
+              <Zap className="h-4 w-4 shrink-0" style={{ color: "#FF9F0A" }} />
+              <span className="text-sm font-semibold flex-1" style={{ color: "#7A5200" }}>
+                Match day — pick your team
+              </span>
+              <span className="text-xs font-semibold" style={{ color: "#FF9F0A" }}>Enter →</span>
+            </button>
+          );
+        })()}
 
         {/* ── Fill Bar Card ── */}
         <div className="card-ios px-4 py-3">
@@ -724,6 +752,10 @@ export default function GameDetail() {
           )}
         </div>
       </div>
+
+      {showMatchDay && (
+        <MatchDayFlow gameId={id} onClose={() => setShowMatchDay(false)} />
+      )}
     </div>
   );
 }
