@@ -2,6 +2,7 @@
  * Drop-in replacement for @workspace/api-client-react.
  * All hook names and return shapes are identical — pages only need to change their import path.
  */
+import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 import { withTimeout } from "./with-timeout";
@@ -1008,8 +1009,8 @@ export async function performCheckIn(
   pitchId: string,
   gameId?: string,
 ): Promise<
-  | { status: "checked_in"; title: string; team: number; pitchName: string; checkedInAt: string; minutesLate: number | null }
-  | { status: "already_checked_in"; title: string; team: number; pitchName: string; checkedInAt: string }
+  | { status: "checked_in"; gameId: string; title: string; team: number; pitchName: string; checkedInAt: string; minutesLate: number | null }
+  | { status: "already_checked_in"; gameId: string; title: string; team: number; pitchName: string; checkedInAt: string }
   | { status: "multiple_matches"; matches: { bookingId: string; gameId: string; title: string; kickoffTime: string; team: number; pitchName: string }[] }
   | { status: "no_match"; pitchName: string | null }
   | { status: "outside_window"; opensAt: string; title: string; pitchName: string }
@@ -1067,7 +1068,7 @@ export async function performCheckIn(
   const game = games.find((g) => g.id === booking.game_id)!;
 
   if (booking.checked_in) {
-    return { status: "already_checked_in", title: game.title, team: booking.team, pitchName: game.pitch_name, checkedInAt: booking.checked_in_at };
+    return { status: "already_checked_in", gameId: game.id, title: game.title, team: booking.team, pitchName: game.pitch_name, checkedInAt: booking.checked_in_at };
   }
 
   const kickoff = new Date(game.kickoff_time);
@@ -1085,10 +1086,134 @@ export async function performCheckIn(
   const minutesLate = Math.max(0, Math.floor((now.getTime() - kickoff.getTime()) / 60000));
   return {
     status: "checked_in",
+    gameId: game.id,
     title: game.title,
     team: booking.team,
     pitchName: game.pitch_name,
     checkedInAt,
     minutesLate: minutesLate > 0 ? minutesLate : null,
   };
+}
+
+// ─── Flashcard: live roster ────────────────────────────────────────────────
+
+export interface RosterEntry {
+  bookingId: string;
+  userId: string | null;
+  name: string;
+  team: 1 | 2 | null;
+  checkedIn: boolean;
+}
+
+export interface GameRoster {
+  entries: RosterEntry[];
+  checkedInCount: number;
+  capacity: number;
+  yellowCount: number;
+  purpleCount: number;
+  kickoffTeam: 1 | 2 | null;
+  teamsLockedAt: string | null;
+}
+
+function getGameRosterQueryKey(gameId: string) {
+  return ["game-roster", gameId] as const;
+}
+
+export function useGameRoster(gameId: string | null) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!gameId) return;
+
+    const channel = supabase
+      .channel(`roster:${gameId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "bookings", filter: `game_id=eq.${gameId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(gameId) });
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(gameId) });
+        },
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [gameId, queryClient]);
+
+  return useQuery({
+    queryKey: getGameRosterQueryKey(gameId ?? ""),
+    enabled: !!gameId,
+    refetchInterval: 10000,
+    queryFn: async (): Promise<GameRoster> => {
+      const [{ data: gameRow }, { data: bookings }] = await Promise.all([
+        supabase
+          .from("games")
+          .select("capacity, kickoff_team, teams_locked_at")
+          .eq("id", gameId!)
+          .single(),
+        supabase
+          .from("bookings")
+          .select("id, user_id, team, checked_in, payment_status, guest_name, users(name)")
+          .eq("game_id", gameId!)
+          .in("payment_status", ["paid", "pending"]),
+      ]);
+
+      const capacity = gameRow?.capacity ?? 12;
+      const entries: RosterEntry[] = (bookings ?? []).map((b: any) => ({
+        bookingId: b.id,
+        userId: b.user_id,
+        name: b.users?.name ?? b.guest_name ?? "Player",
+        team: b.team as 1 | 2 | null,
+        checkedIn: b.checked_in ?? false,
+      }));
+
+      const checkedIn = entries.filter((e) => e.checkedIn);
+      return {
+        entries,
+        checkedInCount: checkedIn.length,
+        capacity,
+        yellowCount: entries.filter((e) => e.team === 1).length,
+        purpleCount: entries.filter((e) => e.team === 2).length,
+        kickoffTeam: (gameRow?.kickoff_team as 1 | 2 | null) ?? null,
+        teamsLockedAt: gameRow?.teams_locked_at ?? null,
+      };
+    },
+  });
+}
+
+// ─── Flashcard: claim a side (atomic, race-safe via RPC) ─────────────────
+
+export type ClaimSideResult = "ok" | "full" | "already_picked" | "not_checked_in";
+
+export function useClaimSide() {
+  return useMutation({
+    mutationFn: async ({ gameId, team }: { gameId: string; team: 1 | 2 }): Promise<ClaimSideResult> => {
+      const { data, error } = await supabase.rpc("claim_side", {
+        p_game_id: gameId,
+        p_team: team,
+      });
+      if (error) throw error;
+      return data as ClaimSideResult;
+    },
+  });
+}
+
+// ─── Flashcard: lock teams and run coin flip once ─────────────────────────
+
+export function useLockTeams() {
+  return useMutation({
+    mutationFn: async ({ gameId }: { gameId: string }): Promise<"ok" | "already_locked" | "not_found"> => {
+      const { data, error } = await supabase.rpc("lock_teams_and_flip", {
+        p_game_id: gameId,
+      });
+      if (error) throw error;
+      return data as "ok" | "already_locked" | "not_found";
+    },
+  });
 }

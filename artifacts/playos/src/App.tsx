@@ -83,6 +83,7 @@ function AppContent() {
           <Route path="/policies/refund" component={RefundPolicy} />
           <Route path="/policies/delivery" component={DeliveryPolicy} />
           <Route path="/my-games" component={MyGames} />
+          <Route path="/flashcard/:gameId" component={FlashcardPreview} />
           <Route path="/flashcard" component={FlashcardPreview} />
 
           {/* Arabic Routes */}
