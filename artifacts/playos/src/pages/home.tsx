@@ -2,15 +2,17 @@ import { useI18n } from "@/lib/i18n";
 import { useGetFeaturedGames } from "@/lib/supabase-api";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { CalendarDays, Clock, MapPin, Users } from "lucide-react";
-import { format } from "date-fns";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { GameCard } from "@/components/GameCard";
 
 export default function Home() {
   const { t, language } = useI18n();
-  const { data: featuredGames, isLoading } = useGetFeaturedGames();
+  const { data: featuredGamesRaw, isLoading } = useGetFeaturedGames();
   const getPath = (path: string) => (language === "ar" ? `/ar${path}` : path);
+
+  // A fully booked game has nothing to offer here — Featured is meant to
+  // pull people toward games they can actually join.
+  const featuredGames = featuredGamesRaw?.filter((g) => g.bookedCount < g.capacity);
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -85,48 +87,13 @@ export default function Home() {
         ) : featuredGames && featuredGames.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {featuredGames.map((game) => (
-              <Card key={game.id} className="flex flex-col overflow-hidden hover:border-primary/50 transition-colors">
-                <div className="bg-muted p-4 border-b flex justify-between items-start">
-                  <Badge variant={game.status === "open" ? "default" : "secondary"}>
-                    {game.status === "open" ? (language === "ar" ? "مفتوح" : "Open") : t("games.full")}
-                  </Badge>
-                  <div className="text-lg font-bold">
-                    {t("game.price")} {game.price}
-                  </div>
-                </div>
-                <CardHeader>
-                  <CardTitle className="line-clamp-1">{game.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-1">
-                    <MapPin className="h-3 w-3" />
-                    <span className="line-clamp-1">{game.pitchName}</span>
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="flex-1 space-y-3 text-sm">
-                  <div className="flex items-center justify-between text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4" />
-                      <span>{format(new Date(game.kickoffTime), "MMM d, yyyy")}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Clock className="h-4 w-4" />
-                      <span>{format(new Date(game.kickoffTime), "h:mm a")}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    <span>
-                      {game.capacity - game.bookedCount} {t("games.spots_left")} ({game.capacity} {language === "ar" ? "العدد الإجمالي" : "total"})
-                    </span>
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full" asChild disabled={game.status === "full"}>
-                    <Link href={getPath(`/game/${game.id}`)}>
-                      {t("games.book")}
-                    </Link>
-                  </Button>
-                </CardFooter>
-              </Card>
+              <GameCard
+                key={game.id}
+                game={game}
+                getPath={getPath}
+                bookLabel={t("games.book")}
+                fullLabel={t("games.full")}
+              />
             ))}
           </div>
         ) : (

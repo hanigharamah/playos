@@ -238,20 +238,33 @@ export function useHostLogin() {
 
 // ─── Games ────────────────────────────────────────────────────────────────
 
+// Booking rows aren't readable under RLS for logged-out visitors (only a
+// player can read their own booking, or an organiser their own game's).
+// This RPC returns counts only — no names, no ids — so the public game
+// cards show real occupancy even when nobody's signed in.
+async function fetchPublicGameCounts(): Promise<Map<string, number>> {
+  const { data, error } = await supabase.rpc("get_public_game_counts");
+  if (error || !data) return new Map();
+  return new Map(data.map((r: any) => [r.game_id, r.booked_count]));
+}
+
 export function useGetFeaturedGames() {
   return useQuery({
     queryKey: ["/api/games/featured"],
     queryFn: async (): Promise<GameSummary[]> => {
-      const { data, error } = await supabase
-        .from("games")
-        .select("*, bookings(id, payment_status)")
-        .eq("is_public", true)
-        .eq("status", "open")
-        .gte("kickoff_time", new Date().toISOString())
-        .order("kickoff_time", { ascending: true })
-        .limit(6);
+      const [{ data, error }, counts] = await Promise.all([
+        supabase
+          .from("games")
+          .select("*, bookings(id, payment_status)")
+          .eq("is_public", true)
+          .eq("status", "open")
+          .gte("kickoff_time", new Date().toISOString())
+          .order("kickoff_time", { ascending: true })
+          .limit(6),
+        fetchPublicGameCounts(),
+      ]);
       if (error) throw error;
-      return mapGameSummaryList(data ?? []);
+      return mapGameSummaryList(data ?? [], counts);
     },
   });
 }
@@ -260,20 +273,23 @@ export function useListGames(params?: { city?: string }) {
   return useQuery({
     queryKey: getListGamesQueryKey(params),
     queryFn: async (): Promise<GameSummary[]> => {
-      const { data, error } = await supabase
-        .from("games")
-        .select("*, bookings(id, payment_status)")
-        .eq("is_public", true)
-        .neq("status", "cancelled")
-        .gte("kickoff_time", new Date().toISOString())
-        .order("kickoff_time", { ascending: true });
+      const [{ data, error }, counts] = await Promise.all([
+        supabase
+          .from("games")
+          .select("*, bookings(id, payment_status)")
+          .eq("is_public", true)
+          .neq("status", "cancelled")
+          .gte("kickoff_time", new Date().toISOString())
+          .order("kickoff_time", { ascending: true }),
+        fetchPublicGameCounts(),
+      ]);
       if (error) throw error;
-      return mapGameSummaryList(data ?? []);
+      return mapGameSummaryList(data ?? [], counts);
     },
   });
 }
 
-function mapGameSummaryList(rows: any[]): GameSummary[] {
+function mapGameSummaryList(rows: any[], counts?: Map<string, number>): GameSummary[] {
   return rows.map((g) => ({
     id: g.id,
     title: g.title,
@@ -283,7 +299,7 @@ function mapGameSummaryList(rows: any[]): GameSummary[] {
     price: Number(g.price),
     capacity: g.capacity,
     status: g.status,
-    bookedCount: (g.bookings as any[]).filter((b) => b.payment_status === "paid").length,
+    bookedCount: counts?.get(g.id) ?? (g.bookings as any[]).filter((b) => b.payment_status === "paid").length,
     durationMinutes: g.duration_minutes,
     isPublic: g.is_public,
     mapsUrl: g.maps_url ?? null,
