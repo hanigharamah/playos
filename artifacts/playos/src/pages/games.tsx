@@ -11,7 +11,7 @@ export default function Games() {
   const { data: games, isLoading } = useListGames();
   const getPath = (path: string) => (language === "ar" ? `/ar${path}` : path);
 
-  // Refs for smooth-scroll per pitch section
+  // Refs for smooth-scroll to a pitch's nearest upcoming game, from the map
   const pitchRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const handlePitchClick = (pitchName: string) => {
@@ -21,24 +21,28 @@ export default function Games() {
     }
   };
 
-  // Group games by pitch
-  const pitchGroups: Record<
-    string,
-    { pitchName: string; locationText?: string | null; games: NonNullable<typeof games> }
-  > = {};
+  // Group games by day (Sunday, Monday, ...). The query already orders by
+  // kickoff_time ascending, so this preserves true chronological order —
+  // day sections naturally appear Sun → Sat as the dates roll forward.
+  const dayGroups: { dayKey: string; label: string; games: NonNullable<typeof games> }[] = [];
   if (games) {
     for (const game of games) {
-      if (!pitchGroups[game.pitchName]) {
-        pitchGroups[game.pitchName] = {
-          pitchName: game.pitchName,
-          locationText: game.locationText,
-          games: [],
-        };
+      const dayKey = format(new Date(game.kickoffTime), "yyyy-MM-dd");
+      let group = dayGroups.find((g) => g.dayKey === dayKey);
+      if (!group) {
+        group = { dayKey, label: format(new Date(game.kickoffTime), "EEEE, d MMM"), games: [] };
+        dayGroups.push(group);
       }
-      pitchGroups[game.pitchName].games.push(game);
+      group.games.push(game);
     }
   }
-  const pitchList = Object.values(pitchGroups);
+
+  // First card for each pitch, so the map's pitch click can still scroll to it.
+  const firstPitchCardRef = (pitchName: string) => (el: HTMLDivElement | null) => {
+    if (el && !pitchRefs.current[pitchName]) {
+      pitchRefs.current[pitchName] = el;
+    }
+  };
 
   return (
     <div className="min-h-screen bg-transparent">
@@ -76,28 +80,17 @@ export default function Games() {
               </div>
             ))}
           </div>
-        ) : pitchList.length > 0 ? (
+        ) : dayGroups.length > 0 ? (
           <div className="space-y-8">
-            {pitchList.map((group) => (
-              <div
-                key={group.pitchName}
-                ref={(el) => { pitchRefs.current[group.pitchName] = el; }}
-                className="scroll-mt-20"
-              >
-                {/* Pitch section header */}
-                <div className="flex items-start gap-2 mb-3">
-                  <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" style={{ color: "#0A84FF" }} />
-                  <div>
-                    <h2 className="text-sm font-bold" style={{ color: "#1D3557" }}>
-                      {group.pitchName}
-                    </h2>
-                    {group.locationText && (
-                      <p className="text-xs" style={{ color: "#6C6C70" }}>
-                        {group.locationText}
-                      </p>
-                    )}
-                  </div>
-                </div>
+            {dayGroups.map((group) => (
+              <div key={group.dayKey} className="scroll-mt-20">
+                {/* Day section header */}
+                <h2
+                  className="text-sm font-bold mb-3"
+                  style={{ color: "#1D3557" }}
+                >
+                  {group.label}
+                </h2>
 
                 {/* Game cards */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -108,7 +101,11 @@ export default function Games() {
                       pct >= 1 ? "#FF3B30" : pct >= 0.8 ? "#FF9F0A" : "#0A84FF";
 
                     return (
-                      <div key={game.id} className="card-ios overflow-hidden flex flex-col">
+                      <div
+                        key={game.id}
+                        ref={firstPitchCardRef(game.pitchName)}
+                        className="card-ios overflow-hidden flex flex-col"
+                      >
                         {/* Status + price row */}
                         <div className="px-4 py-2.5 flex justify-between items-center border-b border-[#E5E5EA]">
                           <span
@@ -138,6 +135,13 @@ export default function Games() {
                           >
                             {game.title}
                           </h3>
+                          <div
+                            className="flex items-center gap-1 text-xs mb-1.5"
+                            style={{ color: "#6C6C70" }}
+                          >
+                            <MapPin className="h-3 w-3 flex-shrink-0" />
+                            <span className="truncate">{game.pitchName}</span>
+                          </div>
                           <div
                             className="flex items-center gap-3 text-xs mb-3"
                             style={{ color: "#6C6C70" }}
