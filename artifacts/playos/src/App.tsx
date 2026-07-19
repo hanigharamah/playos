@@ -3,7 +3,7 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider, useAuth } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
@@ -31,6 +31,16 @@ import MyGames from "@/pages/my-games";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
+
+// The marketing landing page (hero video etc.) is for logged-out visitors
+// only. A logged-in user's "home" is their bookings, so "/" resolves to
+// MyGames once auth has settled. Held on a blank frame during the brief
+// auth check to avoid flashing the landing page before redirecting away.
+function HomeOrMyGames() {
+  const { user, isLoading } = useAuth();
+  if (isLoading) return null;
+  return user ? <MyGames /> : <Home />;
+}
 
 function AppContent() {
   // Pointer-tracked specular sheen for all .glass surfaces.
@@ -64,7 +74,7 @@ function AppContent() {
       <Navbar />
       <main className="flex-1 flex flex-col">
         <Switch>
-          <Route path="/" component={Home} />
+          <Route path="/" component={HomeOrMyGames} />
           <Route path="/games" component={Games} />
           <Route path="/game/new" component={CreateGame} />
           <Route path="/game/:id/manage" component={GameManage} />
@@ -84,7 +94,7 @@ function AppContent() {
           <Route path="/my-games" component={MyGames} />
 
           {/* Arabic Routes */}
-          <Route path="/ar" component={Home} />
+          <Route path="/ar" component={HomeOrMyGames} />
           <Route path="/ar/games" component={Games} />
           <Route path="/ar/game/new" component={CreateGame} />
           <Route path="/ar/game/:id/manage" component={GameManage} />

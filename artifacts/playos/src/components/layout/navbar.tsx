@@ -55,7 +55,7 @@ export function Navbar() {
       <div className="mx-auto px-4 flex h-14 items-center justify-between max-w-5xl">
         {/* Logo */}
         <div className="flex items-center gap-7">
-          <Link href={getPath("/")} className="flex items-center">
+          <Link href={user ? getPath("/my-games") : getPath("/")} className="flex items-center">
             <span
               className="text-xl font-extrabold uppercase select-none"
               style={{ color: "#1D3557", letterSpacing: "-0.03em" }}
