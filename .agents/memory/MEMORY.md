@@ -1,1 +1,0 @@
-- [JWT auth in Replit proxy](jwt-auth-replit.md) — session cookies are silently blocked in Replit's proxied preview; use JWT in localStorage + setAuthTokenGetter instead
