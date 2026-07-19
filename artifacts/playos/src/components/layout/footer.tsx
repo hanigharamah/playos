@@ -23,7 +23,7 @@ export function Footer() {
               <span className="text-xl font-extrabold uppercase" style={{ background: "linear-gradient(120deg, #FF8A00 0%, #FF3D9A 50%, #8E3DFF 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", letterSpacing: "-0.03em" }}>OS</span>
             </div>
             <p className="text-sm text-[#6C6C70] max-w-xs leading-relaxed">
-              The #1 football pickup game booking platform in Saudi Arabia. Book your spot, show up, play.
+              Find a game. Grab a spot. Play.
             </p>
           </div>
 
