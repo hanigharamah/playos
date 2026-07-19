@@ -143,8 +143,8 @@ export default function MyGames() {
   return (
     <div className="min-h-screen bg-transparent">
       <div className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-        <h1 className="text-2xl font-bold" style={{ color: "#1D3557" }}>
-          My Games
+        <h1 className="font-hand text-3xl" style={{ color: "#FF9F0A" }}>
+          coming up
         </h1>
 
         {/* Tabs */}
