@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { format } from "date-fns";
-import { MapPin, Users, Calendar, Clock, Ticket } from "lucide-react";
+import { MapPin, Users, Calendar, Clock, Ticket, ArrowRight } from "lucide-react";
 
 // ── Occupancy state machine ────────────────────────────────────────────────
 // Evaluated top-down, first match wins — this keeps "Almost full" / "Last
@@ -131,21 +131,21 @@ export function GameCard({ game, getPath, bookLabel, fullLabel, className }: Gam
         </div>
       </div>
 
-      {/* CTA button */}
+      {/* CTA button — fixed blue glass, not tied to the occupancy accent;
+          badge + bar are what carry the occupancy color. */}
       <div className="px-4 pb-4">
         <Link href={getPath(`/game/${game.id}`)}>
           <button
             disabled={isFull}
-            className="w-full py-2.5 rounded-[10px] text-sm font-bold transition-all hover:-translate-y-px disabled:cursor-not-allowed flex items-center justify-center gap-1.5"
-            style={{
-              background: isFull
-                ? "#E5E5EA"
-                : `linear-gradient(90deg, ${ACCENT.peach}33, ${ACCENT.coral}33, ${ACCENT.pink}33, ${ACCENT.purple}33)`,
-              color: isFull ? "#6C6C70" : "#1D3557",
-            }}
+            className="btn-pill btn-pill-book w-full text-base font-bold flex items-center justify-between"
           >
-            <Ticket className="h-4 w-4" />
-            {isFull ? fullLabel : bookLabel}
+            <span className="flex items-center gap-2">
+              <Ticket className="h-4 w-4" />
+              {isFull ? fullLabel : bookLabel}
+            </span>
+            <span className="btn-pill-book-arrow">
+              <ArrowRight className="h-4 w-4" />
+            </span>
           </button>
         </Link>
       </div>

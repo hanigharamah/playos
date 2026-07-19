@@ -47,7 +47,7 @@ function AppContent() {
   // Pointer-tracked specular sheen for all .glass surfaces.
   useEffect(() => {
     const onMove = (e: PointerEvent) => {
-      const el = (e.target as HTMLElement | null)?.closest?.(".glass") as HTMLElement | null;
+      const el = (e.target as HTMLElement | null)?.closest?.(".glass, .btn-pill-book") as HTMLElement | null;
       if (!el) return;
       const r = el.getBoundingClientRect();
       el.style.setProperty("--mx", `${((e.clientX - r.left) / r.width) * 100}%`);
