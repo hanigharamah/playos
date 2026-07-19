@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { Link } from "wouter";
 import { useGetDashboardPayouts, useSavePayoutDetails, getGetDashboardPayoutsQueryKey } from "@/lib/supabase-api";
 import { useAuth } from "@/lib/auth";
 import { isOperator } from "@/lib/config";
@@ -59,21 +58,6 @@ export default function Payouts() {
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">
-      {/* Dashboard / Payouts toggle navigation */}
-      <div className="flex justify-center mb-8">
-        <div className="inline-flex items-center bg-muted rounded-xl p-1 gap-1">
-          <Link
-            href="/dashboard"
-            className="px-5 py-1.5 rounded-lg text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-          >
-            Dashboard
-          </Link>
-          <span className="px-5 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-sm">
-            Payouts
-          </span>
-        </div>
-      </div>
-
       <h1 className="text-2xl font-bold mb-6">{t("dash.payouts")}</h1>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

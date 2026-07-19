@@ -17,6 +17,7 @@ import AuthPage from "@/pages/auth";
 import OpsLogin from "@/pages/ops-login";
 import Dashboard from "@/pages/dashboard";
 import Payouts from "@/pages/dashboard/payouts";
+import DashboardSettings from "@/pages/dashboard/settings";
 import GameManage from "@/pages/game/manage";
 import CreateGame from "@/pages/game/new";
 import PaymentCallback from "@/pages/payment/callback";
@@ -83,6 +84,7 @@ function AppContent() {
           <Route path="/x/:token" component={OpsLogin} />
           <Route path="/dashboard" component={Dashboard} />
           <Route path="/dashboard/payouts" component={Payouts} />
+          <Route path="/dashboard/settings" component={DashboardSettings} />
           <Route path="/payment/checkout" component={Checkout} />
           <Route path="/payment/callback" component={PaymentCallback} />
           <Route path="/checkin/:pitchId" component={CheckIn} />
@@ -103,6 +105,7 @@ function AppContent() {
           <Route path="/ar/x/:token" component={OpsLogin} />
           <Route path="/ar/dashboard" component={Dashboard} />
           <Route path="/ar/dashboard/payouts" component={Payouts} />
+          <Route path="/ar/dashboard/settings" component={DashboardSettings} />
           <Route path="/ar/payment/checkout" component={Checkout} />
           <Route path="/ar/payment/callback" component={PaymentCallback} />
           <Route path="/ar/checkin/:pitchId" component={CheckIn} />

@@ -12,50 +12,65 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Globe, Menu, X, LogOut, LayoutDashboard, Gamepad2 } from "lucide-react";
+import { Globe, Menu, X, LogOut, Gamepad2 } from "lucide-react";
 import { useState } from "react";
 
 export function Navbar() {
   const { user, logout } = useAuth();
   const { language, toggleLanguage, t } = useI18n();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [location] = useLocation();
 
   const isArabic = language === "ar";
   const getPath = (path: string) => (isArabic ? `/ar${path}` : path);
+  const isActive = (path: string) => location === getPath(path);
 
-  const NavLinks = () => (
-    <>
-      <Link
-        href={getPath("/games")}
-        className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
-      >
-        {t("nav.games")}
-      </Link>
-      {user?.role === "player" && (
-        <Link
-          href={getPath("/my-games")}
-          className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
-        >
-          My Games
-        </Link>
-      )}
-      {isOperator(user?.role) && (
-        <Link
-          href={getPath("/dashboard")}
-          className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
-        >
-          {t("nav.dashboard")}
-        </Link>
-      )}
-    </>
+  const operatorLink = (path: string, label: string) => (
+    <Link
+      href={getPath(path)}
+      className={`text-sm font-medium transition-colors ${
+        isActive(path) ? "text-[#1C1C1E] font-semibold" : "text-[#6C6C70] hover:text-[#1C1C1E]"
+      }`}
+    >
+      {label}
+    </Link>
   );
+
+  const NavLinks = () =>
+    isOperator(user?.role) ? (
+      <>
+        {operatorLink("/dashboard", t("nav.dashboard"))}
+        {operatorLink("/dashboard/payouts", "Payouts")}
+        {operatorLink("/dashboard/settings", "Settings")}
+      </>
+    ) : (
+      <>
+        <Link
+          href={getPath("/games")}
+          className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
+        >
+          {t("nav.games")}
+        </Link>
+        {user?.role === "player" && (
+          <Link
+            href={getPath("/my-games")}
+            className="text-sm font-medium text-[#6C6C70] hover:text-[#1C1C1E] transition-colors"
+          >
+            My Games
+          </Link>
+        )}
+      </>
+    );
 
   return (
     <header className="sticky top-0 z-50 w-full glass-nav">
       <div className="mx-auto px-4 flex h-14 items-center justify-between max-w-5xl">
         {/* Logo */}
         <div className="flex items-center gap-7">
-          <Link href={user ? getPath("/my-games") : getPath("/")} className="flex items-center">
+          <Link
+            href={isOperator(user?.role) ? getPath("/dashboard") : user ? getPath("/my-games") : getPath("/")}
+            className="flex items-center"
+          >
             <span
               className="text-xl font-extrabold uppercase select-none"
               style={{ color: "#1D3557", letterSpacing: "-0.03em" }}
@@ -118,14 +133,6 @@ export function Navbar() {
                     <Link href={getPath("/my-games")} className="cursor-pointer w-full flex items-center">
                       <Gamepad2 className="mr-2 h-4 w-4" />
                       <span>My Games</span>
-                    </Link>
-                  </DropdownMenuItem>
-                )}
-                {isOperator(user.role) && (
-                  <DropdownMenuItem asChild>
-                    <Link href={getPath("/dashboard")} className="cursor-pointer w-full flex items-center">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
-                      <span>{t("nav.dashboard")}</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
