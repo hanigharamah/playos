@@ -1131,7 +1131,6 @@ export async function performCheckIn(
 
 export interface RosterEntry {
   bookingId: string;
-  userId: string | null;
   name: string;
   team: 1 | 2 | null;
   checkedIn: boolean;
@@ -1183,26 +1182,25 @@ export function useGameRoster(gameId: string | null) {
     enabled: !!gameId,
     refetchInterval: 10000,
     queryFn: async (): Promise<GameRoster> => {
-      const [{ data: gameRow }, { data: bookings }] = await Promise.all([
+      // Names come through the get_game_roster RPC, which returns only
+      // name + team + checked_in (never phone/email/user_id). The games row
+      // supplies capacity and the coin-flip state.
+      const [{ data: gameRow }, { data: rosterRows, error: rosterErr }] = await Promise.all([
         supabase
           .from("games")
           .select("capacity, kickoff_team, teams_locked_at")
           .eq("id", gameId!)
           .single(),
-        supabase
-          .from("bookings")
-          .select("id, user_id, team, checked_in, payment_status, guest_name, users(name)")
-          .eq("game_id", gameId!)
-          .in("payment_status", ["paid", "pending"]),
+        supabase.rpc("get_game_roster", { p_game_id: gameId! }),
       ]);
+      if (rosterErr) throw rosterErr;
 
       const capacity = gameRow?.capacity ?? 12;
-      const entries: RosterEntry[] = (bookings ?? []).map((b: any) => ({
-        bookingId: b.id,
-        userId: b.user_id,
-        name: b.users?.name ?? b.guest_name ?? "Player",
-        team: b.team as 1 | 2 | null,
-        checkedIn: b.checked_in ?? false,
+      const entries: RosterEntry[] = (rosterRows ?? []).map((r: any) => ({
+        bookingId: r.booking_id,
+        name: r.name ?? "Player",
+        team: (r.team as 1 | 2 | null) ?? null,
+        checkedIn: r.checked_in ?? false,
       }));
 
       const checkedIn = entries.filter((e) => e.checkedIn);
