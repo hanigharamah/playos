@@ -762,6 +762,144 @@
   .pill-blob { animation: none; }
 }
 
+/* ── Hero trust badge row (dark glass, icon + title + subtitle, dividers) ──── */
+.hero-badge-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.06);
+  backdrop-filter: blur(8px) saturate(105%);
+  -webkit-backdrop-filter: blur(8px) saturate(105%);
+  border: 0.5px solid rgba(255,255,255,0.06);
+  border-radius: 14px;
+  padding: 14px 8px;
+  margin: 0 auto 40px;
+  width: fit-content;
+  max-width: calc(100vw - 32px);
+}
+.hero-badge-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255,255,255,0.88);
+  padding: 0 20px;
+}
+.hero-badge-item:first-child { padding-left: 12px; }
+.hero-badge-item:last-child  { padding-right: 12px; }
+.hero-badge-divider {
+  width: 1px;
+  height: 36px;
+  background: rgba(255,255,255,0.18);
+  flex-shrink: 0;
+}
+.hero-badge-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.95);
+  white-space: nowrap;
+  line-height: 1.3;
+}
+.hero-badge-sub {
+  font-size: 0.68rem;
+  color: rgba(255,255,255,0.45);
+  white-space: nowrap;
+  line-height: 1.3;
+}
+
+/* ── Hero CTA ─────────────────────────────────────────────────────────────── */
+.hero-cta-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Neon underglow — thin precise LED strip below the pill */
+.hero-neon-glow {
+  position: absolute;
+  bottom: -12px;
+  left: 0;
+  right: 0;
+  height: 16px;
+  background: linear-gradient(90deg,
+    transparent  0%,
+    #FF9F0A     18%,
+    #FF3D9A     50%,
+    #7B3FF2     82%,
+    transparent 100%
+  );
+  filter: blur(8px);
+  border-radius: 50%;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.82;
+}
+
+/* Hero Browse Games pill */
+.btn-pill-hero {
+  position: relative;
+  z-index: 1;
+  color: #1C1C2E;
+  padding: 10px 22px 10px 10px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  min-width: 260px;
+  background:
+    radial-gradient(120% 150% at 8% 6%, rgba(255,255,255,0.97) 0%, rgba(255,255,255,0) 60%),
+    rgba(255,253,250,0.9);
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,1),
+    inset 0 -6px 14px -8px rgba(255,255,255,0.9),
+    0 2px 6px rgba(0,0,0,0.07);
+}
+.btn-pill-hero::after {
+  border: 1px solid rgba(255,255,255,0.82);
+}
+
+/* Light gray icon circle */
+.hero-pill-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.06);
+  border: 0.5px solid rgba(0,0,0,0.08);
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+/* Bare purple arrow */
+.hero-pill-arrow {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #7B3FF2;
+  margin-left: 14px;
+  flex-shrink: 0;
+}
+
+/* Scroll chevron — white on dark background */
+.hero-chevron {
+  display: flex;
+  justify-content: center;
+  color: rgba(255,255,255,0.35);
+  animation: chevronBounce 2.4s ease-in-out infinite;
+}
+
+@keyframes chevronBounce {
+  0%, 100% { transform: translateY(0); opacity: 0.35; }
+  50%       { transform: translateY(7px); opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-chevron { animation: none; }
+}
+
 .btn-pill-share:hover {
   box-shadow:
     inset 0 1.5px 0 rgba(255,255,255,0.95),

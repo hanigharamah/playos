@@ -1,24 +1,41 @@
 import { useI18n } from "@/lib/i18n";
 import { useGetFeaturedGames } from "@/lib/supabase-api";
 import { Link } from "wouter";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { GameCard } from "@/components/GameCard";
+import { MapPin, Users, ShieldCheck, ChevronDown, ArrowRight } from "lucide-react";
+
+function SoccerIcon({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#4C4C56" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="9.5" />
+      <polygon points="12,6.5 15.2,8.8 14.0,12.4 10.0,12.4 8.8,8.8" />
+      <line x1="12"   y1="6.5"  x2="12"   y2="2.5" />
+      <line x1="15.2" y1="8.8"  x2="19.2" y2="6.2" />
+      <line x1="14.0" y1="12.4" x2="17.4" y2="16.0" />
+      <line x1="10.0" y1="12.4" x2="6.6"  y2="16.0" />
+      <line x1="8.8"  y1="8.8"  x2="4.8"  y2="6.2" />
+    </svg>
+  );
+}
 
 export default function Home() {
   const { t, language } = useI18n();
   const { data: featuredGamesRaw, isLoading } = useGetFeaturedGames();
   const getPath = (path: string) => (language === "ar" ? `/ar${path}` : path);
 
-  // A fully booked game has nothing to offer here — Featured is meant to
-  // pull people toward games they can actually join.
   const featuredGames = featuredGamesRaw?.filter((g) => g.bookedCount < g.capacity);
+
+  const isAr = language === "ar";
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section className="relative pt-16 pb-24 sm:pt-20 lg:pt-28 lg:pb-36 overflow-hidden">
-        {/* Background video — masked so its edges fade into the cream gradient */}
+      <section
+        className="relative flex flex-col items-center justify-center"
+        style={{ minHeight: "88vh" }}
+      >
+        {/* Background video */}
         <video
           className="hero-video absolute inset-0 w-full h-full object-cover"
           autoPlay
@@ -30,26 +47,64 @@ export default function Home() {
           <source src="/hero-bg.mp4" type="video/mp4" />
         </video>
 
-        {/* Soft centred light scrim for text legibility (transparent at edges) */}
+        {/* Dark overlay so text pops on night-time pitch */}
         <div
           className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "radial-gradient(ellipse 75% 55% at 50% 50%, rgba(251,247,242,0.32), rgba(251,247,242,0) 72%)",
-          }}
+          style={{ background: "rgba(0,0,0,0.28)" }}
         />
 
-        <div className="container mx-auto px-4 relative z-10 text-center">
+        <div className="container mx-auto px-4 relative z-10 text-center flex flex-col items-center">
           <h1
-            className="font-hand mb-9 max-w-3xl mx-auto"
-            style={{ color: "#FF9F0A", fontSize: "clamp(2rem, 7vw, 4.5rem)", lineHeight: 1.12 }}
+            className="font-hand mb-8 max-w-4xl mx-auto"
+            style={{ color: "#FF9F0A", fontSize: "clamp(3rem, 9vw, 6.5rem)", lineHeight: 1.08 }}
           >
             {t("hero.title")}
           </h1>
-          <div className="flex justify-center">
-            <Button size="lg" className="text-base sm:text-lg px-8" asChild>
-              <Link href={getPath("/games")}>{t("hero.cta")}</Link>
-            </Button>
+
+          {/* Trust badge row — dark glass, icon + title/subtitle + dividers */}
+          <div className="hero-badge-row">
+            <div className="hero-badge-item">
+              <MapPin size={22} strokeWidth={1.5} />
+              <div>
+                <div className="hero-badge-title">{isAr ? "قريب منك"       : "Near you"}</div>
+                <div className="hero-badge-sub">{isAr ? "ألعاب قريبة"      : "Games close by"}</div>
+              </div>
+            </div>
+            <div className="hero-badge-divider" />
+            <div className="hero-badge-item">
+              <Users size={22} strokeWidth={1.5} />
+              <div>
+                <div className="hero-badge-title">{isAr ? "جميع المستويات" : "All levels"}</div>
+                <div className="hero-badge-sub">{isAr ? "الجميع مرحب به"   : "Everyone's welcome"}</div>
+              </div>
+            </div>
+            <div className="hero-badge-divider" />
+            <div className="hero-badge-item">
+              <ShieldCheck size={22} strokeWidth={1.5} />
+              <div>
+                <div className="hero-badge-title">{isAr ? "آمن وموثوق"     : "Safe & trusted"}</div>
+                <div className="hero-badge-sub">{isAr ? "ملاعب معتمدة"     : "Verified venues"}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Hero CTA — neon gradient underglow below the pill */}
+          <div className="flex justify-center mb-10">
+            <div className="hero-cta-wrap">
+              <div className="hero-neon-glow" />
+              <Link href={getPath("/games")} className="btn-pill btn-pill-hero">
+                <span className="hero-pill-icon"><SoccerIcon size={22} /></span>
+                {t("hero.cta")}
+                <span className="hero-pill-arrow">
+                  <ArrowRight size={16} strokeWidth={2} />
+                </span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Scroll chevron */}
+          <div className="hero-chevron">
+            <ChevronDown size={22} strokeWidth={1.5} />
           </div>
         </div>
       </section>
@@ -65,11 +120,12 @@ export default function Home() {
               {language === "ar" ? "مباريات مميزة" : "Featured Games"}
             </h2>
           </div>
-          <Button variant="ghost" asChild>
-            <Link href={getPath("/games")}>
-              {language === "ar" ? "عرض الكل" : "View All"}
-            </Link>
-          </Button>
+          <Link
+            href={getPath("/games")}
+            className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            {language === "ar" ? "عرض الكل" : "View All"}
+          </Link>
         </div>
 
         {isLoading ? (
