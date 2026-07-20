@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useLogin, useSignUp } from "@/lib/supabase-api";
 import { storeAuthToken } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
+import { FullExperienceSheet, shouldShowFullExperience } from "@/components/FullExperienceSheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,11 +14,12 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const returnUrl = new URLSearchParams(window.location.search).get("returnUrl") || "/";
+  const [onboardUserId, setOnboardUserId] = useState<string | null>(null);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [signupForm, setSignupForm] = useState({ name: "", email: "", phone: "", password: "" });
@@ -50,7 +52,13 @@ export default function AuthPage() {
         onSuccess: (user) => {
           if (user.token) storeAuthToken(user.token);
           queryClient.setQueryData(["/api/auth/me"], user);
-          setLocation(returnUrl);
+          // New player: offer match reminders once, right after signup,
+          // before sending them on to the game they were booking.
+          if (user.id && shouldShowFullExperience()) {
+            setOnboardUserId(user.id);
+          } else {
+            setLocation(returnUrl);
+          }
         },
         onError: (err: any) => {
           toast({ title: "Error", description: err?.data?.error || "Signup failed", variant: "destructive" });
@@ -168,6 +176,13 @@ export default function AuthPage() {
           </Tabs>
         </CardContent>
       </Card>
+
+      <FullExperienceSheet
+        open={onboardUserId !== null}
+        userId={onboardUserId ?? ""}
+        isAr={language === "ar"}
+        onDone={() => setLocation(returnUrl)}
+      />
     </div>
   );
 }
