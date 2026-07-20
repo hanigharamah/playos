@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, SectionList, RefreshControl, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { format } from "date-fns";
+import { AlertCircle } from "lucide-react-native";
 import { useGetMyBookings, useCancelBooking, type MyBooking } from "@/lib/api";
 import { GlassCard } from "@/components/GlassCard";
+import { SegmentedControl } from "@/components/SegmentedControl";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -18,61 +20,71 @@ export default function MyGames() {
   const { data, isLoading, refetch, isRefetching } = useGetMyBookings();
   const cancelBooking = useCancelBooking();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
+  const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => { screen("MyGames"); }, []);
 
-  const sections = [
-    { title: "Upcoming", data: data?.upcoming ?? [] },
-    { title: "Past", data: data?.past ?? [] },
-  ].filter((s) => s.data.length > 0);
+  const list = (tab === "upcoming" ? data?.upcoming : data?.past) ?? [];
 
   const handleCancel = (booking: MyBooking) => {
-    Alert.alert(
-      "Cancel booking?",
-      "Refund depends on how close it is to kickoff.",
-      [
-        { text: "Keep spot", style: "cancel" },
-        {
-          text: "Cancel booking",
-          style: "destructive",
-          onPress: () => {
-            setCancellingId(booking.id);
-            cancelBooking.mutate(
-              { bookingId: booking.id },
-              {
-                onSuccess: (res) => Alert.alert("Cancelled", res.message),
-                onSettled: () => setCancellingId(null),
-              },
-            );
-          },
+    Alert.alert("Cancel booking?", "Refund depends on how close it is to kickoff.", [
+      { text: "Keep spot", style: "cancel" },
+      {
+        text: "Cancel booking",
+        style: "destructive",
+        onPress: () => {
+          setCancellingId(booking.id);
+          cancelBooking.mutate(
+            { bookingId: booking.id },
+            { onSuccess: (res) => Alert.alert("Cancelled", res.message), onSettled: () => setCancellingId(null) },
+          );
         },
-      ],
-    );
+      },
+    ]);
   };
 
   return (
-    <SectionList
+    <FlatList
       style={styles.wrap}
       contentContainerStyle={styles.content}
-      sections={sections}
+      data={list}
       keyExtractor={(item) => item.id}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
-      ListHeaderComponent={<Text style={styles.header}>My Games</Text>}
+      ListHeaderComponent={
+        <View>
+          <Text style={styles.header}>Your bookings</Text>
+          <SegmentedControl
+            options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]}
+            value={tab}
+            onChange={setTab}
+          />
+          {tab === "upcoming" && list.length > 0 && (
+            <View style={styles.noticeCard}>
+              <AlertCircle size={16} color={colors.orange} />
+              <View style={{ flex: 1 }}>
+                <Text style={styles.noticeTitle}>Can't make it?</Text>
+                <Text style={styles.noticeBody}>Cancel or reschedule up to 2 hours before match time.</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      }
       ListEmptyComponent={
         !isLoading ? (
           <View style={styles.empty}>
-            <HandwrittenHeader style={styles.emptyTitle}>coming up</HandwrittenHeader>
-            <Text style={styles.emptyBody}>Your booked games will show up here.</Text>
+            <HandwrittenHeader style={styles.emptyTitle}>{tab === "upcoming" ? "coming up" : "nothing yet"}</HandwrittenHeader>
+            <Text style={styles.emptyBody}>
+              {tab === "upcoming" ? "Your booked games will show up here." : "Past games will show up here."}
+            </Text>
           </View>
         ) : null
       }
-      renderSectionHeader={({ section }) => <Text style={styles.sectionLabel}>{section.title}</Text>}
       renderItem={({ item }) => {
         const status = STATUS_LABEL[item.paymentStatus] ?? { label: item.paymentStatus, color: colors.inkMuted };
         return (
           <Pressable
             onPress={() => router.push(`/game/${item.gameId}`)}
-            onLongPress={() => handleCancel(item)}
+            onLongPress={() => tab === "upcoming" && handleCancel(item)}
             style={styles.cardWrap}
           >
             <GlassCard>
@@ -82,9 +94,7 @@ export default function MyGames() {
                   <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
                 </View>
               </View>
-              <Text style={styles.meta}>
-                {item.game.pitchName} · {format(new Date(item.game.kickoffTime), "d MMM, h:mm a")}
-              </Text>
+              <Text style={styles.meta}>{item.game.pitchName} · {format(new Date(item.game.kickoffTime), "d MMM, h:mm a")}</Text>
               <Text style={styles.team}>Team {item.team} · Slot {item.slotIndex + 1}</Text>
               {cancellingId === item.id && <Text style={styles.cancelling}>Cancelling…</Text>}
             </GlassCard>
@@ -97,10 +107,12 @@ export default function MyGames() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.creamDeep },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl * 1.5, paddingBottom: spacing.xxl * 2 },
+  content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
   header: { fontSize: 28, fontWeight: "800", color: colors.inkNavy, marginBottom: spacing.lg },
-  sectionLabel: { fontSize: 13, fontWeight: "700", color: colors.inkMuted, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: spacing.sm, marginTop: spacing.md },
-  cardWrap: { marginBottom: spacing.md },
+  noticeCard: { flexDirection: "row", gap: spacing.sm, backgroundColor: colors.orange + "14", borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg },
+  noticeTitle: { fontSize: 13, fontWeight: "700", color: colors.ink },
+  noticeBody: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },
+  cardWrap: { marginBottom: spacing.md, marginTop: spacing.md },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontSize: 16, fontWeight: "700", color: colors.ink, flex: 1, marginRight: spacing.sm },
   statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },

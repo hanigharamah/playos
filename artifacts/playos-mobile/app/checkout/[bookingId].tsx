@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Linking, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Pressable, Linking, ActivityIndicator, Share, ScrollView } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { Banknote, Smartphone, Check, MessageCircle, Bell } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { format } from "date-fns";
+import { Banknote, Smartphone, Check, MessageCircle, Bell, Share2 } from "lucide-react-native";
 import { useGetSettings, useConfirmPaymentMethod, useGetGame } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { registerForPush } from "@/lib/notifications";
 import { PillButton } from "@/components/PillButton";
 import { GlassCard } from "@/components/GlassCard";
-import { colors, spacing, radius } from "@/lib/theme";
+import { colors, gradients, spacing, radius } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 
 type Method = "cash" | "stcpay";
@@ -51,41 +53,64 @@ export default function Checkout() {
   };
 
   if (done) {
+    const onShare = () => {
+      if (!game) return;
+      Share.share({ message: `I'm playing "${game.title}" on PlayOS`, url: `https://playos.sa/game/${gameId}` });
+    };
+
     return (
-      <View style={styles.wrap}>
-        <GlassCard style={styles.confirmCard}>
-          <View style={styles.confirmIcon}>
-            <Check size={28} color="#FFFFFF" />
-          </View>
-          <Text style={styles.confirmTitle}>Spot reserved</Text>
-          <Text style={styles.confirmBody}>
-            {done === "cash"
-              ? `Pay SAR ${game?.price ?? ""} in cash at the pitch. Your spot is confirmed on payment.`
-              : `Send SAR ${game?.price ?? ""} via STC Pay. Your spot is confirmed once payment is received.`}
-          </Text>
+      <ScrollView style={styles.confirmWrap} contentContainerStyle={styles.confirmContent}>
+        <LinearGradient
+          colors={[gradients.vivid[1], gradients.vivid[3]]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.confirmIconGrad}
+        >
+          <Check size={30} color="#FFFFFF" strokeWidth={3} />
+        </LinearGradient>
+        <Text style={styles.allSet}>You're all set!</Text>
+        <Text style={styles.allSetSub}>See you on the pitch.</Text>
 
-          {settings?.whatsappUrl && (
-            <Pressable style={styles.whatsappBtn} onPress={() => Linking.openURL(settings.whatsappUrl)}>
-              <MessageCircle size={16} color="#FFFFFF" />
-              <Text style={styles.whatsappText}>Join the WhatsApp group</Text>
-            </Pressable>
-          )}
+        {game && (
+          <GlassCard style={styles.summaryCard}>
+            <Text style={styles.summaryTime}>{format(new Date(game.kickoffTime), "EEE, d MMM · h:mm a")}</Text>
+            <Text style={styles.summaryTitle}>{game.title}</Text>
+            <Text style={styles.summarySub}>{game.pitchName}</Text>
+          </GlassCard>
+        )}
 
-          {pushState !== "done" && (
-            <Pressable style={styles.reminderBtn} onPress={enableReminder} disabled={pushState === "loading"}>
-              {pushState === "loading" ? (
-                <ActivityIndicator size="small" color={colors.orange} />
-              ) : (
-                <Bell size={16} color={colors.orange} />
-              )}
-              <Text style={styles.reminderText}>Get a reminder 20 min before kickoff</Text>
-            </Pressable>
-          )}
-          {pushState === "done" && <Text style={styles.reminderDone}>Reminder enabled ✓</Text>}
+        <Text style={styles.confirmBody}>
+          {done === "cash"
+            ? `Pay SAR ${game?.price ?? ""} in cash at the pitch. Your spot is confirmed on payment.`
+            : `Send SAR ${game?.price ?? ""} via STC Pay. Your spot is confirmed once payment is received.`}
+        </Text>
 
-          <PillButton label="Back to game" variant="outline" onPress={() => router.replace(`/game/${gameId}`)} fullWidth />
-        </GlassCard>
-      </View>
+        {settings?.whatsappUrl && (
+          <Pressable style={styles.whatsappBtn} onPress={() => Linking.openURL(settings.whatsappUrl)}>
+            <MessageCircle size={16} color="#FFFFFF" />
+            <Text style={styles.whatsappText}>Join the WhatsApp group</Text>
+          </Pressable>
+        )}
+
+        {pushState !== "done" && (
+          <Pressable style={styles.reminderBtn} onPress={enableReminder} disabled={pushState === "loading"}>
+            {pushState === "loading" ? (
+              <ActivityIndicator size="small" color={colors.orange} />
+            ) : (
+              <Bell size={16} color={colors.orange} />
+            )}
+            <Text style={styles.reminderText}>Get a reminder 20 min before kickoff</Text>
+          </Pressable>
+        )}
+        {pushState === "done" && <Text style={styles.reminderDone}>Reminder enabled ✓</Text>}
+
+        <Pressable style={styles.linkBtn} onPress={onShare}>
+          <Share2 size={14} color={colors.inkMuted} />
+          <Text style={styles.linkText}>Share with friends</Text>
+        </Pressable>
+
+        <PillButton label="Back to game" variant="outline" onPress={() => router.replace(`/game/${gameId}`)} fullWidth />
+      </ScrollView>
     );
   }
 
@@ -123,6 +148,17 @@ const styles = StyleSheet.create({
   confirmIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.inkNavy, alignItems: "center", justifyContent: "center" },
   confirmTitle: { fontSize: 20, fontWeight: "800", color: colors.inkNavy, textAlign: "center" },
   confirmBody: { fontSize: 14, color: colors.inkMuted, textAlign: "center" },
+  confirmWrap: { flex: 1, backgroundColor: colors.creamDeep },
+  confirmContent: { alignItems: "center", padding: spacing.xl, paddingTop: spacing.xxl * 1.5, gap: spacing.md },
+  confirmIconGrad: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
+  allSet: { fontSize: 24, fontWeight: "800", color: colors.inkNavy, marginTop: spacing.sm },
+  allSetSub: { fontSize: 14, color: colors.inkMuted },
+  summaryCard: { width: "100%", maxWidth: 420, marginTop: spacing.sm },
+  summaryTime: { fontSize: 11, fontWeight: "700", color: colors.orange, textTransform: "uppercase" },
+  summaryTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, marginTop: 2 },
+  summarySub: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },
+  linkBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: spacing.sm },
+  linkText: { fontSize: 13, fontWeight: "600", color: colors.inkMuted },
   whatsappBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#25D366", width: "100%", paddingVertical: 12, borderRadius: radius.md },
   whatsappText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
   reminderBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: colors.hairline, width: "100%", paddingVertical: 12, borderRadius: radius.md },
