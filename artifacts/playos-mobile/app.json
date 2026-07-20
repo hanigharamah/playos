@@ -66,11 +66,11 @@
       "policy": "appVersion"
     },
     "updates": {
-      "url": "https://u.expo.dev/REPLACE_WITH_EAS_PROJECT_ID"
+      "url": "https://u.expo.dev/01bef037-9117-4d85-b96c-7af2e9e2ee61"
     },
     "extra": {
       "eas": {
-        "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
+        "projectId": "01bef037-9117-4d85-b96c-7af2e9e2ee61"
       },
       "supabaseUrl": "https://tnqlvszrcskvuqtdcded.supabase.co",
       "supabaseAnonKey": "REPLACE_WITH_ANON_KEY",
