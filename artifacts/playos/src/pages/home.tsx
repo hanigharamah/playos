@@ -31,10 +31,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
-      <section
-        className="relative flex flex-col items-center justify-center"
-        style={{ minHeight: "88vh" }}
-      >
+      <section className="home-hero relative flex flex-col items-center justify-center overflow-hidden">
         {/* Background video */}
         <video
           className="hero-video absolute inset-0 w-full h-full object-cover"
@@ -48,16 +45,10 @@ export default function Home() {
         </video>
 
         {/* Dark overlay so text pops on night-time pitch */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "rgba(0,0,0,0.28)" }}
-        />
+        <div className="home-hero-overlay absolute inset-0 pointer-events-none" />
 
-        <div className="container mx-auto px-4 relative z-10 text-center flex flex-col items-center">
-          <h1
-            className="font-hand mb-8 max-w-4xl mx-auto"
-            style={{ color: "#FF9F0A", fontSize: "clamp(3rem, 9vw, 6.5rem)", lineHeight: 1.08 }}
-          >
+        <div className="home-hero-content container mx-auto px-4 relative z-10 text-center flex flex-col items-center">
+          <h1 className="home-hero-title font-hand">
             {t("hero.title")}
           </h1>
 
@@ -89,7 +80,7 @@ export default function Home() {
           </div>
 
           {/* Hero CTA — neon gradient underglow below the pill */}
-          <div className="flex justify-center mb-10">
+          <div className="hero-cta-row flex justify-center">
             <div className="hero-cta-wrap">
               <div className="hero-neon-glow" />
               <Link href={getPath("/games")} className="btn-pill btn-pill-hero">
@@ -103,7 +94,7 @@ export default function Home() {
           </div>
 
           {/* Scroll chevron */}
-          <div className="hero-chevron">
+          <div className="hero-chevron" aria-hidden="true">
             <ChevronDown size={22} strokeWidth={1.5} />
           </div>
         </div>

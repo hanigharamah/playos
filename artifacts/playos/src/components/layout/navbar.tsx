@@ -64,7 +64,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full glass-nav">
-      <div className="mx-auto px-4 flex h-14 items-center justify-between max-w-5xl">
+      <div className="mx-auto px-6 sm:px-10 flex h-20 sm:h-24 items-center justify-between max-w-none">
         {/* Logo */}
         <div className="flex items-center gap-7">
           <Link
@@ -72,13 +72,13 @@ export function Navbar() {
             className="flex items-center"
           >
             <span
-              className="text-xl font-extrabold uppercase select-none"
+              className="text-3xl sm:text-4xl font-extrabold uppercase select-none"
               style={{ color: "#1D3557", letterSpacing: "-0.03em" }}
             >
               PLAY
             </span>
             <span
-              className="text-xl font-extrabold uppercase select-none"
+              className="text-3xl sm:text-4xl font-extrabold uppercase select-none"
               style={{
                 background: "linear-gradient(120deg, #FF8A00 0%, #FF3D9A 50%, #8E3DFF 100%)",
                 WebkitBackgroundClip: "text",
@@ -99,10 +99,10 @@ export function Navbar() {
         <div className="flex items-center gap-3">
           <button
             onClick={toggleLanguage}
-            className="flex items-center gap-1 text-xs font-semibold text-[#6C6C70] hover:text-[#1C1C1E] transition-colors px-2 py-1 rounded-md hover:bg-[#F2F2F7]"
+            className="flex items-center gap-2 text-base font-semibold text-[#1D3557] hover:text-[#1C1C1E] transition-colors px-2 py-1 rounded-md hover:bg-[#F2F2F7]"
             aria-label="Toggle language"
           >
-            <Globe className="h-3.5 w-3.5" />
+            <Globe className="h-5 w-5" />
             <span className="uppercase">{language === "en" ? "EN" : "AR"}</span>
           </button>
 
@@ -156,10 +156,10 @@ export function Navbar() {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden h-8 w-8"
+            className="md:hidden h-14 w-14 rounded-full bg-white/30 backdrop-blur-sm"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
-            {isMobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            {isMobileMenuOpen ? <X className="h-8 w-8" /> : <Menu className="h-8 w-8" />}
           </Button>
         </div>
       </div>
