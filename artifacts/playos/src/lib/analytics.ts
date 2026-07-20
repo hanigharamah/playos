@@ -5,8 +5,8 @@ import posthog from "posthog-js";
 const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
 // Must match the region the PostHog project was created in — a mismatch is
 // rejected with authentication_failed and events silently never arrive.
-// The PlayOS project is US-hosted; override for an EU project.
-const HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || "https://us.i.posthog.com";
+// The PlayOS project is EU-hosted (PDPL data residency for Saudi players).
+const HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || "https://eu.i.posthog.com";
 
 let enabled = false;
 
