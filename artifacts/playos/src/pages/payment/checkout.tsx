@@ -4,7 +4,11 @@ import { supabase } from "@/lib/supabase";
 import { useGetSettings, useGetMyCredits, useRedeemCredit, useGetGame } from "@/lib/supabase-api";
 import { useI18n } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Smartphone, Banknote, Copy, Check, MessageCircle, Ticket } from "lucide-react";
+import { Loader2, Smartphone, Banknote, Copy, Check, MessageCircle, Ticket, Bell } from "lucide-react";
+import { useAuth } from "@/lib/auth";
+import { canRequestPush, isIOS, isStandalone } from "@/lib/pwa";
+import { subscribeToPush, hasNotificationPermission } from "@/lib/push";
+import { IosInstallSheet } from "@/components/IosInstallSheet";
 
 type Method = "stcpay" | "cash";
 
@@ -25,11 +29,23 @@ export default function Checkout() {
   const { toast } = useToast();
   const fee = game?.price ?? 0;
 
+  const { user } = useAuth();
   const [method, setMethod] = useState<Method | null>(null);
   const [saving, setSaving] = useState(false);
   const [done, setDone] = useState<Method | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pushState, setPushState] = useState<"idle" | "subscribing" | "done" | "hidden">(
+    hasNotificationPermission() ? "hidden" : "idle",
+  );
+  const [iosSheet, setIosSheet] = useState(false);
+
+  async function enableReminder() {
+    if (!user?.id) return;
+    setPushState("subscribing");
+    const result = await subscribeToPush(user.id);
+    setPushState(result === "subscribed" ? "done" : "hidden");
+  }
 
   const copy = (text: string) => {
     navigator.clipboard.writeText(text);
@@ -106,6 +122,32 @@ export default function Checkout() {
                 {isAr ? "انضم لمجموعة الواتساب" : "Join the WhatsApp group"}
               </a>
             )}
+            {pushState !== "hidden" && pushState !== "done" && canRequestPush() && (
+              <button
+                onClick={enableReminder}
+                disabled={pushState === "subscribing"}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-[#E5E5EA] text-sm font-semibold text-[#1D3557] disabled:opacity-60"
+              >
+                <Bell className="h-4 w-4 text-[#FF9F0A]" />
+                {pushState === "subscribing"
+                  ? isAr ? "جارٍ التفعيل…" : "Enabling…"
+                  : isAr ? "ذكّرني قبل ٢٠ دقيقة من المباراة" : "Get a reminder 20 min before kickoff"}
+              </button>
+            )}
+            {pushState !== "hidden" && pushState !== "done" && isIOS() && !isStandalone() && (
+              <button
+                onClick={() => setIosSheet(true)}
+                className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl border border-[#E5E5EA] text-sm font-semibold text-[#1D3557]"
+              >
+                <Bell className="h-4 w-4 text-[#FF9F0A]" />
+                {isAr ? "فعّل تذكيرات المباريات على الآيفون" : "Enable match reminders on iPhone"}
+              </button>
+            )}
+            {pushState === "done" && (
+              <p className="text-xs text-green-600 font-medium">
+                {isAr ? "تم تفعيل التذكير ✓" : "Reminder enabled ✓"}
+              </p>
+            )}
             <button
               onClick={() => setLocation(getPath(`/game/${gameId}`))}
               className="glass glass-btn w-full py-2.5 text-sm"
@@ -114,6 +156,7 @@ export default function Checkout() {
             </button>
           </div>
         </div>
+        <IosInstallSheet open={iosSheet} onClose={() => setIosSheet(false)} isAr={isAr} />
       </div>
     );
   }
