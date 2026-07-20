@@ -28,6 +28,13 @@ self.addEventListener("push", (event) => {
     badge: "/icons/icon-192.png",
     tag: payload.tag || "playos-notification",
     data: { url: payload.url || "/" },
+    // Match reminders are time-sensitive — keep the notification on screen
+    // (not auto-dismissed) until the player taps it and enters the flashcard
+    // flow. requireInteraction is honored on desktop and Android; iOS ignores
+    // it but already keeps notifications in Notification Center/lock screen
+    // until the player acts, so behavior there is equivalent either way.
+    requireInteraction: true,
+    renotify: true,
   };
 
   event.waitUntil(self.registration.showNotification(title, options));
