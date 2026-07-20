@@ -9,6 +9,17 @@ allowBuilds:
 
 autoInstallPeers: false
 
+# @expo/cli (playos-mobile) requires metro-runtime via a plain Node
+# require.resolve() at CLI-setup time, before Metro's own bundler-level
+# resolver (configured in playos-mobile/metro.config.js) is even involved.
+# That resolution walks up from @expo/cli's physical location in the shared
+# pnpm store and only finds a node_modules at the workspace root — never
+# playos-mobile's local one, since that's a sibling directory, not an
+# ancestor. Scoped to this one package so no other workspace member's
+# isolation changes.
+publicHoistPattern:
+  - metro-runtime
+
 catalog:
   '@replit/vite-plugin-cartographer': ^0.5.1
   '@replit/vite-plugin-dev-banner': ^0.1.1
@@ -46,17 +57,6 @@ onlyBuiltDependencies:
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
-  # react-native-reanimated's babel plugin (playos-mobile) needs an internally
-  # -consistent @babel/* toolchain; letting @babel/traverse/@babel/parser
-  # dedupe to a version newer than @babel/core breaks the plugin's traversal
-  # of newer TS syntax nodes ("unknown node of type TSInstantiationExpression").
-  # Pinned via @babel/core's own dependency edge (pnpm 3-level selectors with
-  # scoped package names aren't supported, so this can't be scoped tighter
-  # than "any @babel/core instance"). Low blast radius to the web app: these
-  # are extremely stable APIs, and Babel is only ever invoked there for Vite's
-  # dev-only Fast Refresh transform, never the production build.
-  '@babel/core>@babel/traverse': 7.24.7
-  '@babel/core>@babel/parser': 7.24.7
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'

@@ -2,6 +2,7 @@
   "expo": {
     "name": "PlayOS",
     "slug": "playos",
+    "owner": "playos-sa",
     "scheme": "playos",
     "version": "0.1.0",
     "orientation": "portrait",
