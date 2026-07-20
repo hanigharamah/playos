@@ -1,0 +1,31 @@
+# Expo / RN
+.expo/
+node_modules/
+web-build/
+dist/
+ios/
+android/
+
+# Env / secrets
+.env
+.env.local
+google-service-account.json
+
+# Native builds
+*.ipa
+*.apk
+*.aab
+
+# Metro
+.metro-health-check*
+
+# Debug
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+
+# macOS
+.DS_Store
+
+# TypeScript / Expo generated
+expo-env.d.ts
