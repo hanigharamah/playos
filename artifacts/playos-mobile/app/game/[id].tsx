@@ -48,7 +48,7 @@ export default function GameDetail() {
       {
         onSuccess: ({ bookingId }) => {
           track("booking_started", { gameId: game.id });
-          router.push(`/checkout/${bookingId}?gameId=${game.id}`);
+          router.push({ pathname: "/checkout/[bookingId]", params: { bookingId, gameId: game.id } });
         },
         onError: (err: any) => setError(err?.data?.error ?? "Could not book that spot"),
       },

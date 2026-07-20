@@ -46,6 +46,17 @@ onlyBuiltDependencies:
 
 overrides:
   '@esbuild-kit/esm-loader': npm:tsx@^4.21.0
+  # react-native-reanimated's babel plugin (playos-mobile) needs an internally
+  # -consistent @babel/* toolchain; letting @babel/traverse/@babel/parser
+  # dedupe to a version newer than @babel/core breaks the plugin's traversal
+  # of newer TS syntax nodes ("unknown node of type TSInstantiationExpression").
+  # Pinned via @babel/core's own dependency edge (pnpm 3-level selectors with
+  # scoped package names aren't supported, so this can't be scoped tighter
+  # than "any @babel/core instance"). Low blast radius to the web app: these
+  # are extremely stable APIs, and Babel is only ever invoked there for Vite's
+  # dev-only Fast Refresh transform, never the production build.
+  '@babel/core>@babel/traverse': 7.24.7
+  '@babel/core>@babel/parser': 7.24.7
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-arm64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-darwin-x64': '-'
   '@expo/ngrok-bin>@expo/ngrok-bin-freebsd-ia32': '-'

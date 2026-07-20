@@ -17,8 +17,12 @@ config.resolver.nodeModulesPaths = [
   path.resolve(workspaceRoot, "node_modules"),
 ];
 
-// 3. Force Metro to resolve each package to a single copy — pnpm hoists shared
-//    deps to the workspace root, and Metro will duplicate them without this.
-config.resolver.disableHierarchicalLookup = true;
+// NOTE: deliberately NOT setting disableHierarchicalLookup here. pnpm gives
+// each package a strict, nested node_modules (often several levels of
+// symlinks deep for transitive deps like `invariant` or `@babel/runtime`),
+// and Metro can only reach those by walking up the tree — which is exactly
+// what hierarchical lookup does. Disabling it (the common Yarn/npm-hoisted
+// monorepo advice) breaks resolution under pnpm and produces "Unable to
+// resolve module X" errors for perfectly-installed transitive deps.
 
 module.exports = config;
