@@ -4,6 +4,7 @@ import { useLogin, useSignUp } from "@/lib/supabase-api";
 import { storeAuthToken } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { FullExperienceSheet, shouldShowFullExperience } from "@/components/FullExperienceSheet";
+import { identifyUser, track } from "@/lib/analytics";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,6 +36,8 @@ export default function AuthPage() {
         onSuccess: (user) => {
           if (user.token) storeAuthToken(user.token);
           queryClient.setQueryData(["/api/auth/me"], user);
+          if (user.id) identifyUser(user.id);
+          track("player_logged_in");
           setLocation(returnUrl);
         },
         onError: (err: any) => {
@@ -52,6 +55,8 @@ export default function AuthPage() {
         onSuccess: (user) => {
           if (user.token) storeAuthToken(user.token);
           queryClient.setQueryData(["/api/auth/me"], user);
+          if (user.id) identifyUser(user.id);
+          track("player_signed_up");
           // New player: offer match reminders once, right after signup,
           // before sending them on to the game they were booking.
           if (user.id && shouldShowFullExperience()) {

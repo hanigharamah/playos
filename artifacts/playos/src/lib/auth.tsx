@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "./supabase";
+import { resetAnalytics } from "./analytics";
 import type { AuthUser } from "@workspace/api-client-react";
 
 // No-ops kept for import compat in pages that still reference them
@@ -118,6 +119,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
+    resetAnalytics();
   };
 
   return (

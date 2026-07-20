@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
 import { useGetSettings, useGetMyCredits, useRedeemCredit, useGetGame } from "@/lib/supabase-api";
@@ -9,6 +9,7 @@ import { useAuth } from "@/lib/auth";
 import { canRequestPush, isIOS, isStandalone } from "@/lib/pwa";
 import { subscribeToPush, hasNotificationPermission } from "@/lib/push";
 import { IosInstallSheet } from "@/components/IosInstallSheet";
+import { track } from "@/lib/analytics";
 
 type Method = "stcpay" | "cash";
 
@@ -40,11 +41,19 @@ export default function Checkout() {
   );
   const [iosSheet, setIosSheet] = useState(false);
 
+  useEffect(() => {
+    if (bookingId && gameId) track("booking_started", { gameId });
+  }, [bookingId, gameId]);
+
   async function enableReminder() {
     if (!user?.id) return;
     setPushState("subscribing");
     const result = await subscribeToPush(user.id);
     setPushState(result === "subscribed" ? "done" : "hidden");
+    track(result === "subscribed" ? "reminder_enabled" : "reminder_denied", {
+      source: "checkout",
+      result,
+    });
   }
 
   const copy = (text: string) => {
@@ -63,6 +72,7 @@ export default function Checkout() {
       .from("bookings").update({ payment_method: m }).eq("id", bookingId);
     setSaving(false);
     if (upErr) { setError("Something went wrong — please try again."); return; }
+    track("booking_confirmed", { method: m, fee, gameId });
     setDone(m);
   };
 

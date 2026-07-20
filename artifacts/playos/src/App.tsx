@@ -1,5 +1,6 @@
 import { useEffect } from "react";
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { capturePageview } from "@/lib/analytics";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -44,6 +45,13 @@ function HomeOrMyGames() {
 }
 
 function AppContent() {
+  const [location] = useLocation();
+
+  // Fire a PostHog pageview on every client-side route change (no-op without a key).
+  useEffect(() => {
+    capturePageview(location);
+  }, [location]);
+
   // Pointer-tracked specular sheen for all .glass surfaces.
   useEffect(() => {
     const onMove = (e: PointerEvent) => {

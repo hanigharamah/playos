@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Bell, Share, Plus, Check } from "lucide-react";
 import { canRequestPush, isIOS, isStandalone } from "@/lib/pwa";
 import { subscribeToPush } from "@/lib/push";
+import { track } from "@/lib/analytics";
 
 /**
  * Post-signup interstitial that nudges the new player to turn on match
@@ -30,17 +31,31 @@ export function FullExperienceSheet({
   onDone: () => void;
 }) {
   const [state, setState] = useState<"idle" | "subscribing" | "done">("idle");
-  if (!open) return null;
 
   const iosNeedsInstall = isIOS() && !isStandalone();
+
+  useEffect(() => {
+    if (open) track("reminder_onboarding_shown", { source: "signup", ios_install: iosNeedsInstall });
+  }, [open, iosNeedsInstall]);
+
+  if (!open) return null;
+
+  function dismiss() {
+    if (state !== "done") track("reminder_onboarding_dismissed", { source: "signup" });
+    onDone();
+  }
 
   async function enable() {
     if (!userId) return;
     setState("subscribing");
     const result = await subscribeToPush(userId);
-    setState(result === "subscribed" ? "done" : "idle");
-    if (result !== "subscribed") {
+    if (result === "subscribed") {
+      setState("done");
+      track("reminder_enabled", { source: "signup" });
+    } else {
       // Permission denied or unsupported — don't trap the player here.
+      setState("idle");
+      track("reminder_denied", { source: "signup", result });
       onDone();
     }
   }
@@ -124,7 +139,7 @@ export function FullExperienceSheet({
                   ? isAr ? "جارٍ التفعيل…" : "Turning on…"
                   : isAr ? "فعّل التذكيرات" : "Turn on reminders"}
               </button>
-              <button onClick={onDone} className="w-full py-2 text-sm font-medium text-[#8E8E93]">
+              <button onClick={dismiss} className="w-full py-2 text-sm font-medium text-[#8E8E93]">
                 {isAr ? "ربما لاحقاً" : "Maybe later"}
               </button>
             </>
