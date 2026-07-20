@@ -3,9 +3,10 @@ import posthog from "posthog-js";
 // Analytics is fully optional: with no VITE_POSTHOG_KEY (e.g. local dev), every
 // function below is a silent no-op, so instrumentation never breaks the app.
 const KEY = import.meta.env.VITE_POSTHOG_KEY as string | undefined;
-// Default to EU cloud for PDPL-friendlier data residency (Saudi). Override with
-// VITE_POSTHOG_HOST=https://us.i.posthog.com if the project lives in US.
-const HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || "https://eu.i.posthog.com";
+// Must match the region the PostHog project was created in — a mismatch is
+// rejected with authentication_failed and events silently never arrive.
+// The PlayOS project is US-hosted; override for an EU project.
+const HOST = (import.meta.env.VITE_POSTHOG_HOST as string | undefined) || "https://us.i.posthog.com";
 
 let enabled = false;
 
