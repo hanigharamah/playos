@@ -73,6 +73,8 @@
         "projectId": "REPLACE_WITH_EAS_PROJECT_ID"
       },
       "supabaseUrl": "https://tnqlvszrcskvuqtdcded.supabase.co",
+      "supabaseAnonKey": "REPLACE_WITH_ANON_KEY",
+      "posthogKey": "phc_AWm9NYadeyvRG4mASJPC8hcgNV8Ck37S9BAaywNtCZMv",
       "posthogHost": "https://eu.i.posthog.com"
     }
   }

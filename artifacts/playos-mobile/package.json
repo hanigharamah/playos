@@ -23,6 +23,7 @@
     "expo-notifications": "~0.28.0",
     "expo-device": "~6.0.0",
     "expo-application": "~5.9.0",
+    "expo-crypto": "~13.0.0",
     "expo-image": "~1.12.0",
     "expo-blur": "~13.0.0",
     "expo-linear-gradient": "~13.0.0",
@@ -44,7 +45,15 @@
     "@tanstack/react-query": "^5.51.0",
     "date-fns": "^3.6.0",
     "react-native-url-polyfill": "^2.0.0",
-    "zustand": "^4.5.4"
+    "zustand": "^4.5.4",
+    "posthog-react-native": "^3.3.5",
+    "lucide-react-native": "^0.400.0",
+    "expo-file-system": "~17.0.0",
+    "expo-font": "~12.0.0",
+    "@expo-google-fonts/caveat": "^0.2.3",
+    "expo-web-browser": "~13.0.0",
+    "react-native-webview": "13.8.6",
+    "@react-native-community/netinfo": "11.3.1"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

@@ -65,19 +65,19 @@ export async function registerForPush(userId: string): Promise<RegisterResult> {
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;
   if (!projectId) return { status: "error", reason: "eas.projectId missing in app.json" };
 
-  const { data: tokenData } = await Notifications.getExpoPushTokenAsync({ projectId });
+  const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
 
   const { error } = await supabase.from("push_subscriptions").upsert(
     {
       user_id: userId,
-      expo_push_token: tokenData.data,
+      expo_push_token: expoPushToken,
       platform: Platform.OS,
     },
     { onConflict: "expo_push_token" },
   );
   if (error) return { status: "error", reason: error.message };
 
-  return { status: "granted", token: tokenData.data };
+  return { status: "granted", token: expoPushToken };
 }
 
 /**

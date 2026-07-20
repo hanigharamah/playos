@@ -1,30 +1,36 @@
 import { useState } from "react";
 import { View, Text, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
 import { useRouter, Link } from "expo-router";
-import { useLogin } from "@/lib/api";
+import { useSignUp } from "@/lib/api";
 import { identifyUser, track } from "@/lib/analytics";
 import { PillButton } from "@/components/PillButton";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { colors, spacing, radius } from "@/lib/theme";
 
-export default function Login() {
+export default function Signup() {
   const router = useRouter();
-  const login = useLogin();
+  const signUp = useSignUp();
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  const canSubmit = name.trim() && email.trim() && phone.trim() && password.length >= 6;
+
   const submit = () => {
     setError(null);
-    login.mutate(
-      { email: email.trim(), password },
+    signUp.mutate(
+      { name: name.trim(), email: email.trim(), phone: phone.trim(), password },
       {
         onSuccess: (user) => {
           identifyUser(user.id);
-          track("player_logged_in");
-          router.replace("/(tabs)");
+          track("player_signed_up");
+          // Onboarding first — this is the single moment every new player
+          // passes through, where we ask about match reminders (SPEC.md §5).
+          router.replace("/onboarding");
         },
-        onError: (err: any) => setError(err?.data?.error ?? "Invalid credentials"),
+        onError: (err: any) => setError(err?.data?.error ?? "Signup failed"),
       },
     );
   };
@@ -32,10 +38,11 @@ export default function Login() {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
       <ScrollView contentContainerStyle={styles.wrap} keyboardShouldPersistTaps="handled">
-        <HandwrittenHeader style={styles.title}>PlayOS</HandwrittenHeader>
-        <Text style={styles.subtitle}>Sign in to book your next game</Text>
+        <HandwrittenHeader style={styles.title}>Join PlayOS</HandwrittenHeader>
+        <Text style={styles.subtitle}>Find and book games near you</Text>
 
         <View style={styles.form}>
+          <TextInput style={styles.input} placeholder="Name" placeholderTextColor={colors.inkFaint} value={name} onChangeText={setName} />
           <TextInput
             style={styles.input}
             placeholder="Email"
@@ -44,6 +51,14 @@ export default function Login() {
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Phone (e.g. 05xxxxxxxx)"
+            placeholderTextColor={colors.inkFaint}
+            keyboardType="phone-pad"
+            value={phone}
+            onChangeText={setPhone}
           />
           <TextInput
             style={styles.input}
@@ -56,16 +71,10 @@ export default function Login() {
 
           {error && <Text style={styles.error}>{error}</Text>}
 
-          <PillButton
-            label="Sign In"
-            onPress={submit}
-            loading={login.isPending}
-            disabled={!email || !password}
-            fullWidth
-          />
+          <PillButton label="Create Account" onPress={submit} loading={signUp.isPending} disabled={!canSubmit} fullWidth />
 
-          <Link href="/(auth)/signup" style={styles.link}>
-            <Text style={styles.linkText}>New here? Create an account</Text>
+          <Link href="/(auth)/login" style={styles.link}>
+            <Text style={styles.linkText}>Already have an account? Sign in</Text>
           </Link>
         </View>
       </ScrollView>
@@ -75,7 +84,7 @@ export default function Login() {
 
 const styles = StyleSheet.create({
   wrap: { flexGrow: 1, backgroundColor: colors.creamDeep, padding: spacing.xl, justifyContent: "center" },
-  title: { fontSize: 56, textAlign: "center", marginBottom: 4 },
+  title: { fontSize: 48, textAlign: "center", marginBottom: 4 },
   subtitle: { textAlign: "center", color: colors.inkMuted, marginBottom: spacing.xxl },
   form: { gap: spacing.md },
   input: {
