@@ -74,7 +74,7 @@
         "projectId": "01bef037-9117-4d85-b96c-7af2e9e2ee61"
       },
       "supabaseUrl": "https://tnqlvszrcskvuqtdcded.supabase.co",
-      "supabaseAnonKey": "REPLACE_WITH_ANON_KEY",
+      "supabaseAnonKey": "sb_publishable_pTf0L-xfGByp2r3fNekrQQ_26HJdMPr",
       "posthogKey": "phc_AWm9NYadeyvRG4mASJPC8hcgNV8Ck37S9BAaywNtCZMv",
       "posthogHost": "https://eu.i.posthog.com"
     }
