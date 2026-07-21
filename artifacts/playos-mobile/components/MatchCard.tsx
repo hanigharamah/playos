@@ -5,7 +5,6 @@ import { useRouter } from "expo-router";
 import { useGameRoster } from "@/lib/api";
 import { AvatarStack } from "./AvatarStack";
 import { PillButton } from "./PillButton";
-import { GlassCard } from "./GlassCard";
 import { colors, radius, spacing } from "@/lib/theme";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import type { GameSummary } from "@/lib/api";
@@ -42,36 +41,34 @@ export function MatchCard({
   if (variant === "hero") {
     return (
       <Pressable onPress={onPress}>
-        <GlassCard style={styles.heroWrap} padding={0}>
-          <View style={styles.heroBody}>
-            {spotsLeft > 0 && spotsLeft <= 3 && (
-              <View style={styles.heroSpotsBadge}>
-                <Text style={styles.heroSpotsBadgeText}>{spotsLeft} left</Text>
-              </View>
-            )}
-            <Text style={styles.time}>{dayLabel} · {format(new Date(game.kickoffTime), "h:mm a")}</Text>
-            <Text style={styles.title} numberOfLines={1}>{game.pitchName}</Text>
-
-            <View style={styles.iconBadges}>
-              <View style={styles.iconBadge}><Users size={12} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>{teamSize}v{teamSize}</Text></View>
-              <View style={styles.iconBadge}><MapPin size={12} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Outdoor</Text></View>
-              <View style={styles.iconBadge}><Gauge size={12} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Intermediate</Text></View>
+        <View style={styles.heroWrap}>
+          {spotsLeft > 0 && spotsLeft <= 3 && (
+            <View style={styles.heroSpotsBadge}>
+              <Text style={styles.heroSpotsBadgeText}>{spotsLeft} left</Text>
             </View>
+          )}
+          <Text style={styles.time}>{dayLabel} · {format(new Date(game.kickoffTime), "h:mm a")}</Text>
+          <Text style={styles.title} numberOfLines={1}>{game.pitchName}</Text>
 
-            {names.length > 0 && (
-              <View style={styles.heroAvatarRow}>
-                <AvatarStack names={names} max={4} />
-              </View>
-            )}
-
-            <Pressable onPress={() => router.push(`/game/${game.id}`)} style={styles.heroCta} hitSlop={6}>
-              <View style={styles.heroCtaIcon}>
-                <ArrowRight size={18} color="#FFFFFF" />
-              </View>
-              <Text style={styles.heroCtaLabel}>join match</Text>
-            </Pressable>
+          <View style={styles.iconBadges}>
+            <View style={styles.iconBadge}><Users size={13} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>{teamSize}v{teamSize}</Text></View>
+            <View style={styles.iconBadge}><MapPin size={13} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Outdoor</Text></View>
+            <View style={styles.iconBadge}><Gauge size={13} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Intermediate</Text></View>
           </View>
-        </GlassCard>
+
+          {names.length > 0 && (
+            <View style={styles.heroAvatarRow}>
+              <AvatarStack names={names} max={4} />
+            </View>
+          )}
+
+          <Pressable onPress={() => router.push(`/game/${game.id}`)} style={styles.heroCta} hitSlop={6}>
+            <View style={styles.heroCtaIcon}>
+              <ArrowRight size={20} color="#FFFFFF" />
+            </View>
+            <Text style={styles.heroCtaLabel}>join match</Text>
+          </Pressable>
+        </View>
       </Pressable>
     );
   }
@@ -120,13 +117,21 @@ const styles = StyleSheet.create({
   iconBadgeText: { fontSize: 12, color: colors.inkMuted, fontWeight: "500" },
   ctaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
 
-  // hero (no-photo, glass card, mockup style)
-  heroWrap: { marginTop: 0 },
-  heroBody: { padding: spacing.lg },
+  // hero — pure white floating card, larger radius, strong soft shadow
+  heroWrap: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 28,
+    padding: spacing.xl,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.10,
+    shadowRadius: 28,
+    elevation: 8,
+  },
   heroSpotsBadge: { position: "absolute", top: spacing.lg, right: spacing.lg, backgroundColor: colors.pink + "1F", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   heroSpotsBadgeText: { color: colors.pink, fontSize: 11, fontWeight: "700" },
   heroAvatarRow: { marginTop: spacing.lg },
-  heroCta: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.lg },
-  heroCtaIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: colors.orange, alignItems: "center", justifyContent: "center" },
-  heroCtaLabel: { fontSize: 17, fontWeight: "800", color: colors.ink },
+  heroCta: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.xl },
+  heroCtaIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.orange, alignItems: "center", justifyContent: "center" },
+  heroCtaLabel: { fontSize: 18, fontWeight: "800", color: colors.ink },
 });

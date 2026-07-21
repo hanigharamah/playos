@@ -3,16 +3,15 @@ import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Image, u
 import { useRouter } from "expo-router";
 import { format } from "date-fns";
 import { Bell } from "lucide-react-native";
-import { useListGames, useGetMe, useGetMyBookings } from "@/lib/api";
+import { useListGames, useGetMyBookings } from "@/lib/api";
 import { MatchCard } from "@/components/MatchCard";
-import { GlassCard } from "@/components/GlassCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
-const HERO_BG_HEIGHT = 560;
+const HERO_BG_HEIGHT = 580;
 
 export default function Home() {
   const router = useRouter();
@@ -43,15 +42,13 @@ export default function Home() {
         </View>
 
         <HandwrittenHeader style={styles.headline}>
-          {featured ? `your next match is ${isTonight ? "tonight" : "coming up"}.` : "let's get you\non the pitch."}
+          {featured
+            ? `your next match is ${isTonight ? "tonight." : "coming up."}`
+            : "let's get you\non the pitch."}
         </HandwrittenHeader>
 
-        <Pressable onPress={() => router.push("/activity")} style={styles.activityLink}>
-          <Text style={styles.activityLinkText}>view your activity →</Text>
-        </Pressable>
-
         {featured && (
-          <View style={{ marginTop: spacing.lg }}>
+          <View style={{ marginTop: spacing.xl }}>
             <MatchCard game={featured} variant="hero" onPress={() => router.push(`/game/${featured.id}`)} />
           </View>
         )}
@@ -59,25 +56,31 @@ export default function Home() {
         {upcoming.length > 0 && (
           <View style={{ marginTop: spacing.xl }}>
             <View style={styles.rowBetween}>
-              <Text style={styles.sectionLabel}>coming up</Text>
+              <HandwrittenHeader style={styles.sectionLabel}>coming up</HandwrittenHeader>
               <Pressable onPress={() => router.push("/(tabs)/my-games")}>
                 <Text style={styles.viewAll}>see all</Text>
               </Pressable>
             </View>
-            {upcoming.slice(0, 3).map((b) => (
-              <Pressable key={b.id} onPress={() => router.push(`/game/${b.gameId}`)}>
-                <GlassCard style={styles.upcomingCard} padding={0}>
-                  <View style={styles.upcomingRow}>
-                    <Image source={{ uri: getVenuePhoto(b.game.pitchName, b.game.pitchPhotoUrl) }} style={styles.upcomingThumb} />
+            {upcoming.slice(0, 3).map((b) => {
+              const teamSize = b.game.capacity / 2;
+              return (
+                <Pressable key={b.id} onPress={() => router.push(`/game/${b.gameId}`)}>
+                  <View style={styles.upcomingCard}>
+                    <Image
+                      source={{ uri: getVenuePhoto(b.game.pitchName, b.game.pitchPhotoUrl) }}
+                      style={styles.upcomingThumb}
+                    />
                     <View style={styles.upcomingText}>
-                      <Text style={styles.upcomingMeta}>{format(new Date(b.game.kickoffTime), "EEE, h:mm a").toUpperCase()}</Text>
-                      <Text style={styles.upcomingTitle}>{b.game.title}</Text>
-                      <Text style={styles.upcomingSub}>{b.game.pitchName}</Text>
+                      <Text style={styles.upcomingMeta}>
+                        {format(new Date(b.game.kickoffTime), "EEE, h:mm a").toUpperCase()}
+                      </Text>
+                      <Text style={styles.upcomingTitle} numberOfLines={1}>{b.game.title}</Text>
+                      <Text style={styles.upcomingSub}>{teamSize}v{teamSize} · Outdoor</Text>
                     </View>
                   </View>
-                </GlassCard>
-              </Pressable>
-            ))}
+                </Pressable>
+              );
+            })}
           </View>
         )}
 
@@ -104,19 +107,16 @@ const styles = StyleSheet.create({
   logo: { fontSize: 18, fontWeight: "800", color: colors.inkNavy, letterSpacing: -0.3 },
   bellWrap: { position: "relative" },
   bellDot: { position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.pink },
-  headline: { fontSize: 34, color: colors.orange, marginTop: spacing.lg, lineHeight: 38 },
-  activityLink: { marginTop: spacing.sm },
-  activityLinkText: { fontSize: 13, fontWeight: "600", color: colors.inkMuted },
-  sectionLabel: { fontSize: 14, fontWeight: "700", color: colors.orange, marginBottom: spacing.sm },
+  headline: { fontSize: 44, color: colors.orange, marginTop: spacing.lg, lineHeight: 50 },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
+  sectionLabel: { fontSize: 26, color: colors.orange },
   viewAll: { fontSize: 13, fontWeight: "600", color: colors.inkMuted },
-  upcomingCard: { marginBottom: spacing.sm, overflow: "hidden" },
-  upcomingRow: { flexDirection: "row", alignItems: "center" },
-  upcomingThumb: { width: 64, height: 64 },
-  upcomingText: { flex: 1, padding: spacing.md },
+  upcomingCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: radius.lg, overflow: "hidden", marginBottom: spacing.sm, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
+  upcomingThumb: { width: 72, height: 72 },
+  upcomingText: { flex: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
   upcomingMeta: { fontSize: 11, fontWeight: "700", color: colors.orange, textTransform: "uppercase" },
-  upcomingTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, marginTop: 2 },
-  upcomingSub: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },
+  upcomingTitle: { fontSize: 15, fontWeight: "700", color: colors.ink, marginTop: 2 },
+  upcomingSub: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },
   empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
   emptyTitle: { fontSize: 17, fontWeight: "700", color: colors.ink },
   emptyBody: { fontSize: 13, color: colors.inkMuted, marginTop: 4 },
