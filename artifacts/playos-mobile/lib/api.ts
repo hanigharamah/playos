@@ -475,22 +475,44 @@ export interface GameRoster {
 
 const getGameRosterQueryKey = (gameId: string) => ["game-roster", gameId] as const;
 
+// Multiple MatchCards can render for the same game at once (e.g. a game
+// featured on Home while also listed on Play — tab navigation keeps both
+// mounted), so channels are shared/ref-counted per gameId. Creating a second
+// `roster:${gameId}` channel and calling `.on()` on it after another
+// instance already `.subscribe()`d it throws — reusing the same channel
+// object avoids that.
+const rosterChannels = new Map<string, { channel: ReturnType<typeof supabase.channel>; refCount: number }>();
+
 /** Realtime roster — subscribes to booking/game changes so all players see the same state live. */
 export function useGameRoster(gameId: string | null) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!gameId) return;
-    const channel = supabase
-      .channel(`roster:${gameId}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: `game_id=eq.${gameId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(gameId) });
-      })
-      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameId}` }, () => {
-        queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(gameId) });
-      })
-      .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    let entry = rosterChannels.get(gameId);
+    if (!entry) {
+      const channel = supabase
+        .channel(`roster:${gameId}`)
+        .on("postgres_changes", { event: "*", schema: "public", table: "bookings", filter: `game_id=eq.${gameId}` }, () => {
+          queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(gameId) });
+        })
+        .on("postgres_changes", { event: "UPDATE", schema: "public", table: "games", filter: `id=eq.${gameId}` }, () => {
+          queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(gameId) });
+        })
+        .subscribe();
+      entry = { channel, refCount: 0 };
+      rosterChannels.set(gameId, entry);
+    }
+    entry.refCount += 1;
+    return () => {
+      const e = rosterChannels.get(gameId);
+      if (!e) return;
+      e.refCount -= 1;
+      if (e.refCount <= 0) {
+        supabase.removeChannel(e.channel);
+        rosterChannels.delete(gameId);
+      }
+    };
   }, [gameId, queryClient]);
 
   return useQuery({
