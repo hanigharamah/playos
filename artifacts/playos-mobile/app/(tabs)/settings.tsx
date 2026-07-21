@@ -126,7 +126,7 @@ export default function Profile() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.creamDeep },
   content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
-  header: { fontSize: 28, fontWeight: "800", color: colors.inkNavy, marginBottom: spacing.lg },
+  header: { fontSize: 28, fontWeight: "800", color: colors.orange, marginBottom: spacing.lg },
   profileRow: { flexDirection: "row", alignItems: "center", marginBottom: spacing.lg },
   name: { fontSize: 18, fontWeight: "700", color: colors.ink },
   email: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },

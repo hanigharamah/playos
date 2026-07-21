@@ -14,6 +14,11 @@ import { colors, spacing, radius } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 
+function isWithinHours(isoTime: string, hours: number): boolean {
+  const ms = new Date(isoTime).getTime() - Date.now();
+  return ms > 0 && ms <= hours * 3_600_000;
+}
+
 /**
  * Game detail — dark hero header (mockup style) + real pitch-diagram booking
  * flow below (the mockup implies a one-tap "Join Match", but our data model
@@ -107,6 +112,13 @@ export default function GameDetail() {
         </View>
         <Text style={styles.meta}>{game.pitchName} · {format(new Date(game.kickoffTime), "d MMM, h:mm a")}</Text>
 
+        {isWithinHours(game.kickoffTime, 3) && (
+          <Pressable style={styles.getReadyBanner} onPress={() => router.push(`/countdown/${game.id}`)}>
+            <Text style={styles.getReadyText}>⚡ Kickoff is coming up — get ready</Text>
+            <Text style={styles.getReadyArrow}>→</Text>
+          </Pressable>
+        )}
+
         <View style={styles.chipsRow}>
           <View style={styles.chip}><Text style={styles.chipText}>{teamSize}v{teamSize}</Text></View>
           <View style={styles.chip}><Text style={styles.chipText}>Outdoor</Text></View>
@@ -170,6 +182,9 @@ const styles = StyleSheet.create({
   spotsBadge: { backgroundColor: colors.pink + "1F", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   spotsBadgeText: { color: colors.pink, fontSize: 11, fontWeight: "700" },
   meta: { fontSize: 14, color: colors.inkMuted, marginTop: 4 },
+  getReadyBanner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", backgroundColor: colors.orange + "1A", borderRadius: radius.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg, marginTop: spacing.md },
+  getReadyText: { fontSize: 13, fontWeight: "700", color: colors.orange, flex: 1 },
+  getReadyArrow: { fontSize: 16, fontWeight: "700", color: colors.orange },
   chipsRow: { flexDirection: "row", gap: spacing.sm, marginTop: spacing.md, flexWrap: "wrap" },
   chip: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.hairline, paddingHorizontal: 12, paddingVertical: 6, borderRadius: radius.pill },
   chipText: { fontSize: 12, fontWeight: "600", color: colors.ink },

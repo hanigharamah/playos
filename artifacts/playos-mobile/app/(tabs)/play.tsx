@@ -96,13 +96,13 @@ export default function Play() {
         </Pressable>
       </View>
 
-      <Text style={styles.label}>What do you feel like?</Text>
+      <Text style={styles.label}>how do you feel like playing?</Text>
       <View style={styles.moodRow}>
         {MOODS.map((m) => {
           const active = mood === m;
           return (
             <Pressable key={m} onPress={() => setMood(active ? null : m)} style={[styles.moodChip, active && styles.moodChipActive]}>
-              <Text style={[styles.moodText, active && styles.moodTextActive]}>{m}</Text>
+              <Text style={[styles.moodText, active && styles.moodTextActive]}>{m.toLowerCase()}</Text>
             </Pressable>
           );
         })}
@@ -110,7 +110,10 @@ export default function Play() {
 
       {areas.length > 0 && (
         <>
-          <Text style={[styles.label, { marginTop: spacing.xl }]}>Popular areas</Text>
+          <View style={styles.rowBetween}>
+            <Text style={styles.label}>popular areas</Text>
+            <Text style={styles.seeAll}>see all</Text>
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.sm }}>
             {areas.map(([name, { count, photo }]) => (
               <View key={name} style={styles.areaCard}>
@@ -125,10 +128,10 @@ export default function Play() {
         </>
       )}
 
-      <Text style={[styles.label, { marginTop: spacing.xl }]}>Recommended for you</Text>
+      <Text style={styles.label}>recommended for you</Text>
       {filtered.map((g) => (
         <View key={g.id} style={{ marginBottom: spacing.sm }}>
-          <MatchCard game={g} onPress={() => router.push(`/game/${g.id}`)} />
+          <MatchCard game={g} variant="compact" onPress={() => router.push(`/game/${g.id}`)} />
         </View>
       ))}
       {filtered.length === 0 && (
@@ -173,10 +176,12 @@ const styles = StyleSheet.create({
   filterBtn: { width: 44, height: 44, borderRadius: radius.pill, backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.hairline, alignItems: "center", justifyContent: "center" },
   filterBadge: { position: "absolute", top: -4, right: -4, width: 16, height: 16, borderRadius: 8, backgroundColor: colors.pink, alignItems: "center", justifyContent: "center" },
   filterBadgeText: { fontSize: 9, color: "#FFFFFF", fontWeight: "700" },
-  label: { fontSize: 15, fontWeight: "700", color: colors.ink, marginTop: spacing.xl, marginBottom: spacing.sm },
+  label: { fontSize: 15, fontWeight: "700", color: colors.orange, marginTop: spacing.xl, marginBottom: spacing.sm },
+  rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  seeAll: { fontSize: 13, fontWeight: "600", color: colors.inkMuted, marginTop: spacing.xl },
   moodRow: { flexDirection: "row", gap: spacing.sm, flexWrap: "wrap" },
   moodChip: { paddingHorizontal: spacing.lg, paddingVertical: 8, borderRadius: radius.pill, backgroundColor: "#F2F2F7" },
-  moodChipActive: { backgroundColor: colors.inkNavy },
+  moodChipActive: { backgroundColor: colors.orange },
   moodText: { fontSize: 13, fontWeight: "600", color: colors.ink },
   moodTextActive: { color: "#FFFFFF" },
   areaCard: { width: 130, backgroundColor: "#FFFFFF", borderRadius: radius.md, overflow: "hidden", borderWidth: 1, borderColor: colors.hairline },

@@ -567,6 +567,71 @@ export function useGetMyStats() {
   });
 }
 
+// ─── Activity: XP/level/streak (powered by get_my_activity(), see the ──
+// 2026-07-activity-and-stats.sql migration — all computed live from real
+// check-in history, nothing stored/mutable that could drift out of sync.
+
+export interface MyActivity {
+  xp: number;
+  level: number;
+  xpIntoLevel: number;
+  xpForNextLevel: number;
+  currentStreakDays: number;
+  longestStreakDays: number;
+  matchesThisWeek: number;
+  weekDaysPlayed: boolean[]; // Mon..Sun
+}
+
+export function useGetMyActivity() {
+  return useQuery({
+    queryKey: ["my-activity"],
+    queryFn: async (): Promise<MyActivity> => {
+      const { data, error } = await supabase.rpc("get_my_activity");
+      const empty: MyActivity = {
+        xp: 0, level: 1, xpIntoLevel: 0, xpForNextLevel: 250,
+        currentStreakDays: 0, longestStreakDays: 0, matchesThisWeek: 0,
+        weekDaysPlayed: [false, false, false, false, false, false, false],
+      };
+      if (error || !data?.[0]) return empty;
+      const row = data[0];
+      return {
+        xp: row.xp, level: row.level, xpIntoLevel: row.xp_into_level, xpForNextLevel: row.xp_for_next_level,
+        currentStreakDays: row.current_streak_days, longestStreakDays: row.longest_streak_days,
+        matchesThisWeek: row.matches_this_week, weekDaysPlayed: row.week_days_played ?? empty.weekDaysPlayed,
+      };
+    },
+  });
+}
+
+// ─── Post-match self-reported stats (game_player_stats table) ──────────
+
+export interface GamePlayerStats {
+  goals: number;
+  assists: number;
+  distanceKm: number | null;
+  rating: number | null;
+}
+
+export function useSubmitMatchStats() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { gameId: string; goals: number; assists: number; distanceKm?: number; rating?: number }): Promise<void> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw { data: { error: "Not authenticated" } };
+      const { error } = await supabase.from("game_player_stats").upsert({
+        game_id: vars.gameId, user_id: userId, goals: vars.goals, assists: vars.assists,
+        distance_km: vars.distanceKm ?? null, rating: vars.rating ?? null,
+      });
+      if (error) throw { data: { error: error.message } };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-activity"] });
+      queryClient.invalidateQueries({ queryKey: ["my-stats"] });
+    },
+  });
+}
+
 // ─── Chat (game-group conversations, see the SQL migration) ────────────
 
 export interface ChatMessage {

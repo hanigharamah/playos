@@ -81,7 +81,7 @@ export default function Chat() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.creamDeep },
   content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
-  header: { fontSize: 28, fontWeight: "800", color: colors.inkNavy, marginBottom: spacing.lg },
+  header: { fontSize: 28, fontWeight: "800", color: colors.orange, marginBottom: spacing.lg },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, marginTop: spacing.md, backgroundColor: "#FFFFFF", borderRadius: radius.md, paddingHorizontal: spacing.md, borderWidth: 1, borderColor: colors.hairline },
   avatar: { width: 48, height: 48, borderRadius: 24 },
   name: { fontSize: 15, fontWeight: "700", color: colors.ink },

@@ -100,6 +100,11 @@ export default function MyGames() {
                 <Text style={styles.meta}>{item.game.pitchName} · {format(new Date(item.game.kickoffTime), "d MMM, h:mm a")}</Text>
                 <Text style={styles.team}>Team {item.team} · Slot {item.slotIndex + 1}</Text>
                 {cancellingId === item.id && <Text style={styles.cancelling}>Cancelling…</Text>}
+                {tab === "past" && (
+                  <Pressable onPress={() => router.push(`/post-match/${item.gameId}`)}>
+                    <Text style={styles.statsLink}>add your stats →</Text>
+                  </Pressable>
+                )}
               </View>
             </GlassCard>
           </Pressable>
@@ -112,7 +117,8 @@ export default function MyGames() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.creamDeep },
   content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
-  header: { fontSize: 28, fontWeight: "800", color: colors.inkNavy, marginBottom: spacing.lg },
+  header: { fontSize: 28, fontWeight: "800", color: colors.orange, marginBottom: spacing.lg },
+  statsLink: { fontSize: 12, fontWeight: "700", color: colors.orange, marginTop: spacing.sm },
   noticeCard: { flexDirection: "row", gap: spacing.sm, backgroundColor: colors.orange + "14", borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg },
   noticeTitle: { fontSize: 13, fontWeight: "700", color: colors.ink },
   noticeBody: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },
