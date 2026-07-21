@@ -1,5 +1,6 @@
 import PostHog from "posthog-react-native";
 import Constants from "expo-constants";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 /**
  * PostHog wrapper — same EU project + event names as the web app
@@ -17,7 +18,7 @@ let client: PostHog | null = null;
 
 export async function initAnalytics(): Promise<void> {
   if (client || !KEY) return;
-  client = new PostHog(KEY, { host: HOST, captureNativeAppLifecycleEvents: true });
+  client = new PostHog(KEY, { host: HOST, captureNativeAppLifecycleEvents: true, customStorage: AsyncStorage });
 }
 
 export function screen(name: string, props?: Props): void {
