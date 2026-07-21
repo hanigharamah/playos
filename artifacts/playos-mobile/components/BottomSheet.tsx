@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { View, Modal, Pressable, StyleSheet, Dimensions } from "react-native";
+import { View, Modal, Pressable, StyleSheet, Dimensions, ScrollView } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withTiming, withSpring } from "react-native-reanimated";
 import { colors, radius } from "@/lib/theme";
 
@@ -41,7 +41,7 @@ export function BottomSheet({
       </Animated.View>
       <Animated.View style={[styles.sheet, sheetStyle]}>
         <View style={styles.grabber} />
-        {children}
+        <ScrollView showsVerticalScrollIndicator={false}>{children}</ScrollView>
       </Animated.View>
     </Modal>
   );

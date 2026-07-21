@@ -23,6 +23,7 @@ export interface GameSummary {
   id: string;
   title: string;
   pitchName: string;
+  pitchPhotoUrl: string | null;
   locationText: string | null;
   kickoffTime: string;
   price: number;
@@ -60,6 +61,7 @@ export interface MyBooking {
     id: string;
     title: string;
     pitchName: string;
+    pitchPhotoUrl: string | null;
     kickoffTime: string;
     price: number;
     capacity: number;
@@ -103,11 +105,12 @@ function normalizePhone(phone: string): string {
   return `+966${digits}`;
 }
 
-function mapGameSummary(g: Record<string, any>, bookedCount?: number): GameSummary {
+function mapGameSummary(g: Record<string, any>, bookedCount?: number, photoUrl?: string | null): GameSummary {
   return {
     id: g.id,
     title: g.title,
     pitchName: g.pitch_name,
+    pitchPhotoUrl: photoUrl ?? null,
     locationText: g.location_text ?? null,
     kickoffTime: g.kickoff_time,
     price: Number(g.price),
@@ -119,6 +122,19 @@ function mapGameSummary(g: Record<string, any>, bookedCount?: number): GameSumma
     isPublic: g.is_public,
     mapsUrl: g.maps_url ?? null,
   };
+}
+
+/**
+ * games.pitch_name is a denormalized text copy (not a foreign key), so
+ * pitch photos are looked up by name match — matches the existing
+ * architecture rather than introducing a new FK relationship.
+ */
+async function fetchPitchPhotos(pitchNames: string[]): Promise<Map<string, string | null>> {
+  const unique = Array.from(new Set(pitchNames));
+  if (unique.length === 0) return new Map();
+  const { data, error } = await supabase.from("pitches").select("name, photo_url").in("name", unique);
+  if (error || !data) return new Map();
+  return new Map(data.map((p: any) => [p.name, p.photo_url ?? null]));
 }
 
 // ─── Query keys ─────────────────────────────────────────────────────────
@@ -227,7 +243,9 @@ export function useListGames(params?: { city?: string }) {
         fetchPublicGameCounts(),
       ]);
       if (error) throw error;
-      return (data ?? []).map((g) => mapGameSummary(g, counts.get(g.id)));
+      const rows = data ?? [];
+      const photos = await fetchPitchPhotos(rows.map((g) => g.pitch_name));
+      return rows.map((g) => mapGameSummary(g, counts.get(g.id), photos.get(g.pitch_name)));
     },
   });
 }
@@ -250,7 +268,11 @@ export function useGetGame(id: string, options?: { enabled?: boolean }) {
         paymentMethod: b.payment_method, bookedAt: b.booked_at,
       }));
 
-      return { ...mapGameSummary(game, bookings.filter((b) => b.paymentStatus === "paid").length), bookings };
+      const photos = await fetchPitchPhotos([game.pitch_name]);
+      return {
+        ...mapGameSummary(game, bookings.filter((b) => b.paymentStatus === "paid").length, photos.get(game.pitch_name)),
+        bookings,
+      };
     },
   });
 }
@@ -381,17 +403,21 @@ export function useGetMyBookings() {
         .order("booked_at", { ascending: false });
       if (error) throw error;
 
+      const rows = data ?? [];
+      const photos = await fetchPitchPhotos(rows.map((b: any) => b.games?.pitch_name).filter(Boolean));
+
       const now = new Date();
       const upcoming: MyBooking[] = [];
       const past: MyBooking[] = [];
 
-      for (const b of data ?? []) {
+      for (const b of rows) {
         const g = b.games as any;
         const item: MyBooking = {
           id: b.id, gameId: b.game_id, team: b.team, slotIndex: b.slot_index,
           paymentStatus: b.payment_status, bookedAt: b.booked_at,
           game: {
             id: g.id, title: g.title, pitchName: g.pitch_name,
+            pitchPhotoUrl: photos.get(g.pitch_name) ?? null,
             kickoffTime: g.kickoff_time, price: Number(g.price),
             capacity: g.capacity, status: g.status,
           },
@@ -518,6 +544,162 @@ export function useStartMatch() {
       if (error) throw error;
       return data as StartMatchResult;
     },
+  });
+}
+
+// ─── Profile stats (powered by get_my_stats(), see the SQL migration) ──
+
+export interface MyStats {
+  gamesPlayed: number;
+  gamesWon: number;
+  winRate: number;
+}
+
+export function useGetMyStats() {
+  return useQuery({
+    queryKey: ["my-stats"],
+    queryFn: async (): Promise<MyStats> => {
+      const { data, error } = await supabase.rpc("get_my_stats");
+      if (error || !data?.[0]) return { gamesPlayed: 0, gamesWon: 0, winRate: 0 };
+      const row = data[0];
+      return { gamesPlayed: row.games_played, gamesWon: row.games_won, winRate: Number(row.win_rate) };
+    },
+  });
+}
+
+// ─── Chat (game-group conversations, see the SQL migration) ────────────
+
+export interface ChatMessage {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  body: string;
+  createdAt: string;
+}
+
+export interface ConversationSummary {
+  id: string;
+  kind: "direct" | "game_group";
+  gameId: string | null;
+  gameTitle: string | null;
+  pitchName: string | null;
+  pitchPhotoUrl: string | null;
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+}
+
+/** The user's group chats — one per game they've booked and opened chat for at least once. */
+export function useMyConversations() {
+  return useQuery({
+    queryKey: ["my-conversations"],
+    queryFn: async (): Promise<ConversationSummary[]> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return [];
+
+      const { data: participantRows, error: pErr } = await supabase
+        .from("conversation_participants")
+        .select("conversation_id")
+        .eq("user_id", userId);
+      if (pErr || !participantRows?.length) return [];
+
+      const conversationIds = participantRows.map((r) => r.conversation_id);
+      const { data: conversations, error: cErr } = await supabase
+        .from("conversations")
+        .select("id, kind, game_id, games(title, pitch_name)")
+        .in("id", conversationIds);
+      if (cErr || !conversations) return [];
+
+      const pitchNames = conversations.map((c: any) => c.games?.pitch_name).filter(Boolean);
+      const photos = await fetchPitchPhotos(pitchNames);
+
+      // Last message per conversation — small N (one query per chat is fine at this scale).
+      const withLastMessage = await Promise.all(
+        conversations.map(async (c: any) => {
+          const { data: lastMsg } = await supabase
+            .from("messages")
+            .select("body, created_at")
+            .eq("conversation_id", c.id)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          return {
+            id: c.id,
+            kind: c.kind,
+            gameId: c.game_id,
+            gameTitle: c.games?.title ?? null,
+            pitchName: c.games?.pitch_name ?? null,
+            pitchPhotoUrl: c.games?.pitch_name ? (photos.get(c.games.pitch_name) ?? null) : null,
+            lastMessage: lastMsg?.body ?? null,
+            lastMessageAt: lastMsg?.created_at ?? null,
+          } satisfies ConversationSummary;
+        }),
+      );
+
+      return withLastMessage.sort((a, b) => {
+        const ta = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+        const tb = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+        return tb - ta;
+      });
+    },
+  });
+}
+
+/** Auto-creates (or returns) the game's group chat; throws if caller has no booking. */
+export function useGetOrCreateGameChat() {
+  return useMutation({
+    mutationFn: async (vars: { gameId: string }): Promise<string> => {
+      const { data, error } = await supabase.rpc("get_or_create_game_chat", { p_game_id: vars.gameId });
+      if (error) throw { data: { error: error.message } };
+      return data as string;
+    },
+  });
+}
+
+export function useConversationMessages(conversationId: string | null) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const channel = supabase
+      .channel(`messages:${conversationId}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` }, () => {
+        queryClient.invalidateQueries({ queryKey: ["messages", conversationId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [conversationId, queryClient]);
+
+  return useQuery({
+    queryKey: ["messages", conversationId ?? ""],
+    enabled: !!conversationId,
+    queryFn: async (): Promise<ChatMessage[]> => {
+      const { data, error } = await supabase
+        .from("messages")
+        .select("id, conversation_id, sender_id, body, created_at")
+        .eq("conversation_id", conversationId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((m: any) => ({
+        id: m.id, conversationId: m.conversation_id, senderId: m.sender_id, body: m.body, createdAt: m.created_at,
+      }));
+    },
+  });
+}
+
+export function useSendMessage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { conversationId: string; body: string }): Promise<void> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const senderId = session?.user?.id;
+      if (!senderId) throw { data: { error: "Not authenticated" } };
+      const { error } = await supabase.from("messages").insert({
+        conversation_id: vars.conversationId, sender_id: senderId, body: vars.body.trim(),
+      });
+      if (error) throw { data: { error: error.message } };
+    },
+    onSuccess: (_data, vars) => queryClient.invalidateQueries({ queryKey: ["messages", vars.conversationId] }),
   });
 }
 

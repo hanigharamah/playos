@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Share, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Share, Pressable, ImageBackground } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { format } from "date-fns";
-import { ArrowLeft, Heart, Share2, MapPin } from "lucide-react-native";
-import { useGetGame, useBookSpot } from "@/lib/api";
+import { ArrowLeft, Heart, Share2, MapPin, MessageCircle } from "lucide-react-native";
+import { useGetGame, useBookSpot, useGetOrCreateGameChat } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
 import { FillBar } from "@/components/FillBar";
@@ -12,6 +12,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { PillButton } from "@/components/PillButton";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
+import { getVenuePhoto } from "@/lib/placeholderPhotos";
 
 /**
  * Game detail — dark hero header (mockup style) + real pitch-diagram booking
@@ -25,6 +26,7 @@ export default function GameDetail() {
   const { user } = useAuth();
   const { data: game, isLoading } = useGetGame(id!);
   const bookSpot = useBookSpot();
+  const getOrCreateChat = useGetOrCreateGameChat();
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -67,19 +69,34 @@ export default function GameDetail() {
     Share.share({ message: `Join my game "${game.title}" on PlayOS`, url: `https://playos.sa/game/${game.id}` });
   };
 
+  const openChat = () => {
+    if (!user) return router.push("/(auth)/login");
+    getOrCreateChat.mutate(
+      { gameId: game.id },
+      {
+        onSuccess: (conversationId) => router.push(`/chat/${conversationId}`),
+        onError: (err: any) => setError(err?.data?.error ?? "Book a spot before joining the chat"),
+      },
+    );
+  };
+
   return (
     <ScrollView style={styles.wrap} contentContainerStyle={{ paddingBottom: spacing.xxl * 2 }}>
-      <LinearGradient colors={["#2A3142", "#12141C"]} style={styles.hero}>
+      <ImageBackground source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.hero}>
+        <LinearGradient colors={["rgba(18,20,28,0.1)", "rgba(18,20,28,0.55)"]} style={StyleSheet.absoluteFill} />
         <View style={styles.heroTop}>
           <Pressable onPress={() => router.back()} style={styles.iconBtn} hitSlop={10}>
             <ArrowLeft size={18} color="#FFFFFF" />
           </Pressable>
           <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <Pressable style={styles.iconBtn} hitSlop={10} onPress={openChat} disabled={getOrCreateChat.isPending}>
+              <MessageCircle size={18} color="#FFFFFF" />
+            </Pressable>
             <Pressable style={styles.iconBtn} hitSlop={10}><Heart size={18} color="#FFFFFF" /></Pressable>
             <Pressable style={styles.iconBtn} hitSlop={10} onPress={onShare}><Share2 size={18} color="#FFFFFF" /></Pressable>
           </View>
         </View>
-      </LinearGradient>
+      </ImageBackground>
 
       <View style={styles.content}>
         <View style={styles.rowBetween}>

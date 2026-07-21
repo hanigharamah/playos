@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert } from "react-native";
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { format } from "date-fns";
 import { AlertCircle } from "lucide-react-native";
@@ -7,6 +7,7 @@ import { useGetMyBookings, useCancelBooking, type MyBooking } from "@/lib/api";
 import { GlassCard } from "@/components/GlassCard";
 import { SegmentedControl } from "@/components/SegmentedControl";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -87,16 +88,19 @@ export default function MyGames() {
             onLongPress={() => tab === "upcoming" && handleCancel(item)}
             style={styles.cardWrap}
           >
-            <GlassCard>
-              <View style={styles.row}>
-                <Text style={styles.title} numberOfLines={1}>{item.game.title}</Text>
-                <View style={[styles.statusPill, { backgroundColor: status.color + "1F" }]}>
-                  <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+            <GlassCard padding={0} style={styles.bookingCard}>
+              <Image source={{ uri: getVenuePhoto(item.game.pitchName, item.game.pitchPhotoUrl) }} style={styles.thumb} />
+              <View style={styles.bookingBody}>
+                <View style={styles.row}>
+                  <Text style={styles.title} numberOfLines={1}>{item.game.title}</Text>
+                  <View style={[styles.statusPill, { backgroundColor: status.color + "1F" }]}>
+                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
+                  </View>
                 </View>
+                <Text style={styles.meta}>{item.game.pitchName} · {format(new Date(item.game.kickoffTime), "d MMM, h:mm a")}</Text>
+                <Text style={styles.team}>Team {item.team} · Slot {item.slotIndex + 1}</Text>
+                {cancellingId === item.id && <Text style={styles.cancelling}>Cancelling…</Text>}
               </View>
-              <Text style={styles.meta}>{item.game.pitchName} · {format(new Date(item.game.kickoffTime), "d MMM, h:mm a")}</Text>
-              <Text style={styles.team}>Team {item.team} · Slot {item.slotIndex + 1}</Text>
-              {cancellingId === item.id && <Text style={styles.cancelling}>Cancelling…</Text>}
             </GlassCard>
           </Pressable>
         );
@@ -113,6 +117,9 @@ const styles = StyleSheet.create({
   noticeTitle: { fontSize: 13, fontWeight: "700", color: colors.ink },
   noticeBody: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },
   cardWrap: { marginBottom: spacing.md, marginTop: spacing.md },
+  bookingCard: { flexDirection: "row", overflow: "hidden" },
+  thumb: { width: 84, height: "100%", minHeight: 88 },
+  bookingBody: { flex: 1, padding: spacing.md },
   row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   title: { fontSize: 16, fontWeight: "700", color: colors.ink, flex: 1, marginRight: spacing.sm },
   statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },

@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, Linking, ScrollView } from "react-na
 import { useRouter } from "expo-router";
 import { ChevronRight, CreditCard, Bell, HelpCircle, User as UserIcon, LogOut, Settings as SettingsIcon } from "lucide-react-native";
 import { useAuth } from "@/lib/auth";
-import { useGetMe, useGetMyBookings } from "@/lib/api";
+import { useGetMe, useGetMyStats } from "@/lib/api";
 import { resetAnalytics, track } from "@/lib/analytics";
 import { registerForPush } from "@/lib/notifications";
 import * as Notifications from "expo-notifications";
@@ -21,7 +21,7 @@ const LEGAL_LINKS = [
 export default function Profile() {
   const { signOut } = useAuth();
   const { data: me } = useGetMe();
-  const { data: bookings } = useGetMyBookings();
+  const { data: stats } = useGetMyStats();
   const router = useRouter();
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
   const [toggling, setToggling] = useState(false);
@@ -30,8 +30,6 @@ export default function Profile() {
     screen("Profile");
     Notifications.getPermissionsAsync().then(({ status }) => setPushGranted(status === "granted"));
   }, []);
-
-  const totalGames = (bookings?.upcoming.length ?? 0) + (bookings?.past.length ?? 0);
 
   const togglePush = async () => {
     if (pushGranted) return Linking.openSettings();
@@ -62,8 +60,20 @@ export default function Profile() {
       </View>
 
       <GlassCard style={styles.statCard}>
-        <Text style={styles.statNumber}>{totalGames}</Text>
-        <Text style={styles.statLabel}>Games booked</Text>
+        <View style={styles.statBlock}>
+          <Text style={styles.statNumber}>{stats?.gamesPlayed ?? 0}</Text>
+          <Text style={styles.statLabel}>Matches</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statBlock}>
+          <Text style={styles.statNumber}>{stats?.gamesWon ?? 0}</Text>
+          <Text style={styles.statLabel}>Won</Text>
+        </View>
+        <View style={styles.statDivider} />
+        <View style={styles.statBlock}>
+          <Text style={styles.statNumber}>{stats?.winRate ?? 0}%</Text>
+          <Text style={styles.statLabel}>Win rate</Text>
+        </View>
       </GlassCard>
 
       <GlassCard style={styles.section} padding={0}>
@@ -120,9 +130,11 @@ const styles = StyleSheet.create({
   profileRow: { flexDirection: "row", alignItems: "center", marginBottom: spacing.lg },
   name: { fontSize: 18, fontWeight: "700", color: colors.ink },
   email: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },
-  statCard: { alignItems: "center", marginBottom: spacing.lg },
-  statNumber: { fontSize: 28, fontWeight: "800", color: colors.pink },
-  statLabel: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },
+  statCard: { flexDirection: "row", marginBottom: spacing.lg },
+  statBlock: { flex: 1, alignItems: "center" },
+  statDivider: { width: 1, backgroundColor: colors.hairline },
+  statNumber: { fontSize: 22, fontWeight: "800", color: colors.pink },
+  statLabel: { fontSize: 11, color: colors.inkMuted, marginTop: 2 },
   section: { marginBottom: spacing.lg, overflow: "hidden" },
   row: { flexDirection: "row", alignItems: "center", gap: spacing.md, paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
   rowLabel: { flex: 1, fontSize: 15, fontWeight: "600", color: colors.ink },
