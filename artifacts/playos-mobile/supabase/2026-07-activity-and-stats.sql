@@ -18,7 +18,7 @@
 
 -- ── Post-match self-reported stats ──────────────────────────────────────────
 create table if not exists public.game_player_stats (
-  game_id       uuid not null references public.games(id) on delete cascade,
+  game_id       text not null references public.games(id) on delete cascade,
   user_id       uuid not null references auth.users(id) on delete cascade,
   goals         smallint not null default 0 check (goals >= 0),
   assists       smallint not null default 0 check (assists >= 0),
