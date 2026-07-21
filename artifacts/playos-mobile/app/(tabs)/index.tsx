@@ -8,7 +8,7 @@ import { MatchCard } from "@/components/MatchCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
-import { colors, spacing, radius } from "@/lib/theme";
+import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
 const HERO_BG_HEIGHT = 580;
@@ -43,12 +43,12 @@ export default function Home() {
 
         <HandwrittenHeader style={styles.headline}>
           {featured
-            ? `your next match is ${isTonight ? "tonight." : "coming up."}`
+            ? `your next\nmatch is\n${isTonight ? "tonight." : "coming up."}`
             : "let's get you\non the pitch."}
         </HandwrittenHeader>
 
         {featured && (
-          <View style={{ marginTop: spacing.xl }}>
+          <View style={{ marginTop: spacing.xxl }}>
             <MatchCard game={featured} variant="hero" onPress={() => router.push(`/game/${featured.id}`)} />
           </View>
         )}
@@ -63,6 +63,7 @@ export default function Home() {
             </View>
             {upcoming.slice(0, 3).map((b) => {
               const teamSize = b.game.capacity / 2;
+              const upcomingIsTonight = isSameDay(new Date(b.game.kickoffTime), new Date());
               return (
                 <Pressable key={b.id} onPress={() => router.push(`/game/${b.gameId}`)}>
                   <View style={styles.upcomingCard}>
@@ -72,7 +73,9 @@ export default function Home() {
                     />
                     <View style={styles.upcomingText}>
                       <Text style={styles.upcomingMeta}>
-                        {format(new Date(b.game.kickoffTime), "EEE, h:mm a").toUpperCase()}
+                        {upcomingIsTonight
+                          ? `TONIGHT · ${format(new Date(b.game.kickoffTime), "h:mm a")}`
+                          : format(new Date(b.game.kickoffTime), "EEE, h:mm a").toUpperCase()}
                       </Text>
                       <Text style={styles.upcomingTitle} numberOfLines={1}>{b.game.title}</Text>
                       <Text style={styles.upcomingSub}>{teamSize}v{teamSize} · Outdoor</Text>
@@ -107,13 +110,13 @@ const styles = StyleSheet.create({
   logo: { fontSize: 18, fontWeight: "800", color: colors.inkNavy, letterSpacing: -0.3 },
   bellWrap: { position: "relative" },
   bellDot: { position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.pink },
-  headline: { fontSize: 44, color: colors.orange, marginTop: spacing.lg, lineHeight: 50 },
+  headline: { fontSize: 47, color: colors.orange, marginTop: spacing.xl, lineHeight: 49 },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
-  sectionLabel: { fontSize: 26, color: colors.orange },
+  sectionLabel: { fontSize: 27, color: colors.orange },
   viewAll: { fontSize: 13, fontWeight: "600", color: colors.inkMuted },
-  upcomingCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: radius.lg, overflow: "hidden", marginBottom: spacing.sm, shadowColor: "#000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.06, shadowRadius: 12, elevation: 3 },
-  upcomingThumb: { width: 72, height: 72 },
-  upcomingText: { flex: 1, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
+  upcomingCard: { flexDirection: "row", alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 20, padding: 10, marginBottom: spacing.sm, shadowColor: "#8A5A3A", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.10, shadowRadius: 16, elevation: 4 },
+  upcomingThumb: { width: 64, height: 64, borderRadius: 14 },
+  upcomingText: { flex: 1, paddingHorizontal: spacing.md },
   upcomingMeta: { fontSize: 11, fontWeight: "700", color: colors.orange, textTransform: "uppercase" },
   upcomingTitle: { fontSize: 15, fontWeight: "700", color: colors.ink, marginTop: 2 },
   upcomingSub: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },

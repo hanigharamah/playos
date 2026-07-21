@@ -1,85 +1,98 @@
-import Svg, { Circle } from "react-native-svg";
+import { useMemo } from "react";
+import Svg, { Circle, Defs, RadialGradient, Stop, Ellipse } from "react-native-svg";
+
+type Dot = { x: number; y: number; r: number; color: string; opacity: number };
+
+function mix(a: [number, number, number], b: [number, number, number], t: number): [number, number, number] {
+  return [
+    Math.round(a[0] + (b[0] - a[0]) * t),
+    Math.round(a[1] + (b[1] - a[1]) * t),
+    Math.round(a[2] + (b[2] - a[2]) * t),
+  ];
+}
 
 /**
- * Flowing particle-wave background for the Home hero area.
- * Dots are laid along a parametric sine curve sweeping from top-right to
- * center-left, with perpendicular falloff (denser/bigger/more opaque at the
- * crest, thinning outward) to give a true wave shape rather than a radial fan.
- * Two overlapping bands at different amplitudes add depth.
+ * Flowing particle-wave background for the Home hero (mockup style).
+ *
+ * The dots are laid along concentric curved streamlines emanating from an
+ * off-screen centre just past the top-right corner, sweeping down and to the
+ * left across the hero area — this gives the flowing "contour ribbon" look
+ * rather than a scatter. A soft pink→peach radial bloom sits under the dots,
+ * and each dot's colour + opacity + size is driven by its proximity to that
+ * bloom (pink + bright + larger near it, faint peach far away). Dots fade out
+ * toward the left edge and above the featured card.
  */
 export function DotWaveBackground({ width, height }: { width: number; height: number }) {
-  const dots: { x: number; y: number; r: number; opacity: number; color: string; key: string }[] = [];
+  const bx = width * 0.70;
+  const by = height * 0.34;
 
-  // Color palette: coral at the dense crest → peach → faint orange at edges
-  const COLORS = ["#FF6F61", "#FF3D9A", "#FF9F5A", "#FF9F0A"];
+  const dots = useMemo<Dot[]>(() => {
+    const out: Dot[] = [];
 
-  function colorAt(t: number): string {
-    const idx = Math.min(Math.floor(t * (COLORS.length - 1)), COLORS.length - 2);
-    return COLORS[idx];
-  }
+    const cx = width * 1.02; // streamline centre, just off the right edge near the top
+    const cy = height * 0.15;
+    const bloomR = width * 0.58;
 
-  // Seeded-ish deterministic jitter so it looks organic but doesn't re-render chaotically
-  function jitter(seed: number, scale: number): number {
-    return ((Math.sin(seed * 127.1 + 311.7) * 43758.5453) % 1) * scale - scale / 2;
-  }
+    const PEACH: [number, number, number] = [255, 181, 122]; // #FFB57A
+    const CORAL: [number, number, number] = [255, 111, 97]; // #FF6F61
+    const PINK: [number, number, number] = [255, 74, 150]; // #FF4A96
 
-  // Two wave bands for depth
-  const BANDS = [
-    { tOffset: 0, amplitudeScale: 1.0, dotCount: 280, radiusRange: [1.0, 2.4], opacityPeak: 0.65 },
-    { tOffset: 0.18, amplitudeScale: 0.72, dotCount: 180, radiusRange: [0.8, 1.8], opacityPeak: 0.4 },
-  ];
+    const baseR = width * 0.10;
+    const arcSpacing = width * 0.044;
+    const arcCount = 27;
+    const stepLen = 15; // px between dots along a streamline
 
-  BANDS.forEach((band, bandIdx) => {
-    for (let i = 0; i < band.dotCount; i++) {
-      // t: position along the wave path (0 = top-right entry, 1 = center-left exit)
-      const t = i / (band.dotCount - 1);
+    for (let a = 0; a < arcCount; a++) {
+      const R = baseR + a * arcSpacing;
+      const thetaStart = Math.PI * 0.52;
+      const thetaEnd = Math.PI * 1.16;
+      const arcLen = (thetaEnd - thetaStart) * R;
+      const steps = Math.max(6, Math.floor(arcLen / stepLen));
 
-      // Wave crest path: parametric curve from (width*1.05, height*-0.05) sweeping
-      // to (width*0.1, height*0.62). A sine bump peaks around t=0.45.
-      const startX = width * 1.05;
-      const startY = height * -0.05;
-      const endX = width * 0.08;
-      const endY = height * 0.68;
-      const crestX = startX + (endX - startX) * t;
-      const sineOffset = Math.sin(t * Math.PI) * height * 0.22 * band.amplitudeScale;
-      const crestY = startY + (endY - startY) * t + sineOffset;
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        const theta = thetaStart + (thetaEnd - thetaStart) * t;
+        // deterministic organic jitter so streamlines aren't mechanically perfect
+        const jitter = Math.sin(a * 12.9898 + s * 4.1414) * arcSpacing * 0.28;
+        const rr = R + jitter;
+        const x = cx + rr * Math.cos(theta);
+        const y = cy + rr * Math.sin(theta);
+        if (x < -6 || x > width + 6 || y < -6 || y > height + 6) continue;
 
-      // Perpendicular spread: each dot is offset from the crest perpendicular
-      // to the path. Gaussian-ish distribution so dots thin away from crest.
-      const spreadWidth = width * 0.28 * band.amplitudeScale;
-      // Normal-approximated via average of randoms (Box-Muller would be exact but heavier)
-      const u1 = jitter(i * 3.1 + bandIdx * 99.7 + 7.3, 1);
-      const u2 = jitter(i * 5.7 + bandIdx * 41.1 + 13.9, 1);
-      const gaussian = (u1 + u2) / 2; // approx normal, range ≈ [-0.5, 0.5]
-      const spreadDist = gaussian * spreadWidth;
+        const d = Math.hypot(x - bx, y - by) / bloomR;
+        const prox = Math.max(0, 1 - d); // 1 at bloom centre → 0 far out
 
-      // Perpendicular direction (rotate path tangent 90°)
-      const dx = endX - startX;
-      const dy = endY - startY + Math.cos(t * Math.PI) * height * 0.22 * band.amplitudeScale;
-      const len = Math.sqrt(dx * dx + dy * dy) || 1;
-      const perpX = -dy / len;
-      const perpY = dx / len;
+        const col = prox < 0.5 ? mix(PEACH, CORAL, prox / 0.5) : mix(CORAL, PINK, (prox - 0.5) / 0.5);
 
-      const x = crestX + perpX * spreadDist + jitter(i * 2.3 + bandIdx * 17, 5);
-      const y = crestY + perpY * spreadDist + jitter(i * 4.1 + bandIdx * 31, 5);
+        const edgeFadeL = Math.min(1, Math.max(0, (x - width * 0.01) / (width * 0.26)));
+        const bottomFade = Math.min(1, Math.max(0, (height * 0.66 - y) / (height * 0.22)));
+        const opacity = Math.min(0.88, 0.13 + prox * 0.72) * edgeFadeL * (0.32 + 0.68 * bottomFade);
+        if (opacity < 0.03) continue;
 
-      // Skip dots that fall fully off-screen
-      if (x < -4 || x > width + 4 || y < -4 || y > height + 4) continue;
-
-      // Opacity and size: peak at crest (|gaussian| ≈ 0), fall off with distance
-      const distFraction = Math.min(Math.abs(gaussian) * 2, 1);
-      const opacity = band.opacityPeak * (1 - distFraction * distFraction) + 0.02;
-      const [minR, maxR] = band.radiusRange;
-      const r = maxR - (maxR - minR) * distFraction;
-
-      dots.push({ x, y, r, opacity, color: colorAt(t + band.tOffset * 0.5), key: `${bandIdx}-${i}` });
+        out.push({
+          x,
+          y,
+          r: 0.9 + prox * 1.7,
+          color: `rgb(${col[0]},${col[1]},${col[2]})`,
+          opacity,
+        });
+      }
     }
-  });
+    return out;
+  }, [width, height, bx, by]);
 
   return (
     <Svg width={width} height={height} style={{ position: "absolute", top: 0, left: 0 }} pointerEvents="none">
-      {dots.map((d) => (
-        <Circle key={d.key} cx={d.x} cy={d.y} r={d.r} fill={d.color} opacity={d.opacity} />
+      <Defs>
+        <RadialGradient id="bloom" cx="70%" cy="34%" rx="58%" ry="40%">
+          <Stop offset="0%" stopColor="#FF4A96" stopOpacity="0.22" />
+          <Stop offset="42%" stopColor="#FF8A5A" stopOpacity="0.11" />
+          <Stop offset="100%" stopColor="#FFB57A" stopOpacity="0" />
+        </RadialGradient>
+      </Defs>
+      <Ellipse cx={bx} cy={by} rx={width * 0.62} ry={height * 0.36} fill="url(#bloom)" />
+      {dots.map((d, i) => (
+        <Circle key={i} cx={d.x} cy={d.y} r={d.r} fill={d.color} opacity={d.opacity} />
       ))}
     </Svg>
   );

@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, ImageBackground } from "react-native";
-import { Users, MapPin, Gauge, ArrowRight } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { Users, Shield, Gauge, ArrowRight } from "lucide-react-native";
 import { format } from "date-fns";
 import { useRouter } from "expo-router";
 import { useGameRoster } from "@/lib/api";
@@ -41,33 +42,40 @@ export function MatchCard({
   if (variant === "hero") {
     return (
       <Pressable onPress={onPress}>
-        <View style={styles.heroWrap}>
-          {spotsLeft > 0 && spotsLeft <= 3 && (
-            <View style={styles.heroSpotsBadge}>
-              <Text style={styles.heroSpotsBadgeText}>{spotsLeft} left</Text>
-            </View>
-          )}
-          <Text style={styles.time}>{dayLabel} · {format(new Date(game.kickoffTime), "h:mm a")}</Text>
-          <Text style={styles.title} numberOfLines={1}>{game.pitchName}</Text>
+        <View style={styles.heroShadow}>
+          <LinearGradient
+            colors={["#FFFFFF", "#FFF7F2", "#FFF1F6"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroCard}
+          >
+            {spotsLeft > 0 && spotsLeft <= 3 && (
+              <View style={styles.heroSpotsBadge}>
+                <Text style={styles.heroSpotsBadgeText}>{spotsLeft} left</Text>
+              </View>
+            )}
+            <Text style={styles.time}>{dayLabel} · {format(new Date(game.kickoffTime), "h:mm a")}</Text>
+            <Text style={styles.title} numberOfLines={1}>{game.pitchName}</Text>
 
-          <View style={styles.iconBadges}>
-            <View style={styles.iconBadge}><Users size={13} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>{teamSize}v{teamSize}</Text></View>
-            <View style={styles.iconBadge}><MapPin size={13} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Outdoor</Text></View>
-            <View style={styles.iconBadge}><Gauge size={13} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Intermediate</Text></View>
-          </View>
-
-          {names.length > 0 && (
-            <View style={styles.heroAvatarRow}>
-              <AvatarStack names={names} max={4} />
+            <View style={styles.iconBadges}>
+              <View style={styles.iconBadge}><Users size={14} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>{teamSize}v{teamSize}</Text></View>
+              <View style={styles.iconBadge}><Shield size={14} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Outdoor</Text></View>
+              <View style={styles.iconBadge}><Gauge size={14} color={colors.inkMuted} /><Text style={styles.iconBadgeText}>Intermediate</Text></View>
             </View>
-          )}
 
-          <Pressable onPress={() => router.push(`/game/${game.id}`)} style={styles.heroCta} hitSlop={6}>
-            <View style={styles.heroCtaIcon}>
-              <ArrowRight size={20} color="#FFFFFF" />
-            </View>
-            <Text style={styles.heroCtaLabel}>join match</Text>
-          </Pressable>
+            {names.length > 0 && (
+              <View style={styles.heroAvatarRow}>
+                <AvatarStack names={names} max={4} size={34} />
+              </View>
+            )}
+
+            <Pressable onPress={() => router.push(`/game/${game.id}`)} style={styles.heroCta} hitSlop={6}>
+              <View style={styles.heroCtaIcon}>
+                <ArrowRight size={22} color="#FFFFFF" />
+              </View>
+              <Text style={styles.heroCtaLabel}>join match</Text>
+            </Pressable>
+          </LinearGradient>
         </View>
       </Pressable>
     );
@@ -117,21 +125,28 @@ const styles = StyleSheet.create({
   iconBadgeText: { fontSize: 12, color: colors.inkMuted, fontWeight: "500" },
   ctaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.md },
 
-  // hero — pure white floating card, larger radius, strong soft shadow
-  heroWrap: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
+  // hero — white floating card with a faint warm sheen, big radius, soft shadow
+  heroShadow: {
+    borderRadius: 30,
+    shadowColor: "#8A5A3A",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.16,
+    shadowRadius: 32,
+    elevation: 10,
+  },
+  heroCard: {
+    borderRadius: 30,
     padding: spacing.xl,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.10,
-    shadowRadius: 28,
-    elevation: 8,
+    overflow: "hidden",
   },
   heroSpotsBadge: { position: "absolute", top: spacing.lg, right: spacing.lg, backgroundColor: colors.pink + "1F", paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
   heroSpotsBadgeText: { color: colors.pink, fontSize: 11, fontWeight: "700" },
   heroAvatarRow: { marginTop: spacing.lg },
   heroCta: { flexDirection: "row", alignItems: "center", gap: spacing.md, marginTop: spacing.xl },
-  heroCtaIcon: { width: 52, height: 52, borderRadius: 26, backgroundColor: colors.orange, alignItems: "center", justifyContent: "center" },
+  heroCtaIcon: {
+    width: 56, height: 56, borderRadius: 28, backgroundColor: colors.orange,
+    alignItems: "center", justifyContent: "center",
+    shadowColor: colors.orange, shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 12, elevation: 6,
+  },
   heroCtaLabel: { fontSize: 18, fontWeight: "800", color: colors.ink },
 });
