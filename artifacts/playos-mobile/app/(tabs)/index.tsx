@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Image, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { format } from "date-fns";
 import { Bell } from "lucide-react-native";
@@ -7,11 +7,16 @@ import { useListGames, useGetMe, useGetMyBookings } from "@/lib/api";
 import { MatchCard } from "@/components/MatchCard";
 import { GlassCard } from "@/components/GlassCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { colors, spacing } from "@/lib/theme";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
+import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { colors, spacing, radius } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
+
+const HERO_BG_HEIGHT = 560;
 
 export default function Home() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { data: games, isLoading, refetch, isRefetching } = useListGames();
   const { data: bookings } = useGetMyBookings();
 
@@ -22,60 +27,68 @@ export default function Home() {
   const isTonight = featured && isSameDay(new Date(featured.kickoffTime), new Date());
 
   return (
-    <ScrollView
-      style={styles.wrap}
-      contentContainerStyle={styles.content}
-      refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
-    >
-      <View style={styles.header}>
-        <Text style={styles.logo}>PLAYOS</Text>
-        <Pressable hitSlop={12} style={styles.bellWrap}>
-          <Bell size={22} color={colors.ink} />
-          {upcoming.length > 0 && <View style={styles.bellDot} />}
+    <View style={styles.wrap}>
+      <DotWaveBackground width={width} height={HERO_BG_HEIGHT} />
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
+      >
+        <View style={styles.header}>
+          <Text style={styles.logo}>PLAYOS</Text>
+          <Pressable hitSlop={12} style={styles.bellWrap}>
+            <Bell size={22} color={colors.ink} />
+            {upcoming.length > 0 && <View style={styles.bellDot} />}
+          </Pressable>
+        </View>
+
+        <HandwrittenHeader style={styles.headline}>
+          {featured ? `your next match is ${isTonight ? "tonight" : "coming up"}.` : "let's get you\non the pitch."}
+        </HandwrittenHeader>
+
+        <Pressable onPress={() => router.push("/activity")} style={styles.activityLink}>
+          <Text style={styles.activityLinkText}>view your activity →</Text>
         </Pressable>
-      </View>
 
-      <HandwrittenHeader style={styles.headline}>
-        {featured ? `your next match is ${isTonight ? "tonight" : "coming up"}.` : "let's get you\non the pitch."}
-      </HandwrittenHeader>
-
-      <Pressable onPress={() => router.push("/activity")} style={styles.activityLink}>
-        <Text style={styles.activityLinkText}>view your activity →</Text>
-      </Pressable>
-
-      {featured && (
-        <View style={{ marginTop: spacing.lg }}>
-          <MatchCard game={featured} variant="hero" onPress={() => router.push(`/game/${featured.id}`)} />
-        </View>
-      )}
-
-      {upcoming.length > 0 && (
-        <View style={{ marginTop: spacing.xl }}>
-          <View style={styles.rowBetween}>
-            <Text style={styles.sectionLabel}>coming up</Text>
-            <Pressable onPress={() => router.push("/(tabs)/my-games")}>
-              <Text style={styles.viewAll}>see all</Text>
-            </Pressable>
+        {featured && (
+          <View style={{ marginTop: spacing.lg }}>
+            <MatchCard game={featured} variant="hero" onPress={() => router.push(`/game/${featured.id}`)} />
           </View>
-          {upcoming.slice(0, 3).map((b) => (
-            <Pressable key={b.id} onPress={() => router.push(`/game/${b.gameId}`)}>
-              <GlassCard style={styles.upcomingCard}>
-                <Text style={styles.upcomingMeta}>{format(new Date(b.game.kickoffTime), "EEE, h:mm a").toUpperCase()}</Text>
-                <Text style={styles.upcomingTitle}>{b.game.title}</Text>
-                <Text style={styles.upcomingSub}>{b.game.pitchName}</Text>
-              </GlassCard>
-            </Pressable>
-          ))}
-        </View>
-      )}
+        )}
 
-      {!isLoading && !featured && (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No games nearby yet</Text>
-          <Text style={styles.emptyBody}>Check the Play tab to browse all venues.</Text>
-        </View>
-      )}
-    </ScrollView>
+        {upcoming.length > 0 && (
+          <View style={{ marginTop: spacing.xl }}>
+            <View style={styles.rowBetween}>
+              <Text style={styles.sectionLabel}>coming up</Text>
+              <Pressable onPress={() => router.push("/(tabs)/my-games")}>
+                <Text style={styles.viewAll}>see all</Text>
+              </Pressable>
+            </View>
+            {upcoming.slice(0, 3).map((b) => (
+              <Pressable key={b.id} onPress={() => router.push(`/game/${b.gameId}`)}>
+                <GlassCard style={styles.upcomingCard} padding={0}>
+                  <View style={styles.upcomingRow}>
+                    <Image source={{ uri: getVenuePhoto(b.game.pitchName, b.game.pitchPhotoUrl) }} style={styles.upcomingThumb} />
+                    <View style={styles.upcomingText}>
+                      <Text style={styles.upcomingMeta}>{format(new Date(b.game.kickoffTime), "EEE, h:mm a").toUpperCase()}</Text>
+                      <Text style={styles.upcomingTitle}>{b.game.title}</Text>
+                      <Text style={styles.upcomingSub}>{b.game.pitchName}</Text>
+                    </View>
+                  </View>
+                </GlassCard>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {!isLoading && !featured && (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>No games nearby yet</Text>
+            <Text style={styles.emptyBody}>Check the Play tab to browse all venues.</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
@@ -85,6 +98,7 @@ function isSameDay(a: Date, b: Date) {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.creamDeep },
+  scroll: { flex: 1 },
   content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   logo: { fontSize: 18, fontWeight: "800", color: colors.inkNavy, letterSpacing: -0.3 },
@@ -96,7 +110,10 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 14, fontWeight: "700", color: colors.orange, marginBottom: spacing.sm },
   rowBetween: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.sm },
   viewAll: { fontSize: 13, fontWeight: "600", color: colors.inkMuted },
-  upcomingCard: { marginBottom: spacing.sm },
+  upcomingCard: { marginBottom: spacing.sm, overflow: "hidden" },
+  upcomingRow: { flexDirection: "row", alignItems: "center" },
+  upcomingThumb: { width: 64, height: 64 },
+  upcomingText: { flex: 1, padding: spacing.md },
   upcomingMeta: { fontSize: 11, fontWeight: "700", color: colors.orange, textTransform: "uppercase" },
   upcomingTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, marginTop: 2 },
   upcomingSub: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },
