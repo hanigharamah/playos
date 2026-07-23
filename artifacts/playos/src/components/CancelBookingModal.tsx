@@ -25,25 +25,21 @@ interface CancelBookingModalProps {
 function getRefundTier(kickoffTime: Date, total: number) {
   const now = new Date();
   const hoursUntil = (kickoffTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-  if (hoursUntil > 12) {
+  // Flat 26h policy (July 2026): free cancellation until 26h before kickoff,
+  // nothing inside that window. Keep in sync with useCancelBooking and
+  // /policies/refund.
+  if (hoursUntil > 26) {
     return {
       tier: "full" as const,
       message: `You will receive a 100% refund of SAR ${total.toFixed(2)}.`,
       severity: "info" as const,
     };
-  } else if (hoursUntil >= 6) {
-    return {
-      tier: "credit" as const,
-      message: `You'll receive 1 credit token to use toward your next match. No cash refund applies in this window.`,
-      severity: "warn" as const,
-    };
-  } else {
-    return {
-      tier: "none" as const,
-      message: `No refund is available. Your booking cannot be cancelled less than 6 hours before kickoff. You will not receive any refund.`,
-      severity: "danger" as const,
-    };
   }
+  return {
+    tier: "none" as const,
+    message: `No refund is available less than 26 hours before kickoff. Cancelling releases your spot to other players, but you will not receive a refund.`,
+    severity: "danger" as const,
+  };
 }
 
 export function CancelBookingModal({
@@ -80,26 +76,10 @@ export function CancelBookingModal({
   };
 
   const bgColor =
-    refund.severity === "danger"
-      ? "bg-red-50 border-red-200"
-      : refund.severity === "warn"
-      ? "bg-yellow-50 border-yellow-200"
-      : "bg-blue-50 border-blue-200";
-
-  const textColor =
-    refund.severity === "danger"
-      ? "text-red-800"
-      : refund.severity === "warn"
-      ? "text-yellow-800"
-      : "text-blue-800";
-
-  const Icon = refund.severity === "danger" || refund.severity === "warn" ? AlertTriangle : Info;
-  const iconColor =
-    refund.severity === "danger"
-      ? "text-red-500"
-      : refund.severity === "warn"
-      ? "text-yellow-500"
-      : "text-blue-500";
+    refund.severity === "danger" ? "bg-red-50 border-red-200" : "bg-blue-50 border-blue-200";
+  const textColor = refund.severity === "danger" ? "text-red-800" : "text-blue-800";
+  const Icon = refund.severity === "danger" ? AlertTriangle : Info;
+  const iconColor = refund.severity === "danger" ? "text-red-500" : "text-blue-500";
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
