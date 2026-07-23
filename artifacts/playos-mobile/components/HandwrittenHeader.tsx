@@ -2,14 +2,15 @@ import { Text, type TextProps } from "react-native";
 import { colors, font } from "@/lib/theme";
 
 /**
- * Caveat-font header used for the orange handwritten accents throughout the
- * web app (hero title, "coming up" labels). Requires Caveat_600SemiBold to
- * be loaded via useFonts in app/_layout.tsx (already wired).
+ * Script-font header for the orange handwritten accents ("tonight", "coming
+ * up", "pick your side"). The Figma redesign standardized on Pacifico; both
+ * Pacifico_400Regular and the legacy Caveat_600SemiBold are loaded in
+ * app/_layout.tsx.
  */
 export function HandwrittenHeader({ style, ...rest }: TextProps) {
   return (
     <Text
-      style={[{ fontFamily: font.hand, color: colors.orange, fontSize: 28, letterSpacing: -0.5 }, style]}
+      style={[{ fontFamily: font.script, color: colors.orange, fontSize: 26 }, style]}
       {...rest}
     />
   );
