@@ -64,7 +64,7 @@ export default function MyGames() {
               <AlertCircle size={16} color={colors.orange} />
               <View style={{ flex: 1 }}>
                 <Text style={styles.noticeTitle}>Can't make it?</Text>
-                <Text style={styles.noticeBody}>Cancel or reschedule up to 2 hours before match time.</Text>
+                <Text style={styles.noticeBody}>Free cancellation up to 26 hours before kickoff.</Text>
               </View>
             </View>
           )}
