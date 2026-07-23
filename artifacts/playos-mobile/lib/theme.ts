@@ -81,8 +81,9 @@ export const spacing = {
 export const font = {
   // Load `Caveat` (Google Fonts) at app boot via expo-font for handwritten
   // headers; system font (SF Pro on iOS, Roboto on Android) for the rest.
-  hand: "Caveat_600SemiBold",
-  /** Figma redesign script accents ("tonight", "pick your side", section labels). */
-  script: "Pacifico_400Regular",
+  /** Script accents — the Figma designs use Caveat Bold (nodes 1:2, 1:4). */
+  hand: "Caveat_700Bold",
+  /** Legacy alias kept for older screens; prefer `hand`. */
+  script: "Caveat_700Bold",
   body: undefined, // undefined = system default
 } as const;

@@ -4,8 +4,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import { StatusBar } from "expo-status-bar";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useFonts, Caveat_600SemiBold } from "@expo-google-fonts/caveat";
-import { Pacifico_400Regular } from "@expo-google-fonts/pacifico";
+import { useFonts, Caveat_600SemiBold, Caveat_700Bold } from "@expo-google-fonts/caveat";
 import { AuthProvider } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { colors } from "@/lib/theme";
@@ -20,7 +19,7 @@ const queryClient = new QueryClient({
 
 export default function RootLayout() {
   const router = useRouter();
-  const [fontsLoaded] = useFonts({ Caveat_600SemiBold, Pacifico_400Regular });
+  const [fontsLoaded] = useFonts({ Caveat_600SemiBold, Caveat_700Bold });
 
   useEffect(() => {
     initAnalytics();
