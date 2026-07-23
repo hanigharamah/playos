@@ -1,9 +1,11 @@
-import Svg, { Rect, Line, Circle, Text as SvgText, G } from "react-native-svg";
+import Svg, { Rect, Line, Circle, Path, Text as SvgText, G } from "react-native-svg";
+import { colors } from "@/lib/theme";
 
 /**
- * Direct port of ../playos/src/pages/game/[id].tsx PitchSVG. Positions,
- * viewBox, and colors are copied verbatim — do not "improve" the geometry,
- * it was tuned by eye on the web and must look identical here.
+ * Interactive pitch spot-picker, restyled to the Figma glass booking page
+ * (node 1:4): cream turf #F6EADE, tan line work, Team A orange / Team B
+ * purple dots with soft glows, dashed open slots. Slot POSITIONS are the
+ * tuned geometry ported from the web — do not "improve" them.
  */
 type Pos = { x: number; y: number };
 
@@ -42,6 +44,9 @@ const POSITIONS: Record<number, Pos[]> = {
     { x: 106, y: 140 }, { x: 106, y: 180 }, { x: 155, y: 130 },
   ],
 };
+
+const LINE = "rgba(184,168,148,0.5)";
+const TURF = "#F6EADE";
 
 function getPositions(teamSize: number): Pos[] {
   return POSITIONS[Math.min(11, Math.max(3, teamSize))] ?? POSITIONS[5];
@@ -85,47 +90,46 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
     const booking = getBooking(team, slot);
     const isSelected = selectedSlot?.team === team && selectedSlot?.slot === slot;
     const isCurrentUser = !!booking && booking.userId === currentUserId;
-
-    let fillColor = "rgba(255,255,255,0.12)";
-    let strokeColor = "rgba(255,255,255,0.5)";
-    let strokeDash = "4,3";
-    let strokeWidth = 1.5;
-    let textColor = "rgba(255,255,255,0.6)";
-    let label = "+";
-
-    if (booking) {
-      if (isCurrentUser) {
-        fillColor = "#FFD60A";
-        textColor = "#1C1C1E";
-      } else if (team === 1) {
-        fillColor = "#0A84FF";
-        textColor = "#FFFFFF";
-      } else {
-        fillColor = "#FF3B30";
-        textColor = "#FFFFFF";
-      }
-      strokeColor = "rgba(255,255,255,0.9)";
-      strokeDash = "";
-      strokeWidth = 2;
-      label = initials(booking.playerName);
-    } else if (isSelected) {
-      fillColor = "rgba(255,214,10,0.35)";
-      strokeColor = "#FFD60A";
-      strokeDash = "";
-      strokeWidth = 2;
-      label = "+";
-      textColor = "#FFD60A";
-    }
-
+    const teamColor = team === 1 ? colors.teamOrange : colors.teamPurple;
     const canClick = gameOpen && !booking && !isPending;
 
     // react-native-svg shapes take onPress directly — they can't be wrapped
     // in a React Native <Pressable> since Svg only accepts SVG-node children.
+    if (booking) {
+      return (
+        <G key={`${team}-${slot}`}>
+          <Circle cx={pos.x} cy={pos.y} r={16} fill={teamColor} opacity={0.22} />
+          <Circle cx={pos.x} cy={pos.y} r={11.5} fill={teamColor} stroke="#FFFFFF" strokeWidth={2} />
+          <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={7.5} fontWeight="bold" fill="#FFFFFF" dy={3}>
+            {isCurrentUser ? "YOU" : initials(booking.playerName)}
+          </SvgText>
+        </G>
+      );
+    }
+
+    if (isSelected) {
+      return (
+        <G key={`${team}-${slot}`} onPress={canClick ? () => onSlotClick(team, slot) : undefined}>
+          <Circle cx={pos.x} cy={pos.y} r={16} fill={teamColor} opacity={0.18} />
+          <Circle cx={pos.x} cy={pos.y} r={11.5} fill={teamColor} fillOpacity={0.3} stroke={teamColor} strokeWidth={2} />
+          <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={12} fontWeight="bold" fill={teamColor} dy={4}>
+            +
+          </SvgText>
+        </G>
+      );
+    }
+
     return (
       <G key={`${team}-${slot}`} onPress={canClick ? () => onSlotClick(team, slot) : undefined}>
-        <Circle cx={pos.x} cy={pos.y} r={14} fill={fillColor} stroke={strokeColor} strokeWidth={strokeWidth} strokeDasharray={strokeDash} />
-        <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={booking ? 7.5 : 11} fontWeight="bold" fill={textColor} dy={4}>
-          {label}
+        <Circle
+          cx={pos.x} cy={pos.y} r={10}
+          fill="transparent"
+          stroke="rgba(184,168,148,0.9)"
+          strokeWidth={1.5}
+          strokeDasharray="3,3"
+        />
+        <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={11} fontWeight="600" fill="rgba(184,168,148,0.9)" dy={4}>
+          +
         </SvgText>
       </G>
     );
@@ -133,29 +137,29 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
 
   return (
     <Svg viewBox="0 0 400 260" width="100%" height="100%">
-      <Rect x={0} y={0} width={400} height={260} rx={10} fill="#276B39" />
+      <Rect x={0} y={0} width={400} height={260} rx={14} fill={TURF} />
 
-      {Array.from({ length: 8 }).map((_, i) => (
-        <Rect key={i} x={12 + i * 47} y={12} width={47} height={236} fill={i % 2 === 0 ? "rgba(0,0,0,0.04)" : "transparent"} />
-      ))}
+      {/* Line work — tan on cream, per the Figma pitch */}
+      <Rect x={6} y={6} width={388} height={248} fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Line x1={200} y1={6} x2={200} y2={254} stroke={LINE} strokeWidth={1.5} />
+      <Circle cx={200} cy={130} r={27} fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Circle cx={200} cy={130} r={2.5} fill={LINE} />
 
-      <Rect x={12} y={12} width={376} height={236} fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth={1.5} />
-      <Line x1={200} y1={12} x2={200} y2={248} stroke="rgba(255,255,255,0.7)" strokeWidth={1.5} />
-      <Circle cx={200} cy={130} r={28} fill="none" stroke="rgba(255,255,255,0.7)" strokeWidth={1.5} />
-      <Circle cx={200} cy={130} r={2.5} fill="rgba(255,255,255,0.8)" />
+      <Rect x={6} y={78} width={52} height={104} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={6} y={100} width={22} height={60} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={342} y={78} width={52} height={104} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={372} y={100} width={22} height={60} fill="none" stroke={LINE} strokeWidth={1.2} />
 
-      <Rect x={12} y={78} width={52} height={104} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth={1.2} />
-      <Rect x={12} y={100} width={24} height={60} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth={1.2} />
-      <Rect x={336} y={78} width={52} height={104} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth={1.2} />
-      <Rect x={364} y={100} width={24} height={60} fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth={1.2} />
-
-      <SvgText x={100} y={26} textAnchor="middle" fontSize={9} fontWeight="700" fill="rgba(255,255,255,0.25)" letterSpacing={2}>TEAM 1</SvgText>
-      <SvgText x={300} y={26} textAnchor="middle" fontSize={9} fontWeight="700" fill="rgba(255,255,255,0.25)" letterSpacing={2}>TEAM 2</SvgText>
+      {/* Corner arcs */}
+      <Path d="M 6 20 A 14 14 0 0 0 20 6" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 380 6 A 14 14 0 0 0 394 20" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 394 240 A 14 14 0 0 0 380 254" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 20 254 A 14 14 0 0 0 6 240" fill="none" stroke={LINE} strokeWidth={1.2} />
 
       {positions.map((pos, i) => renderSlot(1, i, pos))}
       {positions.map((pos, i) => renderSlot(2, i, mirrorX(pos)))}
 
-      {isPending && <Rect x={0} y={0} width={400} height={260} rx={10} fill="rgba(0,0,0,0.4)" />}
+      {isPending && <Rect x={0} y={0} width={400} height={260} rx={14} fill="rgba(246,234,222,0.55)" />}
     </Svg>
   );
 }

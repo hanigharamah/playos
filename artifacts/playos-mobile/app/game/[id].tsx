@@ -3,15 +3,15 @@ import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Share, Pressable
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
-import { ArrowLeft, Heart, Share2, MessageCircle, Users, Clock, MapPin, Calendar, Grid3x3, Banknote, ShieldCheck, Lock } from "lucide-react-native";
-import { useGetGame, useBookSpot, useGetOrCreateGameChat } from "@/lib/api";
+import { ArrowLeft, ArrowRight, ArrowUp, Users, Clock, Navigation, MapPin, Calendar, Grid3x3, BarChart3, Lock, ShieldCheck } from "lucide-react-native";
+import { useGetGame, useBookSpot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
 import { GlassCard } from "@/components/GlassCard";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { AvatarStack } from "@/components/AvatarStack";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { colors, gradients, spacing, radius } from "@/lib/theme";
+import { colors, spacing, radius } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 
@@ -20,11 +20,15 @@ function isWithinHours(isoTime: string, hours: number): boolean {
   return ms > 0 && ms <= hours * 3_600_000;
 }
 
+// Exact palette from the Figma booking page (node 1:4)
+const INK = "#211C33";
+const MUTED = "#858091";
+const BODY = "#4D475C";
+
 /**
- * Game detail — Figma glass booking page (node 1:4 in FIGMA-MAP.md): warm
- * canvas with the venue photo bleeding in top-right, glass nav, script accent
- * over a big title, spots card with avatars, venue card with map tile, info
- * grid, and the interactive pitch picker feeding the gradient join CTA.
+ * Game detail — 1:1 port of the Figma glass booking page (node 1:4, see
+ * FIGMA-MAP.md). Booking mechanics unchanged: tap a slot → join match →
+ * checkout.
  */
 export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -32,7 +36,6 @@ export default function GameDetail() {
   const { user } = useAuth();
   const { data: game, isLoading } = useGetGame(id!);
   const bookSpot = useBookSpot();
-  const getOrCreateChat = useGetOrCreateGameChat();
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -78,17 +81,6 @@ export default function GameDetail() {
     Share.share({ message: `Join my game "${game.title}" on PlayOS`, url: `https://playos.sa/game/${game.id}` });
   };
 
-  const openChat = () => {
-    if (!user) return router.push("/(auth)/login");
-    getOrCreateChat.mutate(
-      { gameId: game.id },
-      {
-        onSuccess: (conversationId) => router.push(`/chat/${conversationId}`),
-        onError: (err: any) => setError(err?.data?.error ?? "Book a spot before joining the chat"),
-      },
-    );
-  };
-
   const openMaps = () => {
     const q = encodeURIComponent(game.locationText || game.pitchName);
     Linking.openURL(`https://maps.apple.com/?q=${q}`);
@@ -97,33 +89,35 @@ export default function GameDetail() {
   return (
     <View style={styles.wrap}>
       <WarmCanvas />
-      {/* Venue photo bleeding in from the top-right, blended into the canvas */}
+      {/* Silky light streaks, top-left (Figma 173:315/316) */}
+      <View style={[styles.streak, { top: 70, opacity: 0.3 }]} pointerEvents="none" />
+      <View style={[styles.streak, { top: 130, opacity: 0.2 }]} pointerEvents="none" />
+      {/* Venue photo bleeding across the top (Figma Skyline: 310×260 @ 80,30) */}
       <View style={styles.skyline} pointerEvents="none">
         <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.skylineImg} />
-        <LinearGradient colors={[colors.canvas, "transparent"]} start={{ x: 0, y: 0.5 }} end={{ x: 0.7, y: 0.5 }} style={StyleSheet.absoluteFill} />
-        <LinearGradient colors={["transparent", colors.canvas]} start={{ x: 0.5, y: 0.25 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={[colors.canvas, "transparent"]} start={{ x: 0, y: 0.5 }} end={{ x: 0.55, y: 0.5 }} style={StyleSheet.absoluteFill} />
+        <LinearGradient colors={["transparent", colors.canvas]} start={{ x: 0.5, y: 0.3 }} end={{ x: 0.5, y: 1 }} style={StyleSheet.absoluteFill} />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Glass nav */}
+        {/* Nav: back circle + orange share pill (Figma 173:319 / 316:410) */}
         <View style={styles.nav}>
           <Pressable onPress={() => router.back()} style={styles.navCircle} hitSlop={10}>
-            <ArrowLeft size={19} color={colors.inkDeep} />
+            <ArrowLeft size={19} color={INK} />
           </Pressable>
-          <View style={styles.navRight}>
-            <Pressable onPress={openChat} style={styles.navCircle} hitSlop={10} disabled={getOrCreateChat.isPending}>
-              <MessageCircle size={18} color={colors.inkDeep} />
-            </Pressable>
-            <Pressable onPress={onShare} hitSlop={10}>
-              <LinearGradient colors={gradients.sharePill} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={styles.sharePill}>
-                <Share2 size={16} color={colors.inkDeep} />
-                <Text style={styles.sharePillText}>Share</Text>
-              </LinearGradient>
-            </Pressable>
-            <Pressable style={styles.navCircle} hitSlop={10}>
-              <Heart size={18} color={colors.inkDeep} />
-            </Pressable>
-          </View>
+          <Pressable onPress={onShare} hitSlop={10}>
+            <LinearGradient
+              colors={["#FFD7A7", "#FF9A4D", "#FF6B2E"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.sharePill}
+            >
+              <Text style={styles.sharePillText}>share</Text>
+              <View style={styles.shareOrb}>
+                <ArrowUp size={13} color="#C2551A" />
+              </View>
+            </LinearGradient>
+          </Pressable>
         </View>
 
         {/* Title block */}
@@ -132,11 +126,11 @@ export default function GameDetail() {
         </HandwrittenHeader>
         <Text style={styles.title}>{game.title}</Text>
         <View style={styles.metaRow}>
-          <Users size={16} color={colors.purpleSoft} />
+          <Users size={17} color={colors.purpleSoft} />
           <Text style={styles.metaText}>{teamSize}v{teamSize}</Text>
-          <Clock size={16} color={colors.purpleSoft} style={styles.metaGap} />
+          <Clock size={17} color={colors.purpleSoft} style={styles.metaGap} />
           <Text style={styles.metaText}>90 mins</Text>
-          <MapPin size={16} color={colors.purpleSoft} style={styles.metaGap} />
+          <Navigation size={17} color={colors.purpleSoft} style={styles.metaGap} />
           <Text style={styles.metaText} numberOfLines={1}>{game.pitchName}</Text>
         </View>
 
@@ -147,9 +141,9 @@ export default function GameDetail() {
           </Pressable>
         )}
 
-        {/* Spots card */}
-        <GlassCard style={styles.blockGap} padding={16}>
-          <View style={styles.spotsRow}>
+        {/* Spots card (Figma 173:342: h72, r20, soft glass) */}
+        <GlassCard variant="soft" round={20} style={styles.blockGap} padding={0}>
+          <View style={styles.spotsInner}>
             <View style={{ flex: 1 }}>
               <View style={styles.spotsLine}>
                 <Text style={styles.spotsNumber}>{spotsLeft}</Text>
@@ -160,60 +154,62 @@ export default function GameDetail() {
             <AvatarStack
               names={game.bookings.filter((b) => b.paymentStatus === "paid").map((b) => (b.userId === user?.id ? "You" : "Player"))}
               max={3}
-              size={40}
+              size={36}
             />
           </View>
         </GlassCard>
 
-        {/* About + rule pills */}
-        <Text style={styles.sectionTitle}>about the match</Text>
-        <View style={styles.aboutRow}>
-          <Text style={styles.aboutBody}>Competitive game.{"\n"}Good vibes and great players.</Text>
+        {/* About + rule pills (right-stacked, Figma 174:315–327) */}
+        <View style={styles.aboutBlock}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.sectionTitle}>about the match</Text>
+            <Text style={styles.aboutBody}>Competitive game.{"\n"}Good vibes and great players!</Text>
+          </View>
           <View style={styles.pillsCol}>
             <View style={styles.rulePill}>
-              <ShieldCheck size={14} color={colors.inkDeep} />
+              <ShieldCheck size={14} color={INK} />
               <Text style={styles.rulePillText}>Fair play</Text>
             </View>
             <View style={styles.rulePill}>
-              <Users size={14} color={colors.inkDeep} />
+              <Users size={14} color={INK} />
               <Text style={styles.rulePillText}>No slide tackles</Text>
             </View>
           </View>
         </View>
 
-        {/* Venue card */}
-        <GlassCard style={styles.blockGap} padding={16}>
-          <Text style={styles.cardLabel}>venue</Text>
-          <View style={styles.venueRow}>
+        {/* Venue card (Figma 174:328: h108, r22, map 140×89) */}
+        <GlassCard variant="soft" round={22} style={styles.blockGap} padding={0}>
+          <View style={styles.venueInner}>
             <View style={{ flex: 1 }}>
+              <Text style={styles.cardLabel}>venue</Text>
               <View style={styles.venueNameRow}>
-                <MapPin size={17} color={colors.orange} />
+                <MapPin size={18} color={colors.orange} />
                 <Text style={styles.venueName}>{game.pitchName}</Text>
               </View>
               {!!game.locationText && <Text style={styles.venueAddr}>{game.locationText}</Text>}
             </View>
             <Pressable onPress={openMaps} style={styles.mapTile}>
-              <View style={[styles.mapLine, { top: 18, transform: [{ rotate: "-18deg" }] }]} />
-              <View style={[styles.mapLine, { top: 44, transform: [{ rotate: "-18deg" }] }]} />
-              <View style={[styles.mapLine, { top: 70, transform: [{ rotate: "-18deg" }] }]} />
-              <View style={[styles.mapLineV, { left: 24, transform: [{ rotate: "-18deg" }] }]} />
-              <View style={[styles.mapLineV, { left: 58, transform: [{ rotate: "-18deg" }] }]} />
-              <View style={styles.mapPin}>
-                <MapPin size={20} color="#FFFFFF" fill={colors.orange} />
-              </View>
+              {[14, 42, 70].map((t) => (
+                <View key={`h${t}`} style={[styles.mapLine, { top: t, transform: [{ rotate: "18deg" }] }]} />
+              ))}
+              {[-10, 20, 50, 80, 110].map((l) => (
+                <View key={`v${l}`} style={[styles.mapLineV, { left: l, transform: [{ rotate: "18deg" }] }]} />
+              ))}
+              <View style={[styles.mapLine, styles.mapMainRoad, { top: 56, transform: [{ rotate: "18deg" }] }]} />
+              <MapPin size={26} color="#FFFFFF" fill={colors.orange} />
             </Pressable>
           </View>
         </GlassCard>
 
-        {/* Info grid */}
-        <GlassCard style={styles.blockGap} padding={0}>
+        {/* Info grid (Figma 176:315: h48, r16) */}
+        <GlassCard variant="soft" round={16} style={styles.blockGap} padding={0}>
           <View style={styles.infoGrid}>
             <View style={styles.infoCol}>
               <View style={styles.infoHead}>
                 <Calendar size={13} color={colors.orange} />
                 <Text style={styles.infoLabel}>Date</Text>
               </View>
-              <Text style={styles.infoValue}>{format(kickoff, "d MMM yyyy")}</Text>
+              <Text style={styles.infoValueSm}>{format(kickoff, "d MMM yyyy")}</Text>
             </View>
             <View style={styles.infoDivider} />
             <View style={styles.infoCol}>
@@ -234,51 +230,56 @@ export default function GameDetail() {
             <View style={styles.infoDivider} />
             <View style={styles.infoCol}>
               <View style={styles.infoHead}>
-                <Banknote size={13} color="#ED5C87" />
-                <Text style={styles.infoLabel}>Price</Text>
+                <BarChart3 size={13} color="#ED5C87" />
+                <Text style={styles.infoLabel}>Level</Text>
               </View>
-              <Text style={styles.infoValue}>SAR {game.price}</Text>
+              {/* TODO: replace with game.skillLevel once the backend field exists */}
+              <Text style={styles.infoValueSm}>Intermediate</Text>
             </View>
           </View>
         </GlassCard>
 
-        {/* Choose your spot */}
-        <GlassCard style={styles.blockGap} padding={16}>
-          <View style={styles.pitchHeader}>
-            <Text style={styles.cardLabel}>choose your spot</Text>
-            <View style={styles.legend}>
-              <View style={[styles.legendDot, { backgroundColor: colors.teamOrange }]} />
-              <Text style={styles.legendText}>Team A</Text>
-              <View style={[styles.legendDot, { backgroundColor: colors.teamPurple, marginLeft: 10 }]} />
-              <Text style={styles.legendText}>Team B</Text>
+        {/* Choose your spot (Figma 351:461: r18, cream pitch, tan lines) */}
+        <GlassCard variant="soft" round={18} style={styles.blockGap} padding={0}>
+          <View style={styles.pitchInner}>
+            <View style={styles.pitchHeader}>
+              <Text style={styles.cardLabel}>choose your spot</Text>
+              <View style={styles.legend}>
+                <View style={[styles.legendDot, { backgroundColor: colors.teamOrange }]} />
+                <Text style={styles.legendText}>Team A</Text>
+                <View style={[styles.legendDot, { backgroundColor: colors.teamPurple, marginLeft: 10 }]} />
+                <Text style={styles.legendText}>Team B</Text>
+              </View>
             </View>
-          </View>
-          <View style={styles.pitchWrap}>
-            <PitchSVG
-              teamSize={teamSize}
-              bookings={game.bookings.map((b) => ({
-                team: b.team, slotIndex: b.slotIndex, userId: b.userId,
-                playerName: b.userId === user?.id ? "You" : "Player", paymentStatus: b.paymentStatus,
-              }))}
-              selectedSlot={selectedSlot}
-              onSlotClick={handleSlotClick}
-              currentUserId={user?.id}
-              isPending={bookSpot.isPending}
-              gameOpen={gameOpen}
-            />
-          </View>
-          <View style={styles.pitchFooter}>
-            <Users size={14} color={colors.faintLavender} />
-            <Text style={styles.pitchFooterText}>Minimum {minPlayers} players to start</Text>
-            {spotsLeft > 0 && <Text style={styles.pitchFooterSpots}>· {spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left</Text>}
+            <View style={styles.pitchWrap}>
+              <PitchSVG
+                teamSize={teamSize}
+                bookings={game.bookings.map((b) => ({
+                  team: b.team, slotIndex: b.slotIndex, userId: b.userId,
+                  playerName: b.userId === user?.id ? "You" : "Player", paymentStatus: b.paymentStatus,
+                }))}
+                selectedSlot={selectedSlot}
+                onSlotClick={handleSlotClick}
+                currentUserId={user?.id}
+                isPending={bookSpot.isPending}
+                gameOpen={gameOpen}
+              />
+            </View>
+            <View style={styles.pitchFooter}>
+              <Users size={13} color={MUTED} />
+              <Text style={styles.pitchFooterText}>Minimum {minPlayers} players to start</Text>
+              {spotsLeft > 0 && (
+                <Text style={styles.pitchFooterSpots}>· {spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left</Text>
+              )}
+            </View>
           </View>
         </GlassCard>
 
         {error && <Text style={styles.error}>{error}</Text>}
 
-        {/* CTA */}
-        <GlassCard style={styles.blockGap} padding={14}>
-          <View style={styles.ctaRow}>
+        {/* CTA bar (Figma 176:399: solid glass 82% + lavender glass button) */}
+        <GlassCard round={20} style={styles.blockGap} padding={0}>
+          <View style={styles.ctaInner}>
             <View>
               <Text style={styles.ctaPrice}>SAR {game.price}</Text>
               <Text style={styles.ctaPer}>per player</Text>
@@ -289,18 +290,21 @@ export default function GameDetail() {
               style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}
             >
               <LinearGradient
-                colors={gradients.cta}
+                colors={[
+                  "rgba(244,217,255,0.38)", "rgba(233,201,250,0.38)", "rgba(220,201,255,0.38)",
+                  "rgba(213,215,255,0.38)", "rgba(199,213,255,0.38)",
+                ]}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}
-                style={[styles.ctaBtn, (!selectedSlot || !gameOpen) && { opacity: 0.5 }]}
+                style={[styles.ctaBtn, (!selectedSlot || !gameOpen) && { opacity: 0.55 }]}
               >
                 {bookSpot.isPending ? (
-                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <ActivityIndicator color="#6251E8" size="small" />
                 ) : (
                   <>
                     <Text style={styles.ctaBtnText}>{selectedSlot ? "join match" : "pick a spot"}</Text>
-                    <View style={styles.ctaArrow}>
-                      <ArrowLeft size={15} color={colors.inkDeep} style={{ transform: [{ rotate: "180deg" }] }} />
+                    <View style={styles.ctaOrb}>
+                      <ArrowRight size={15} color={INK} />
                     </View>
                   </>
                 )}
@@ -310,7 +314,7 @@ export default function GameDetail() {
         </GlassCard>
 
         <View style={styles.secureRow}>
-          <Lock size={12} color={colors.faintLavender} />
+          <Lock size={12} color="#807873" />
           <Text style={styles.secureText}>Secure booking</Text>
         </View>
       </ScrollView>
@@ -321,26 +325,35 @@ export default function GameDetail() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.canvas },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.canvas },
-  skyline: { position: "absolute", top: 0, right: 0, width: 300, height: 240 },
-  skylineImg: { width: "100%", height: "100%", opacity: 0.9 },
-  content: { paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: spacing.xxl },
+  streak: {
+    position: "absolute", left: -70, width: 420, height: 26, borderRadius: 13,
+    backgroundColor: "#FFFFFF", transform: [{ rotate: "-22deg" }],
+  },
+  skyline: { position: "absolute", top: 0, right: 0, width: 310, height: 260 },
+  skylineImg: { width: "100%", height: "100%", opacity: 0.92 },
+  content: { paddingHorizontal: spacing.lg, paddingTop: 52, paddingBottom: spacing.xxl },
   nav: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  navRight: { flexDirection: "row", alignItems: "center", gap: spacing.sm },
   navCircle: {
     width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: colors.glassFill, borderWidth: 1, borderColor: colors.glassStroke,
-    shadowColor: colors.warmShadow, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 10, elevation: 3,
+    shadowColor: "#997359", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
   },
   sharePill: {
-    flexDirection: "row", alignItems: "center", gap: 6, height: 42, paddingHorizontal: 16,
-    borderRadius: 21, borderWidth: 1, borderColor: colors.glassStroke,
+    flexDirection: "row", alignItems: "center", gap: 7, height: 30,
+    paddingLeft: 15, paddingRight: 3, borderRadius: 15,
+    borderWidth: 0.6, borderColor: "rgba(255,255,255,0.7)",
+    shadowColor: "#D9B08C", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 5, elevation: 3,
   },
-  sharePillText: { fontSize: 14.5, fontWeight: "600", color: colors.inkDeep },
+  sharePillText: { fontSize: 13.5, fontWeight: "500", color: "#7A3B1E", letterSpacing: -0.13 },
+  shareOrb: {
+    width: 25, height: 25, borderRadius: 12.5, backgroundColor: "rgba(255,255,255,0.92)",
+    alignItems: "center", justifyContent: "center",
+  },
   scriptDate: { fontSize: 23, marginTop: spacing.xl },
-  title: { fontSize: 32, fontWeight: "800", color: colors.inkDeep, marginTop: 2 },
-  metaRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.md },
-  metaGap: { marginLeft: spacing.md },
-  metaText: { fontSize: 14, fontWeight: "600", color: colors.inkDeep, flexShrink: 1 },
+  title: { fontSize: 32, fontWeight: "800", color: INK, marginTop: 2 },
+  metaRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: spacing.md },
+  metaGap: { marginLeft: spacing.lg },
+  metaText: { fontSize: 14, fontWeight: "600", color: INK, flexShrink: 1 },
   getReadyBanner: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     backgroundColor: colors.orange + "1A", borderRadius: radius.md,
@@ -348,59 +361,62 @@ const styles = StyleSheet.create({
   },
   getReadyText: { fontSize: 13, fontWeight: "700", color: colors.orange },
   blockGap: { marginTop: spacing.lg },
-  spotsRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  spotsInner: { flexDirection: "row", alignItems: "center", paddingHorizontal: 17, paddingVertical: 12 },
   spotsLine: { flexDirection: "row", alignItems: "baseline", gap: 8 },
-  spotsNumber: { fontSize: 30, fontWeight: "800", color: colors.orange },
-  spotsLabel: { fontSize: 17, fontWeight: "700", color: colors.inkDeep },
-  spotsSub: { fontSize: 12, color: colors.mutedLavender, marginTop: 4 },
-  sectionTitle: { fontSize: 15.5, fontWeight: "700", color: colors.inkDeep, marginTop: spacing.xl },
-  aboutRow: { flexDirection: "row", justifyContent: "space-between", marginTop: spacing.sm, gap: spacing.md },
-  aboutBody: { fontSize: 13, color: colors.mutedLavender, lineHeight: 20, flex: 1 },
-  pillsCol: { gap: spacing.sm, alignItems: "flex-end" },
+  spotsNumber: { fontSize: 28, fontWeight: "800", color: colors.orange },
+  spotsLabel: { fontSize: 15, fontWeight: "700", color: INK },
+  spotsSub: { fontSize: 11, color: MUTED, marginTop: 3 },
+  aboutBlock: { flexDirection: "row", marginTop: spacing.xl, gap: spacing.md },
+  sectionTitle: { fontSize: 14, fontWeight: "700", color: INK },
+  aboutBody: { fontSize: 12, color: BODY, lineHeight: 20, marginTop: spacing.sm },
+  pillsCol: { gap: spacing.sm, alignItems: "flex-end", justifyContent: "center" },
   rulePill: {
     flexDirection: "row", alignItems: "center", gap: 6,
-    backgroundColor: colors.glassFill, borderWidth: 1, borderColor: colors.glassStroke,
-    paddingHorizontal: 12, height: 32, borderRadius: 16,
-    shadowColor: colors.warmShadow, shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.1, shadowRadius: 8, elevation: 2,
+    backgroundColor: "rgba(255,255,255,0.4)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 11, height: 29, borderRadius: 16,
+    shadowColor: "#997359", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 2,
   },
-  rulePillText: { fontSize: 11.5, fontWeight: "600", color: colors.inkDeep },
-  cardLabel: { fontSize: 14, fontWeight: "700", color: colors.inkDeep },
-  venueRow: { flexDirection: "row", gap: spacing.md, marginTop: spacing.sm },
-  venueNameRow: { flexDirection: "row", alignItems: "center", gap: 6 },
-  venueName: { fontSize: 15, fontWeight: "700", color: colors.inkDeep },
-  venueAddr: { fontSize: 12.5, color: colors.mutedLavender, marginTop: 6, marginLeft: 23 },
+  rulePillText: { fontSize: 10.5, fontWeight: "600", color: INK },
+  cardLabel: { fontSize: 13, fontWeight: "600", color: INK },
+  venueInner: { flexDirection: "row", padding: 15, gap: spacing.md },
+  venueNameRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: spacing.md },
+  venueName: { fontSize: 14, fontWeight: "700", color: INK },
+  venueAddr: { fontSize: 11.5, color: MUTED, marginTop: 6, marginLeft: 25 },
   mapTile: {
-    width: 132, height: 100, borderRadius: radius.lg, backgroundColor: "#F8EFE6",
+    width: 140, height: 89, borderRadius: 16, backgroundColor: "#F9EFE6",
     overflow: "hidden", alignItems: "center", justifyContent: "center",
   },
-  mapLine: { position: "absolute", left: -20, width: 200, height: 2, backgroundColor: "rgba(255,255,255,0.95)" },
-  mapLineV: { position: "absolute", top: -20, width: 2, height: 160, backgroundColor: "rgba(255,255,255,0.95)" },
-  mapPin: { alignItems: "center", justifyContent: "center" },
-  infoGrid: { flexDirection: "row", paddingVertical: 12, paddingHorizontal: 4 },
-  infoCol: { flex: 1, paddingHorizontal: 8 },
-  infoHead: { flexDirection: "row", alignItems: "center", gap: 4 },
-  infoLabel: { fontSize: 9.5, color: colors.mutedLavender },
-  infoValue: { fontSize: 12.5, fontWeight: "700", color: colors.inkDeep, marginTop: 6 },
-  infoDivider: { width: 1, backgroundColor: "rgba(33,28,51,0.08)", marginVertical: 2 },
-  pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  legend: { flexDirection: "row", alignItems: "center", gap: 5 },
-  legendDot: { width: 9, height: 9, borderRadius: 4.5 },
-  legendText: { fontSize: 11, color: colors.mutedLavender },
-  pitchWrap: { borderRadius: radius.md, overflow: "hidden", aspectRatio: 400 / 260, marginTop: spacing.md },
-  pitchFooter: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.md },
-  pitchFooterText: { fontSize: 11.5, color: colors.mutedLavender },
-  pitchFooterSpots: { fontSize: 11.5, fontWeight: "700", color: colors.orange },
+  mapLine: { position: "absolute", left: -40, width: 220, height: 2, backgroundColor: "rgba(255,255,255,0.95)" },
+  mapLineV: { position: "absolute", top: -40, width: 2, height: 200, backgroundColor: "rgba(255,255,255,0.95)" },
+  mapMainRoad: { height: 3.5, backgroundColor: "#FFFFFF" },
+  infoGrid: { flexDirection: "row", paddingVertical: 8, paddingHorizontal: 4, minHeight: 48 },
+  infoCol: { flex: 1, paddingHorizontal: 9 },
+  infoHead: { flexDirection: "row", alignItems: "center", gap: 5 },
+  infoLabel: { fontSize: 8.5, color: MUTED },
+  infoValue: { fontSize: 12, fontWeight: "700", color: INK, marginTop: 5 },
+  infoValueSm: { fontSize: 10, fontWeight: "700", color: INK, marginTop: 6 },
+  infoDivider: { width: 1, backgroundColor: "rgba(33,28,51,0.08)", marginVertical: 4 },
+  pitchInner: { padding: 11 },
+  pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4, paddingTop: 2 },
+  legend: { flexDirection: "row", alignItems: "center", gap: 4 },
+  legendDot: { width: 8, height: 8, borderRadius: 4 },
+  legendText: { fontSize: 10, color: MUTED },
+  pitchWrap: { borderRadius: 12, overflow: "hidden", aspectRatio: 400 / 260, marginTop: spacing.sm },
+  pitchFooter: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: spacing.sm, paddingHorizontal: 4, paddingBottom: 2 },
+  pitchFooterText: { fontSize: 10.5, color: MUTED },
+  pitchFooterSpots: { fontSize: 10.5, fontWeight: "600", color: colors.orange },
   error: { color: colors.danger, textAlign: "center", marginTop: spacing.md },
-  ctaRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
-  ctaPrice: { fontSize: 21, fontWeight: "800", color: colors.inkDeep },
-  ctaPer: { fontSize: 11, color: colors.mutedLavender, marginTop: 2 },
+  ctaInner: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 19, paddingVertical: 9 },
+  ctaPrice: { fontSize: 19, fontWeight: "800", color: INK },
+  ctaPer: { fontSize: 10, color: MUTED, marginTop: 2 },
   ctaBtn: {
-    flexDirection: "row", alignItems: "center", gap: 10, height: 48,
-    paddingLeft: 22, paddingRight: 8, borderRadius: 24, minWidth: 170, justifyContent: "center",
-    shadowColor: "#B78CC0", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 12, elevation: 4,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    width: 168, height: 44, borderRadius: 22, paddingLeft: 25, paddingRight: 7,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#AD91FF", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 24, elevation: 4,
   },
-  ctaBtnText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
-  ctaArrow: { width: 32, height: 32, borderRadius: 16, backgroundColor: "rgba(255,255,255,0.95)", alignItems: "center", justifyContent: "center" },
-  secureRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: spacing.lg },
-  secureText: { fontSize: 11, color: colors.faintLavender },
+  ctaBtnText: { fontSize: 14.5, fontWeight: "600", color: "#6251E8" },
+  ctaOrb: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
+  secureRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: spacing.lg },
+  secureText: { fontSize: 13, color: "#807873" },
 });
