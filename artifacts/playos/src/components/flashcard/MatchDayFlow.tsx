@@ -87,7 +87,7 @@ function derivePhase(
 
   const now = new Date();
   const kickoff = new Date(game.kickoff_time);
-  const checkInOpens = new Date(kickoff.getTime() - 15 * 60 * 1000);
+  const checkInOpens = new Date(kickoff.getTime() - 20 * 60 * 1000);
 
   if (!myBooking.checked_in && now < checkInOpens) return "outside_window";
   if (!myBooking.checked_in) return "arrival";
@@ -268,7 +268,7 @@ export function MatchDayFlow({ gameId, onClose }: MatchDayFlowProps) {
             <h1 className="text-2xl font-bold">Not yet</h1>
             <p className="text-muted-foreground">
               Check-in for <strong>{game?.title}</strong> opens{" "}
-              {kickoff ? <>at <strong>{format(new Date(kickoff.getTime() - 15 * 60 * 1000), "h:mm a")}</strong></> : "15 min before kickoff"}.
+              {kickoff ? <>at <strong>{format(new Date(kickoff.getTime() - 20 * 60 * 1000), "h:mm a")}</strong></> : "20 min before kickoff"}.
             </p>
           </div>
         </div>

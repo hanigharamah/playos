@@ -107,6 +107,9 @@ begin
     coalesce(count(*) filter (where b.checked_in), 0) * 100
     + coalesce(sum(coalesce(s.goals, 0)), 0) * 20
     + coalesce(sum(coalesce(s.assists, 0)), 0) * 10
+    -- +5 XP per commendation received. Requires player_commendations to
+    -- exist: run 2026-07-commendations.sql BEFORE (re-)running this file.
+    + (select coalesce(count(*), 0) * 5 from public.player_commendations c where c.rated_id = auth.uid())
   into v_xp
   from public.bookings b
   left join public.game_player_stats s on s.game_id = b.game_id and s.user_id = b.user_id

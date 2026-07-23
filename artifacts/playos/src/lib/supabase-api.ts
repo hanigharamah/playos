@@ -1120,7 +1120,8 @@ export async function performCheckIn(
   }
 
   const kickoff = new Date(game.kickoff_time);
-  const checkInOpens = new Date(kickoff.getTime() - 15 * 60 * 1000);
+  // T-20 window (product decision July 2026 — matches mobile + Live Activity)
+  const checkInOpens = new Date(kickoff.getTime() - 20 * 60 * 1000);
   if (now < checkInOpens) {
     return { status: "outside_window", opensAt: checkInOpens.toISOString(), title: game.title, pitchName: game.pitch_name };
   }
