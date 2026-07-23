@@ -46,13 +46,15 @@ vec4 main(vec2 fragCoord) {
   bd.x *= aspect;
   float prox = clamp(1.0 - length(bd) / 0.62, 0.0, 1.0);
 
+  // NB: "dot" is a reserved builtin in SkSL — naming a variable "dot" makes
+  // RuntimeEffect.Make() fail silently, so the whole wave vanishes.
   float dotR = 0.10 + prox * 0.16;
-  float dot = smoothstep(dotR, dotR - 0.06, dd);
+  float disc = smoothstep(dotR, dotR - 0.06, dd);
 
   float edgeL = smoothstep(0.0, 0.26, uv.x);
   float cardFade = smoothstep(0.80, 0.42, uv.y) * 0.7 + 0.3;
 
-  float a = dot * (0.10 + prox * 0.85) * edgeL * cardFade;
+  float a = disc * (0.10 + prox * 0.85) * edgeL * cardFade;
   vec3 col = palette(prox);
   vec3 glow = PINK * prox * prox * 0.10;
 
@@ -62,7 +64,10 @@ vec4 main(vec2 fragCoord) {
 `);
 
 export function DotWaveBackground({ width, height }: { width: number; height: number }) {
-  if (!source) return null;
+  if (!source) {
+    if (__DEV__) console.warn("DotWaveBackground: SkSL shader failed to compile — wave hidden");
+    return null;
+  }
   return (
     <Canvas style={{ position: "absolute", top: 0, left: 0, width, height }} pointerEvents="none">
       <Fill>
