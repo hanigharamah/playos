@@ -273,6 +273,12 @@ export default function Checkout() {
 
           {error && <p className="text-sm text-[#FF3B30]">{error}</p>}
 
+          <p className="text-xs text-center text-[#6C6C70]">
+            {isAr
+              ? "إلغاء مجاني حتى ٢٦ ساعة قبل الموعد. لا يوجد استرداد بعد ذلك."
+              : "Free cancellation up to 26 hours before kickoff. No refund after that."}
+          </p>
+
           <button
             onClick={() => method && choose(method)}
             disabled={!method || saving}
