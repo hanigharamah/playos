@@ -8,7 +8,6 @@ import { AuthProvider, useAuth } from "@/lib/auth";
 import { I18nProvider } from "@/lib/i18n";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { WhatsAppBar } from "@/components/layout/whatsapp-bar";
 
 // Pages
 import Home from "@/pages/home";
@@ -79,7 +78,6 @@ function AppContent() {
         <div className="app-bg__blob app-bg__blob--1" />
         <div className="app-bg__blob app-bg__blob--2" />
       </div>
-      <WhatsAppBar />
       <Navbar />
       <main className="flex-1 flex flex-col">
         <Switch>
