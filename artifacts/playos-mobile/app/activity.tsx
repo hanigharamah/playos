@@ -1,121 +1,248 @@
 import { useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, useWindowDimensions, Platform } from "react-native";
 import { useRouter } from "expo-router";
-import Svg, { Circle } from "react-native-svg";
-import { ArrowLeft, Flame, Medal, Check } from "lucide-react-native";
+import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
+import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
+import { ArrowLeft, Flame, Check, Star } from "lucide-react-native";
 import { useGetMyActivity } from "@/lib/api";
-import { GlassCard } from "@/components/GlassCard";
-import { colors, radius, spacing } from "@/lib/theme";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
+import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
 const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 const WEEKLY_GOAL = 4;
 
+// Exact palette from the Figma Activity screen (node 1:9)
+const INK = "#1C1C1E";
+const MUTED = "#6C6C70";
+const RING_INK = "#262E47";
+const SUBTLE = "#8C8780";
+
 /**
- * Real computed activity — every number here comes from get_my_activity()
- * (see supabase/2026-07-activity-and-stats.sql), derived live from actual
- * check-in history. Nothing here is a stored counter that could drift out
- * of sync or a mockup placeholder.
+ * Real computed activity — every number comes from get_my_activity()
+ * (supabase/2026-07-activity-and-stats.sql), derived live from check-in
+ * history. Layout is a 1:1 port of Figma node 1:9.
  */
 export default function Activity() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { data } = useGetMyActivity();
 
   useEffect(() => { screen("Activity"); }, []);
 
   const matches = data?.matchesThisWeek ?? 0;
   const pct = Math.min(1, matches / WEEKLY_GOAL);
-  const radiusPx = 44;
-  const circumference = 2 * Math.PI * radiusPx;
+  const days = data?.weekDaysPlayed ?? [false, false, false, false, false, false, false];
 
-  const levelPct = data ? data.xpIntoLevel / data.xpForNextLevel : 0;
+  // Donut ring (68px outer, 6px stroke)
+  const R = 29;
+  const C = 2 * Math.PI * R;
+
+  const xpInto = data?.xpIntoLevel ?? 0;
+  const xpNext = data?.xpForNextLevel ?? 250;
+  const levelPct = xpNext > 0 ? Math.min(1, xpInto / xpNext) : 0;
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={styles.content}>
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10}><ArrowLeft size={20} color={colors.ink} /></Pressable>
-        <Text style={styles.headerTitle}>activity</Text>
-        <View style={{ width: 20 }} />
-      </View>
+    <View style={styles.wrap}>
+      <DotWaveBackground width={width} height={600} />
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <View style={styles.topRow}>
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <ArrowLeft size={20} color={INK} strokeWidth={2} />
+          </Pressable>
+        </View>
 
-      <GlassCard style={styles.weekCard}>
-        <Text style={styles.weekLabel}>this week</Text>
-        <View style={styles.weekRow}>
-          <Text style={styles.weekCount}>{matches} / {WEEKLY_GOAL} matches</Text>
-          <View style={styles.ring}>
-            <Svg width={100} height={100}>
-              <Circle cx={50} cy={50} r={radiusPx} stroke={colors.hairline} strokeWidth={8} fill="none" />
+        <HandwrittenHeader style={styles.header}>activity</HandwrittenHeader>
+
+        {/* This week + weekly-goal ring (Figma 11:14 / 142:280) */}
+        <View style={styles.weekHeaderRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.thisWeek}>this week</Text>
+            <Text style={styles.matchesLine}>
+              <Text style={styles.matchesCount}>{matches}</Text>
+              <Text style={styles.matchesRest}> / {WEEKLY_GOAL} matches</Text>
+            </Text>
+          </View>
+
+          <BlurView intensity={Platform.OS === "ios" ? 24 : 0} tint="light" style={styles.ringCard}>
+            <Svg width={68} height={68}>
+              <Defs>
+                <SvgGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <Stop offset="0" stopColor="#FF8A00" />
+                  <Stop offset="1" stopColor="#D933BF" />
+                </SvgGradient>
+              </Defs>
+              <Circle cx={34} cy={34} r={R} stroke="#EFE7DE" strokeWidth={6} fill="none" />
               <Circle
-                cx={50} cy={50} r={radiusPx}
-                stroke={colors.orange} strokeWidth={8} fill="none"
-                strokeDasharray={`${circumference}, ${circumference}`}
-                strokeDashoffset={circumference * (1 - pct)}
+                cx={34} cy={34} r={R}
+                stroke="url(#ringGrad)" strokeWidth={6} fill="none"
+                strokeDasharray={`${C}, ${C}`}
+                strokeDashoffset={C * (1 - pct)}
                 strokeLinecap="round"
-                transform="rotate(-90 50 50)"
+                transform="rotate(-90 34 34)"
               />
             </Svg>
-          </View>
+            <Text style={styles.ringPct}>{Math.round(pct * 100)}%</Text>
+            <Text style={styles.ringLabel}>weekly goal</Text>
+          </BlurView>
         </View>
-      </GlassCard>
 
-      <GlassCard style={styles.section}>
-        <Text style={styles.weekLabel}>playing streak</Text>
-        <View style={styles.dayRow}>
-          {DAY_LABELS.map((label, i) => (
-            <View key={i} style={styles.dayCol}>
-              <View style={[styles.dayDot, data?.weekDaysPlayed[i] && styles.dayDotActive]}>
-                {data?.weekDaysPlayed[i] && <Check size={12} color="#FFFFFF" />}
+        {/* Week day bubbles (Figma 142:281) */}
+        <BlurView intensity={Platform.OS === "ios" ? 24 : 0} tint="light" style={styles.weekCard}>
+          <View style={styles.weekRow}>
+            {DAY_LABELS.map((label, i) => (
+              <View key={i} style={styles.dayCol}>
+                <Text style={styles.dayLabel}>{label}</Text>
+                {days[i] ? (
+                  <LinearGradient
+                    colors={["#FF8A5B", "#F0455E"]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                    style={styles.dayBubble}
+                  >
+                    <Check size={15} color="#FFFFFF" strokeWidth={3} />
+                  </LinearGradient>
+                ) : (
+                  <View style={[styles.dayBubble, styles.dayBubbleEmpty]} />
+                )}
               </View>
-              <Text style={styles.dayLabel}>{label}</Text>
-            </View>
-          ))}
-        </View>
-        <View style={styles.streakRow}>
-          <Flame size={18} color={colors.orange} />
-          <Text style={styles.streakText}>{data?.currentStreakDays ?? 0} days</Text>
-          <Text style={styles.streakBest}>best: {data?.longestStreakDays ?? 0} days</Text>
-        </View>
-      </GlassCard>
-
-      <GlassCard style={styles.section}>
-        <View style={styles.levelHeader}>
-          <View>
-            <Text style={styles.weekLabel}>level</Text>
-            <Text style={styles.levelNumber}>{data?.level ?? 1}</Text>
+            ))}
           </View>
-          <Medal size={28} color={colors.orange} />
-        </View>
-        <View style={styles.xpTrack}>
-          <View style={[styles.xpFill, { width: `${Math.round(levelPct * 100)}%` }]} />
-        </View>
-        <Text style={styles.xpText}>{data?.xpIntoLevel ?? 0} / {data?.xpForNextLevel ?? 250} XP</Text>
-      </GlassCard>
-    </ScrollView>
+        </BlurView>
+
+        {/* Streak (Figma 142:282) */}
+        <BlurView intensity={Platform.OS === "ios" ? 24 : 0} tint="light" style={styles.streakCard}>
+          <LinearGradient
+            colors={["#FF9933", "#FF4D40"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.flameBox}
+          >
+            <Flame size={26} color="#FFFFFF" strokeWidth={2} fill="#FFFFFF" />
+          </LinearGradient>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.streakLabel}>playing streak</Text>
+            <Text style={styles.streakValue}>{data?.currentStreakDays ?? 0} days</Text>
+          </View>
+          <Text style={styles.streakBest}>best: {data?.longestStreakDays ?? 0} days</Text>
+        </BlurView>
+
+        {/* Level (Figma 142:286) */}
+        <BlurView intensity={Platform.OS === "ios" ? 24 : 0} tint="light" style={styles.levelCard}>
+          <View style={styles.levelTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.levelLabel}>level</Text>
+              <Text style={styles.levelValue}>{data?.level ?? 1}</Text>
+            </View>
+            <View style={styles.starOuterGlow}>
+              <View style={styles.starInnerGlow}>
+                <LinearGradient
+                  colors={["#FFB33C", "#FF8A00"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.starBadge}
+                >
+                  <Star size={24} color="#FFFFFF" fill="#FFFFFF" strokeWidth={0} />
+                </LinearGradient>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.xpBlock}>
+            <View style={styles.xpTrack}>
+              <LinearGradient
+                colors={["#FF8A00", "#D940D9"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[styles.xpFill, { width: `${Math.round(levelPct * 100)}%` }]}
+              />
+            </View>
+            <Text style={styles.xpText}>
+              <Text style={styles.xpCurrent}>{xpInto.toLocaleString()}</Text>
+              <Text style={styles.xpTotal}> / {xpNext.toLocaleString()} XP</Text>
+            </Text>
+          </View>
+        </BlurView>
+      </ScrollView>
+    </View>
   );
 }
 
+const glassCard = {
+  backgroundColor: "rgba(255,255,255,0.55)",
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.75)",
+  overflow: "hidden" as const,
+  shadowColor: "#8C5926",
+  shadowOffset: { width: 0, height: 10 },
+  shadowOpacity: 0.1,
+  shadowRadius: 24,
+  elevation: 3,
+};
+
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.creamDeep },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: spacing.lg },
-  headerTitle: { fontSize: 20, fontWeight: "800", color: colors.orange },
-  weekCard: { marginBottom: spacing.lg },
-  weekLabel: { fontSize: 13, fontWeight: "700", color: colors.inkMuted, textTransform: "uppercase", letterSpacing: 0.5 },
-  weekRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: spacing.sm },
-  weekCount: { fontSize: 20, fontWeight: "800", color: colors.ink },
-  ring: { width: 100, height: 100 },
-  section: { marginBottom: spacing.lg },
-  dayRow: { flexDirection: "row", justifyContent: "space-between", marginTop: spacing.md },
-  dayCol: { alignItems: "center", gap: 6 },
-  dayDot: { width: 28, height: 28, borderRadius: 14, backgroundColor: "#F2F2F7", alignItems: "center", justifyContent: "center" },
-  dayDotActive: { backgroundColor: colors.orange },
-  dayLabel: { fontSize: 11, color: colors.inkMuted, fontWeight: "600" },
-  streakRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.lg },
-  streakText: { fontSize: 16, fontWeight: "800", color: colors.ink },
-  streakBest: { fontSize: 12, color: colors.inkMuted, marginLeft: "auto" },
-  levelHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  levelNumber: { fontSize: 28, fontWeight: "800", color: colors.ink, marginTop: 2 },
-  xpTrack: { height: 8, borderRadius: 4, backgroundColor: colors.hairline, marginTop: spacing.md, overflow: "hidden" },
-  xpFill: { height: "100%", borderRadius: 4, backgroundColor: colors.orange },
-  xpText: { fontSize: 12, color: colors.inkMuted, marginTop: spacing.xs, textAlign: "right" },
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
+  content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: 130 },
+
+  topRow: { height: 24, justifyContent: "center" },
+  header: { fontSize: 34, marginTop: 10 },
+
+  weekHeaderRow: { flexDirection: "row", alignItems: "flex-start", marginTop: spacing.lg },
+  thisWeek: { fontSize: 13, fontWeight: "600", color: MUTED },
+  matchesLine: { marginTop: 8 },
+  matchesCount: { fontSize: 36, fontWeight: "700", color: "#FF8A00" },
+  matchesRest: { fontSize: 36, fontWeight: "700", color: "#1C2133" },
+
+  ringCard: {
+    ...glassCard,
+    width: 104, height: 112, borderRadius: 24,
+    alignItems: "center", justifyContent: "center", paddingTop: 6,
+  },
+  ringPct: { position: "absolute", top: 33, fontSize: 17, fontWeight: "700", color: RING_INK },
+  ringLabel: { fontSize: 9, color: SUBTLE, marginTop: 4 },
+
+  weekCard: { ...glassCard, height: 92, borderRadius: 22, marginTop: spacing.xl, justifyContent: "center" },
+  weekRow: { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 8 },
+  dayCol: { alignItems: "center", width: 36 },
+  dayLabel: { fontSize: 11, color: MUTED },
+  dayBubble: { width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center", marginTop: 6 },
+  dayBubbleEmpty: { backgroundColor: "rgba(230,228,224,0.7)" },
+
+  streakCard: {
+    ...glassCard,
+    flexDirection: "row", alignItems: "center", gap: 16,
+    height: 96, borderRadius: 22, marginTop: spacing.lg, paddingHorizontal: 16,
+  },
+  flameBox: {
+    width: 52, height: 52, borderRadius: 16, alignItems: "center", justifyContent: "center",
+    shadowColor: "#FF6B33", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 4,
+  },
+  streakLabel: { fontSize: 13, fontWeight: "600", color: MUTED },
+  streakValue: { fontSize: 32, fontWeight: "700", color: INK, marginTop: 2 },
+  streakBest: { fontSize: 13, color: MUTED, alignSelf: "flex-end", marginBottom: 12 },
+
+  levelCard: { ...glassCard, borderRadius: 22, marginTop: spacing.lg, padding: 20, minHeight: 200 },
+  levelTop: { flexDirection: "row", alignItems: "flex-start" },
+  levelLabel: { fontSize: 13, fontWeight: "600", color: MUTED },
+  levelValue: { fontSize: 48, fontWeight: "700", color: INK, marginTop: 2 },
+  starOuterGlow: {
+    width: 96, height: 96, borderRadius: 48, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,170,60,0.10)",
+  },
+  starInnerGlow: {
+    width: 76, height: 76, borderRadius: 38, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,170,60,0.16)",
+  },
+  starBadge: {
+    width: 56, height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center",
+    shadowColor: "#FF8A00", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.4, shadowRadius: 14, elevation: 5,
+  },
+  xpBlock: { marginTop: "auto", paddingTop: spacing.xxl },
+  xpTrack: { height: 8, borderRadius: 4, backgroundColor: "#E5E3DE", overflow: "hidden" },
+  xpFill: { height: 8, borderRadius: 4 },
+  xpText: { marginTop: 8 },
+  xpCurrent: { fontSize: 12, color: "#FF8A00" },
+  xpTotal: { fontSize: 12, color: SUBTLE },
 });
