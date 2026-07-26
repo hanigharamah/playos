@@ -45,8 +45,13 @@ const POSITIONS: Record<number, Pos[]> = {
   ],
 };
 
-const LINE = "rgba(184,168,148,0.5)";
+const LINE = "rgba(255,255,255,0.85)";
 const TURF = "#F6EADE";
+const EMPTY = "rgba(191,184,173,0.5)";
+/** Design pitch is 326×122 (wide + short); slot POSITIONS were tuned on a
+ *  400×260 board, so squash Y to fit without distorting the dots. */
+const VB_H = 150;
+const Y_SCALE = VB_H / 260;
 
 function getPositions(teamSize: number): Pos[] {
   return POSITIONS[Math.min(11, Math.max(3, teamSize))] ?? POSITIONS[5];
@@ -86,7 +91,8 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
     return paidBookings.find((b) => b.team === team && b.slotIndex === slot);
   }
 
-  function renderSlot(team: number, slot: number, pos: Pos) {
+  function renderSlot(team: number, slot: number, rawPos: Pos) {
+    const pos = { x: rawPos.x, y: rawPos.y * Y_SCALE };
     const booking = getBooking(team, slot);
     const isSelected = selectedSlot?.team === team && selectedSlot?.slot === slot;
     const isCurrentUser = !!booking && booking.userId === currentUserId;
@@ -98,9 +104,9 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
     if (booking) {
       return (
         <G key={`${team}-${slot}`}>
-          <Circle cx={pos.x} cy={pos.y} r={16} fill={teamColor} opacity={0.22} />
-          <Circle cx={pos.x} cy={pos.y} r={11.5} fill={teamColor} stroke="#FFFFFF" strokeWidth={2} />
-          <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={7.5} fontWeight="bold" fill="#FFFFFF" dy={3}>
+          <Circle cx={pos.x} cy={pos.y} r={13} fill={teamColor} opacity={0.2} />
+          <Circle cx={pos.x} cy={pos.y} r={9.5} fill={teamColor} stroke="#FFFFFF" strokeWidth={1.6} />
+          <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={7} fontWeight="bold" fill="#FFFFFF" dy={2.6}>
             {isCurrentUser ? "YOU" : initials(booking.playerName)}
           </SvgText>
         </G>
@@ -110,56 +116,50 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
     if (isSelected) {
       return (
         <G key={`${team}-${slot}`} onPress={canClick ? () => onSlotClick(team, slot) : undefined}>
-          <Circle cx={pos.x} cy={pos.y} r={16} fill={teamColor} opacity={0.18} />
-          <Circle cx={pos.x} cy={pos.y} r={11.5} fill={teamColor} fillOpacity={0.3} stroke={teamColor} strokeWidth={2} />
-          <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={12} fontWeight="bold" fill={teamColor} dy={4}>
+          <Circle cx={pos.x} cy={pos.y} r={13} fill={teamColor} opacity={0.18} />
+          <Circle cx={pos.x} cy={pos.y} r={9.5} fill={teamColor} fillOpacity={0.3} stroke={teamColor} strokeWidth={1.8} />
+          <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={11} fontWeight="bold" fill={teamColor} dy={3.6}>
             +
           </SvgText>
         </G>
       );
     }
 
+    // Open slot: a small plus mark, per the design (no dashed ring)
     return (
       <G key={`${team}-${slot}`} onPress={canClick ? () => onSlotClick(team, slot) : undefined}>
-        <Circle
-          cx={pos.x} cy={pos.y} r={10}
-          fill="transparent"
-          stroke="rgba(184,168,148,0.9)"
-          strokeWidth={1.5}
-          strokeDasharray="3,3"
-        />
-        <SvgText x={pos.x} y={pos.y} textAnchor="middle" fontSize={11} fontWeight="600" fill="rgba(184,168,148,0.9)" dy={4}>
-          +
-        </SvgText>
+        <Circle cx={pos.x} cy={pos.y} r={11} fill="transparent" />
+        <Rect x={pos.x - 3.5} y={pos.y - 0.75} width={7} height={1.5} rx={0.5} fill={EMPTY} />
+        <Rect x={pos.x - 0.75} y={pos.y - 3.5} width={1.5} height={7} rx={0.5} fill={EMPTY} />
       </G>
     );
   }
 
   return (
-    <Svg viewBox="0 0 400 260" width="100%" height="100%">
-      <Rect x={0} y={0} width={400} height={260} rx={14} fill={TURF} />
+    <Svg viewBox={`0 0 400 ${VB_H}`} width="100%" height="100%">
+      <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill={TURF} />
 
-      {/* Line work — tan on cream, per the Figma pitch */}
-      <Rect x={6} y={6} width={388} height={248} fill="none" stroke={LINE} strokeWidth={1.5} />
-      <Line x1={200} y1={6} x2={200} y2={254} stroke={LINE} strokeWidth={1.5} />
-      <Circle cx={200} cy={130} r={27} fill="none" stroke={LINE} strokeWidth={1.5} />
-      <Circle cx={200} cy={130} r={2.5} fill={LINE} />
+      {/* Line work — white on cream, per the Figma pitch */}
+      <Rect x={5} y={4} width={390} height={142} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Line x1={200} y1={4} x2={200} y2={146} stroke={LINE} strokeWidth={1.2} />
+      <Circle cx={200} cy={75} r={21} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Circle cx={200} cy={75} r={2} fill={LINE} />
 
-      <Rect x={6} y={78} width={52} height={104} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Rect x={6} y={100} width={22} height={60} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Rect x={342} y={78} width={52} height={104} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Rect x={372} y={100} width={22} height={60} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={5} y={31} width={52} height={88} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={5} y={48} width={20} height={54} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={343} y={31} width={52} height={88} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={375} y={48} width={20} height={54} fill="none" stroke={LINE} strokeWidth={1.2} />
 
       {/* Corner arcs */}
-      <Path d="M 6 20 A 14 14 0 0 0 20 6" fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Path d="M 380 6 A 14 14 0 0 0 394 20" fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Path d="M 394 240 A 14 14 0 0 0 380 254" fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Path d="M 20 254 A 14 14 0 0 0 6 240" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 5 16 A 12 12 0 0 0 17 4" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 383 4 A 12 12 0 0 0 395 16" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 395 134 A 12 12 0 0 0 383 146" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 17 146 A 12 12 0 0 0 5 134" fill="none" stroke={LINE} strokeWidth={1.2} />
 
       {positions.map((pos, i) => renderSlot(1, i, pos))}
       {positions.map((pos, i) => renderSlot(2, i, mirrorX(pos)))}
 
-      {isPending && <Rect x={0} y={0} width={400} height={260} rx={14} fill="rgba(246,234,222,0.55)" />}
+      {isPending && <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="rgba(246,234,222,0.55)" />}
     </Svg>
   );
 }

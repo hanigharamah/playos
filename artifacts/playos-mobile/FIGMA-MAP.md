@@ -40,7 +40,7 @@ regenerating it.)
 |---|---|---|
 | Home | 1:2 | `app/(tabs)/index.tsx` |
 | Play | 1:3 | `app/(tabs)/play.tsx` |
-| Game Detail (booking page, glass redesign) | 1:4 | `app/game/[id].tsx` |
+| Game Detail (standalone Figma page) | 552:483 | `app/game/[id].tsx` |
 | Bookings | 1:5 | `app/(tabs)/my-games.tsx` |
 | Chats | 1:6 | `app/(tabs)/chat.tsx` |
 | Profile | 1:7 | `app/(tabs)/profile.tsx` |
