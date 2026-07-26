@@ -1,47 +1,46 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { format } from "date-fns";
-import { AlertCircle } from "lucide-react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { format, isSameDay } from "date-fns";
 import { useGetMyBookings, useCancelBooking, type MyBooking } from "@/lib/api";
-import { GlassCard } from "@/components/GlassCard";
-import { SegmentedControl } from "@/components/SegmentedControl";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
-import { colors, spacing, radius } from "@/lib/theme";
+import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
-const STATUS_LABEL: Record<string, { label: string; color: string }> = {
-  paid: { label: "Confirmed", color: colors.success },
-  pending: { label: "Pending payment", color: colors.orange },
-};
+// Exact palette from the Figma Bookings screen (node 1:5)
+const INK = "#1C1C1E";
+const MUTED = "#6C6C70";
 
 export default function MyGames() {
   const router = useRouter();
   const { data, isLoading, refetch, isRefetching } = useGetMyBookings();
   const cancelBooking = useCancelBooking();
-  const [cancellingId, setCancellingId] = useState<string | null>(null);
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => { screen("MyGames"); }, []);
 
   const list = (tab === "upcoming" ? data?.upcoming : data?.past) ?? [];
+  const soonest = data?.upcoming?.[0];
 
   const handleCancel = (booking: MyBooking) => {
-    Alert.alert("Cancel booking?", "Refund depends on how close it is to kickoff.", [
-      { text: "Keep spot", style: "cancel" },
-      {
-        text: "Cancel booking",
-        style: "destructive",
-        onPress: () => {
-          setCancellingId(booking.id);
-          cancelBooking.mutate(
-            { bookingId: booking.id },
-            { onSuccess: (res) => Alert.alert("Cancelled", res.message), onSettled: () => setCancellingId(null) },
-          );
+    Alert.alert(
+      "Cancel booking?",
+      "Free cancellation up to 26 hours before kickoff. After that your spot is released but there's no refund.",
+      [
+        { text: "Keep my spot", style: "cancel" },
+        {
+          text: "Cancel booking",
+          style: "destructive",
+          onPress: () =>
+            cancelBooking.mutate(
+              { bookingId: booking.id },
+              { onSuccess: (res) => Alert.alert("Cancelled", res.message) },
+            ),
         },
-      },
-    ]);
+      ],
+    );
   };
 
   return (
@@ -51,29 +50,35 @@ export default function MyGames() {
       data={list}
       keyExtractor={(item) => item.id}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
+      showsVerticalScrollIndicator={false}
       ListHeaderComponent={
         <View>
-          <Text style={styles.header}>Your bookings</Text>
-          <SegmentedControl
-            options={[{ value: "upcoming", label: "Upcoming" }, { value: "past", label: "Past" }]}
-            value={tab}
-            onChange={setTab}
-          />
-          {tab === "upcoming" && list.length > 0 && (
-            <View style={styles.noticeCard}>
-              <AlertCircle size={16} color={colors.orange} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.noticeTitle}>Can't make it?</Text>
-                <Text style={styles.noticeBody}>Free cancellation up to 26 hours before kickoff.</Text>
-              </View>
-            </View>
-          )}
+          <HandwrittenHeader style={styles.header}>my games</HandwrittenHeader>
+
+          {/* Segmented control (Figma 5:4) */}
+          <View style={styles.segment}>
+            <Pressable
+              style={[styles.segmentHalf, tab === "upcoming" && styles.segmentActive]}
+              onPress={() => setTab("upcoming")}
+            >
+              <Text style={[styles.segmentText, tab === "upcoming" && styles.segmentTextActive]}>upcoming</Text>
+            </Pressable>
+            <Pressable
+              style={[styles.segmentHalf, tab === "past" && styles.segmentActive]}
+              onPress={() => setTab("past")}
+            >
+              <Text style={[styles.segmentText, tab === "past" && styles.segmentTextActive]}>past</Text>
+            </Pressable>
+          </View>
+          <View style={[styles.underline, tab === "past" && styles.underlinePast]} />
         </View>
       }
       ListEmptyComponent={
         !isLoading ? (
           <View style={styles.empty}>
-            <HandwrittenHeader style={styles.emptyTitle}>{tab === "upcoming" ? "coming up" : "nothing yet"}</HandwrittenHeader>
+            <HandwrittenHeader style={styles.emptyTitle}>
+              {tab === "upcoming" ? "nothing booked yet" : "nothing yet"}
+            </HandwrittenHeader>
             <Text style={styles.emptyBody}>
               {tab === "upcoming" ? "Your booked games will show up here." : "Past games will show up here."}
             </Text>
@@ -81,59 +86,107 @@ export default function MyGames() {
         ) : null
       }
       renderItem={({ item }) => {
-        const status = STATUS_LABEL[item.paymentStatus] ?? { label: item.paymentStatus, color: colors.inkMuted };
+        const kickoff = new Date(item.game.kickoffTime);
+        const teamSize = item.game.capacity / 2;
+        const tonight = isSameDay(kickoff, new Date());
         return (
           <Pressable
+            style={styles.row}
             onPress={() => router.push(`/game/${item.gameId}`)}
-            onLongPress={() => tab === "upcoming" && handleCancel(item)}
-            style={styles.cardWrap}
+            onLongPress={() => handleCancel(item)}
           >
-            <GlassCard padding={0} style={styles.bookingCard}>
-              <Image source={{ uri: getVenuePhoto(item.game.pitchName, item.game.pitchPhotoUrl) }} style={styles.thumb} />
-              <View style={styles.bookingBody}>
-                <View style={styles.row}>
-                  <Text style={styles.title} numberOfLines={1}>{item.game.title}</Text>
-                  <View style={[styles.statusPill, { backgroundColor: status.color + "1F" }]}>
-                    <Text style={[styles.statusText, { color: status.color }]}>{status.label}</Text>
-                  </View>
-                </View>
-                <Text style={styles.meta}>{item.game.pitchName} · {format(new Date(item.game.kickoffTime), "d MMM, h:mm a")}</Text>
-                <Text style={styles.team}>Team {item.team} · Slot {item.slotIndex + 1}</Text>
-                {cancellingId === item.id && <Text style={styles.cancelling}>Cancelling…</Text>}
-                {tab === "past" && (
-                  <Pressable onPress={() => router.push(`/post-match/${item.gameId}`)}>
-                    <Text style={styles.statsLink}>add your stats →</Text>
-                  </Pressable>
-                )}
-              </View>
-            </GlassCard>
+            <Image
+              source={{ uri: getVenuePhoto(item.game.pitchName, item.game.pitchPhotoUrl) }}
+              style={styles.thumb}
+            />
+            <View style={styles.rowText}>
+              <Text style={styles.rowMeta}>
+                {tonight ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()} • {format(kickoff, "h:mm a")}
+              </Text>
+              <Text style={styles.rowTitle} numberOfLines={1}>{item.game.title}</Text>
+              <Text style={styles.rowSub}>{teamSize}v{teamSize} • Outdoor</Text>
+            </View>
           </Pressable>
         );
       }}
+      ListFooterComponent={
+        tab === "upcoming" && soonest ? (
+          <Pressable onPress={() => handleCancel(soonest)}>
+            <LinearGradient
+              colors={["rgba(255,227,191,0.85)", "rgba(255,209,158,0.85)"]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={styles.nudge}
+            >
+              <View style={styles.alertBadge}>
+                <Text style={styles.alertBadgeText}>!</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.nudgeTitle}>can't make it?</Text>
+                <Text style={styles.nudgeBody}>Cancel or reschedule up to 26 hours{"\n"}before match time.</Text>
+              </View>
+              <Text style={styles.nudgeChevron}>›</Text>
+            </LinearGradient>
+          </Pressable>
+        ) : null
+      }
     />
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.creamDeep },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
-  header: { fontSize: 28, fontWeight: "800", color: colors.orange, marginBottom: spacing.lg },
-  statsLink: { fontSize: 12, fontWeight: "700", color: colors.orange, marginTop: spacing.sm },
-  noticeCard: { flexDirection: "row", gap: spacing.sm, backgroundColor: colors.orange + "14", borderRadius: radius.md, padding: spacing.md, marginTop: spacing.lg },
-  noticeTitle: { fontSize: 13, fontWeight: "700", color: colors.ink },
-  noticeBody: { fontSize: 12, color: colors.inkMuted, marginTop: 2 },
-  cardWrap: { marginBottom: spacing.md, marginTop: spacing.md },
-  bookingCard: { flexDirection: "row", overflow: "hidden" },
-  thumb: { width: 84, height: "100%", minHeight: 88 },
-  bookingBody: { flex: 1, padding: spacing.md },
-  row: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
-  title: { fontSize: 16, fontWeight: "700", color: colors.ink, flex: 1, marginRight: spacing.sm },
-  statusPill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill },
-  statusText: { fontSize: 11, fontWeight: "700" },
-  meta: { fontSize: 13, color: colors.inkMuted, marginTop: 4 },
-  team: { fontSize: 12, color: colors.inkFaint, marginTop: 2 },
-  cancelling: { fontSize: 12, color: colors.danger, marginTop: 6 },
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
+  content: { paddingHorizontal: 19, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
+
+  header: { fontSize: 28, marginBottom: spacing.xl },
+
+  segment: {
+    flexDirection: "row", height: 44, borderRadius: 22, padding: 3,
+    backgroundColor: "rgba(255,255,255,0.4)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
+  },
+  segmentHalf: { flex: 1, borderRadius: 18, alignItems: "center", justifyContent: "center" },
+  segmentActive: {
+    backgroundColor: "rgba(255,255,255,0.65)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
+  },
+  segmentText: { fontSize: 14, color: MUTED },
+  segmentTextActive: { fontWeight: "600", color: INK },
+  underline: { width: 70, height: 2, backgroundColor: colors.orange, marginTop: 27, marginBottom: 9 },
+  underlinePast: { marginLeft: 179 },
+
+  row: {
+    flexDirection: "row", alignItems: "center", height: 104, borderRadius: 18, padding: 13,
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
+    marginBottom: 16,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 4,
+  },
+  thumb: { width: 76, height: 76, borderRadius: 16 },
+  rowText: { flex: 1, marginLeft: 16 },
+  rowMeta: { fontSize: 11, fontWeight: "600", color: colors.orange },
+  rowTitle: { fontSize: 18, fontWeight: "700", color: INK, marginTop: 5 },
+  rowSub: { fontSize: 13, color: MUTED, marginTop: 6 },
+
+  nudge: {
+    flexDirection: "row", alignItems: "center", gap: 14,
+    height: 96, borderRadius: 16, paddingHorizontal: 14, marginTop: 4,
+    borderWidth: 1.5, borderColor: "rgba(255,158,51,0.9)",
+    shadowColor: "#D9730D", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.22, shadowRadius: 20, elevation: 4,
+  },
+  alertBadge: {
+    width: 48, height: 48, borderRadius: 24, backgroundColor: colors.orange,
+    alignItems: "center", justifyContent: "center",
+    shadowColor: "#D9730D", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10, elevation: 3,
+  },
+  alertBadgeText: { fontSize: 22, fontWeight: "700", color: "#FFFFFF" },
+  nudgeTitle: { fontSize: 16, fontWeight: "600", color: "#BF5205" },
+  nudgeBody: { fontSize: 13, color: MUTED, marginTop: 6, lineHeight: 17 },
+  nudgeChevron: { fontSize: 18, fontWeight: "700", color: MUTED },
+
   empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
-  emptyTitle: { fontSize: 32 },
-  emptyBody: { color: colors.inkMuted, marginTop: spacing.sm },
+  emptyTitle: { fontSize: 26 },
+  emptyBody: { fontSize: 13, color: MUTED, marginTop: 8 },
 });

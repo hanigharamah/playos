@@ -350,7 +350,12 @@ export function useConfirmPaymentMethod() {
   });
 }
 
-/** Refund tiers by time-to-kickoff — exact port of the web's useCancelBooking. */
+/**
+ * Flat 26h policy (July 2026): > 26h → full refund, otherwise nothing.
+ * Mirrors the web's useCancelBooking; keep both in sync with the policy page.
+ * Resale-triggered token issuance is deliberately not implemented — it depends
+ * on a waitlist/reclaim claim-and-pay flow that doesn't exist yet.
+ */
 export function useCancelBooking() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -364,18 +369,9 @@ export function useCancelBooking() {
       const kickoff = (booking?.games as any)?.kickoff_time;
       const hoursUntil = kickoff ? (new Date(kickoff).getTime() - Date.now()) / 3_600_000 : 0;
 
-      let message = "Booking cancelled. No refund applies this close to kickoff.";
-      if (hoursUntil > 12) {
-        message = "Booking cancelled. You'll receive a full refund.";
-      } else if (hoursUntil >= 6) {
-        const uidVal = booking?.user_id;
-        if (uidVal) {
-          const { data: u } = await supabase.from("users").select("credits").eq("id", uidVal).single();
-          await supabase.from("users").update({ credits: (u?.credits ?? 0) + 1 }).eq("id", uidVal);
-          queryClient.invalidateQueries({ queryKey: qk.myCredits });
-        }
-        message = "Booking cancelled. 1 credit token added for your next match.";
-      }
+      const message = hoursUntil > 26
+        ? "Booking cancelled. You'll receive a full refund."
+        : "Booking cancelled. No refund applies less than 26 hours before kickoff.";
 
       if (booking?.game_id) {
         await supabase.from("games").update({ status: "open" }).eq("id", booking.game_id).eq("status", "full");
@@ -383,6 +379,20 @@ export function useCancelBooking() {
       }
       queryClient.invalidateQueries({ queryKey: qk.myBookings });
       return { message };
+    },
+  });
+}
+
+/** Wallet token balance shown on the Profile screen. */
+export function useGetMyCredits() {
+  return useQuery({
+    queryKey: qk.myCredits,
+    queryFn: async (): Promise<number> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (!uid) return 0;
+      const { data } = await supabase.from("users").select("credits").eq("id", uid).single();
+      return data?.credits ?? 0;
     },
   });
 }
