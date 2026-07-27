@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert, Image } from "react-native";
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays } from "lucide-react-native";
-import { useGetMyBookings, useCancelBooking, type MyBooking } from "@/lib/api";
+import { useGetMyBookings, type MyBooking } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
@@ -18,7 +18,6 @@ const MUTED = "#6C6C70";
 export default function MyGames() {
   const router = useRouter();
   const { data, isLoading, refetch, isRefetching } = useGetMyBookings();
-  const cancelBooking = useCancelBooking();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => { screen("MyGames"); }, []);
@@ -26,24 +25,8 @@ export default function MyGames() {
   const list = (tab === "upcoming" ? data?.upcoming : data?.past) ?? [];
   const soonest = data?.upcoming?.[0];
 
-  const handleCancel = (booking: MyBooking) => {
-    Alert.alert(
-      "Cancel booking?",
-      "Free cancellation up to 26 hours before kickoff. After that your spot is released but there's no refund.",
-      [
-        { text: "Keep my spot", style: "cancel" },
-        {
-          text: "Cancel booking",
-          style: "destructive",
-          onPress: () =>
-            cancelBooking.mutate(
-              { bookingId: booking.id },
-              { onSuccess: (res) => Alert.alert("Cancelled", res.message) },
-            ),
-        },
-      ],
-    );
-  };
+  /** Routes to the designed confirmation screen (Figma 345:400). */
+  const handleCancel = (booking: MyBooking) => router.push(`/cancel/${booking.id}`);
 
   return (
     <FlatList
