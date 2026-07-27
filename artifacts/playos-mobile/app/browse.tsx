@@ -90,14 +90,15 @@ export default function Browse() {
               <Pressable key={g.id} style={styles.row} onPress={() => router.push(`/game/${g.id}`)}>
                 <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.thumb} />
                 <View style={styles.rowText}>
-                  <Text style={styles.rowMeta}>
-                    {isSameDay(kickoff, new Date()) ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()}
-                    {" • "}
-                    {format(kickoff, "h:mm a")}
+                  {/* Figma Match Row (323:315): format · venue, then when, then spots */}
+                  <Text style={styles.rowTitle} numberOfLines={1}>
+                    {teamSize}v{teamSize} · {g.pitchName}
                   </Text>
-                  <Text style={styles.rowTitle} numberOfLines={1}>{g.title}</Text>
                   <Text style={styles.rowSub}>
-                    {teamSize}v{teamSize} • {spotsLeft > 0 ? `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left` : "full"}
+                    {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE")} · {format(kickoff, "h:mm a")}
+                  </Text>
+                  <Text style={styles.rowSpots}>
+                    {spotsLeft > 0 ? `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left` : "full"}
                   </Text>
                 </View>
                 <Text style={styles.chevron}>›</Text>
@@ -131,8 +132,8 @@ const styles = StyleSheet.create({
   searchInput: { flex: 1, fontSize: 14, color: INK, padding: 0 },
 
   tabs: { flexDirection: "row", gap: 26, marginTop: spacing.xl },
-  tab: { fontSize: 15, color: MUTED },
-  tabActive: { fontWeight: "600", color: INK },
+  tab: { fontSize: 15, color: "#99999E" },
+  tabActive: { fontWeight: "700", color: INK },
   underline: { width: 54, height: 2, backgroundColor: colors.orange, marginTop: 6, marginBottom: 18 },
   underlineMatches: { marginLeft: 80, width: 64 },
 
@@ -145,9 +146,9 @@ const styles = StyleSheet.create({
   },
   thumb: { width: 68, height: 68, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.6)" },
   rowText: { flex: 1, marginLeft: 12 },
-  rowMeta: { fontSize: 11, fontWeight: "600", color: colors.orange, marginBottom: 3 },
   rowTitle: { fontSize: 17, fontWeight: "700", color: INK },
   rowSub: { fontSize: 13, color: MUTED, marginTop: 6 },
+  rowSpots: { fontSize: 13, fontWeight: "600", color: "#FF8A00", marginTop: 5 },
   chevron: { fontSize: 18, fontWeight: "700", color: MUTED },
 
   empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
