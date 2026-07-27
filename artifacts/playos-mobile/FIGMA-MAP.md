@@ -44,10 +44,11 @@ regenerating it.)
 | Bookings | 1:5 | `app/(tabs)/my-games.tsx` |
 | Chats | 1:6 | `app/(tabs)/chat.tsx` |
 | Profile | 1:7 | `app/(tabs)/profile.tsx` |
-| Browse | 1:8 | (within Play stack) |
+| Browse + Browse-Matches | 1:8 / 324:315 | `app/browse.tsx` (tabbed) |
 | Activity | 1:9 | `app/activity.tsx` |
 | Countdown | 1:10 | `app/countdown/[id].tsx` |
 | Post-match | 1:11 | `app/post-match/[id].tsx` |
+| Booking Confirmed | 369:568 | `app/booking-confirmed/[bookingId].tsx` (built, not yet wired — see note) |
 | Game Detail — Full (Waitlist) | 351:364 | `app/game/[id].tsx` (full state) |
 | Legal — Terms of Service | 361:544 | new: `app/legal/terms.tsx` |
 | Enable Notifications | 410:478 | new: `app/enable-notifications.tsx` |

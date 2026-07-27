@@ -60,7 +60,9 @@ export default function Play() {
         <>
           <View style={styles.rowBetween}>
             <HandwrittenHeader style={styles.sectionLabel}>areas near you</HandwrittenHeader>
-            <Text style={styles.seeAll}>see all</Text>
+            <Pressable onPress={() => router.push("/browse")}>
+              <Text style={styles.seeAll}>see all</Text>
+            </Pressable>
           </View>
           <ScrollView
             horizontal
