@@ -56,8 +56,8 @@ export default function Profile() {
   const initial = (me?.name ?? "?").charAt(0).toUpperCase();
 
   const menu = [
-    { icon: <UserIcon size={22} color={INK} strokeWidth={1.8} />, label: "personal info", onPress: () => {} },
-    { icon: <CreditCard size={22} color={INK} strokeWidth={1.8} />, label: "payment methods", onPress: () => {} },
+    { icon: <UserIcon size={22} color={INK} strokeWidth={1.8} />, label: "personal info", onPress: () => router.push("/settings") },
+    { icon: <CreditCard size={22} color={INK} strokeWidth={1.8} />, label: "payment methods", onPress: () => router.push("/settings") },
     { icon: <Bell size={22} color={INK} strokeWidth={1.8} />, label: "notifications", onPress: togglePush },
     { icon: <HelpCircle size={22} color={INK} strokeWidth={1.8} />, label: "help & support", onPress: () => Linking.openURL("https://playos.sa/about") },
   ];
@@ -106,7 +106,7 @@ export default function Profile() {
       ))}
 
       {/* Wallet (Figma 355:475) */}
-      <Pressable style={styles.walletCard}>
+      <Pressable style={styles.walletCard} onPress={() => router.push("/settings")}>
         <View style={styles.walletIcon}>
           <Wallet size={22} color="#B45309" strokeWidth={1.8} />
         </View>

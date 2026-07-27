@@ -5,6 +5,7 @@ import { format, isToday, isYesterday } from "date-fns";
 import { MessageCircle } from "lucide-react-native";
 import { useMyConversations } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -70,19 +71,17 @@ export default function Chat() {
         }
         ListEmptyComponent={
           !isLoading ? (
-            <View style={styles.empty}>
-              <View style={styles.emptyIcon}>
-                <MessageCircle size={28} color={MUTED} strokeWidth={1.8} />
-              </View>
-              <HandwrittenHeader style={styles.emptyTitle}>
-                {tab === "groups" ? "no games yet" : "no messages yet"}
-              </HandwrittenHeader>
-              <Text style={styles.emptyBody}>
-                {tab === "groups"
-                  ? "Book a game and open its chat to see the group here."
-                  : "Direct messages aren't available yet — join a game's group chat instead."}
-              </Text>
-            </View>
+            <EmptyState
+              icon={<MessageCircle size={38} color="#C2703A" strokeWidth={1.8} />}
+              title={tab === "groups" ? "no chats yet" : "no messages yet"}
+              body={
+                tab === "groups"
+                  ? "book a game and its group chat opens 20 min before kickoff."
+                  : "direct messages aren't available yet — join a game's group chat instead."
+              }
+              actionLabel={tab === "groups" ? "browse matches" : undefined}
+              onAction={tab === "groups" ? () => router.push("/browse") : undefined}
+            />
           ) : null
         }
         renderItem={({ item }) => (
@@ -140,11 +139,4 @@ const styles = StyleSheet.create({
   rowMeta: { alignItems: "flex-end", gap: 8 },
   time: { fontSize: 12, color: MUTED },
 
-  empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
-  emptyIcon: {
-    width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-  },
-  emptyTitle: { fontSize: 26, marginTop: spacing.lg },
-  emptyBody: { fontSize: 13, color: MUTED, marginTop: 8, textAlign: "center", paddingHorizontal: spacing.xl },
 });

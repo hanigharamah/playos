@@ -4,10 +4,11 @@ import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
-import { ArrowLeft, Flame, Check, Star } from "lucide-react-native";
+import { ArrowLeft, Flame, Check, Star, Trophy } from "lucide-react-native";
 import { useGetMyActivity } from "@/lib/api";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -44,6 +45,11 @@ export default function Activity() {
   const xpNext = data?.xpForNextLevel ?? 250;
   const levelPct = xpNext > 0 ? Math.min(1, xpInto / xpNext) : 0;
 
+  // A brand-new player has no XP, no streak and no days played — showing a
+  // grid of zeros reads as broken, so swap in the empty state.
+  const hasNoHistory =
+    !!data && data.xp === 0 && data.currentStreakDays === 0 && data.matchesThisWeek === 0;
+
   return (
     <View style={styles.wrap}>
       <DotWaveBackground width={width} height={600} />
@@ -56,6 +62,19 @@ export default function Activity() {
 
         <HandwrittenHeader style={styles.header}>activity</HandwrittenHeader>
 
+        {/* Nothing tracked yet — show the empty state instead of a wall of zeros
+            (Figma Activity-Empty 353:546). */}
+        {hasNoHistory && (
+          <EmptyState
+            icon={<Trophy size={38} color="#C2703A" strokeWidth={1.8} />}
+            title="no activity yet"
+            body="play your first match and your streak, level and XP start here."
+            actionLabel="browse matches"
+            onAction={() => router.push("/browse")}
+          />
+        )}
+
+        {!hasNoHistory && <>
         {/* This week + weekly-goal ring (Figma 11:14 / 142:280) */}
         <View style={styles.weekHeaderRow}>
           <View style={{ flex: 1 }}>
@@ -165,6 +184,7 @@ export default function Activity() {
             </Text>
           </View>
         </BlurView>
+        </>}
       </ScrollView>
     </View>
   );

@@ -3,8 +3,10 @@ import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Alert, Ima
 import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
+import { CalendarDays } from "lucide-react-native";
 import { useGetMyBookings, useCancelBooking, type MyBooking } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { EmptyState } from "@/components/EmptyState";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -75,14 +77,17 @@ export default function MyGames() {
       }
       ListEmptyComponent={
         !isLoading ? (
-          <View style={styles.empty}>
-            <HandwrittenHeader style={styles.emptyTitle}>
-              {tab === "upcoming" ? "nothing booked yet" : "nothing yet"}
-            </HandwrittenHeader>
-            <Text style={styles.emptyBody}>
-              {tab === "upcoming" ? "Your booked games will show up here." : "Past games will show up here."}
-            </Text>
-          </View>
+          <EmptyState
+            icon={<CalendarDays size={38} color="#C2703A" strokeWidth={1.8} />}
+            title={tab === "upcoming" ? "no games booked yet" : "no past games yet"}
+            body={
+              tab === "upcoming"
+                ? "when you join a match, it'll show up here."
+                : "matches you've played will show up here."
+            }
+            actionLabel={tab === "upcoming" ? "browse matches" : undefined}
+            onAction={tab === "upcoming" ? () => router.push("/browse") : undefined}
+          />
         ) : null
       }
       renderItem={({ item }) => {
@@ -186,7 +191,4 @@ const styles = StyleSheet.create({
   nudgeBody: { fontSize: 13, color: MUTED, marginTop: 6, lineHeight: 17 },
   nudgeChevron: { fontSize: 18, fontWeight: "700", color: MUTED },
 
-  empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
-  emptyTitle: { fontSize: 26 },
-  emptyBody: { fontSize: 13, color: MUTED, marginTop: 8 },
 });
