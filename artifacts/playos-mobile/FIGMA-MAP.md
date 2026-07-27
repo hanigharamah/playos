@@ -91,6 +91,57 @@ once · payments mada/Apple Pay/Google Pay (gateway TBD).
 | Ops · Resolve disputed score | 686:508 | _blocked: no score schema_ |
 | Ops · Review reported player | 686:549 | _blocked: no reports table_ |
 
+## Launch backlog (🧱 page — 41 screens, all magenta NEW)
+
+Built:
+
+| Screen | Node | Code |
+|---|---|---|
+| Loading · Home skeleton | 698:518 | `components/Skeleton.tsx` → `HomeSkeleton`, used by `app/(tabs)/index.tsx` |
+| Loading · Browse skeleton | 698:553 | `components/Skeleton.tsx` → `BrowseSkeleton`, used by `app/browse.tsx` |
+| Loading · Bookings skeleton | 698:595 | `components/Skeleton.tsx` → `BookingsSkeleton`, used by `app/(tabs)/my-games.tsx` |
+
+Skeleton rules, from the annotations and enforced in code:
+- block geometry mirrors the real cards exactly so nothing jumps when data lands
+- held back 300ms (`useDelayedVisible`) so a warm cache doesn't flash it
+- on request failure the screen routes to `/error/server`; the skeleton never keeps pulsing
+- controls that are client state (filter chips, upcoming/past segment) stay live and tappable during load
+
+Not yet built — no product decision or backend needed, next in line:
+
+| Screen | Node |
+|---|---|
+| Loading · Game detail skeleton | 698:636 |
+| Empty · Play tab, nothing live | 697:506 |
+| Empty · Venues, no results | 697:540 |
+| Empty · Matches, no results | 697:585 |
+| Permission · Location denied | 696:620 |
+| Permission · Notifications off | 696:656 |
+| System · Update required | 696:690 |
+| Booking · Time clash | 700:698 |
+| Loading · Reconnecting | 698:699 |
+| Error · Chat send failed | 698:664 |
+| Settings · Notifications | 699:726 |
+
+Blocked, with reason:
+
+| Screen(s) | Node(s) | Blocked on |
+|---|---|---|
+| Payments · Saved methods / Add a card / Remove card? / Checkout · Choose method / Error · Saved card expired / Loading · Payment processing | 695:483, 695:525, 695:559, 695:588, 695:631, 696:492 | no payment gateway, no saved-card store |
+| Empty · Wallet, zero tokens | 697:628 | no token ledger |
+| Empty · Awards, nobody voted / Loading · Awards being counted / Awards · Voting closed | 697:693, 698:729, 701:672 | award categories not ratified, no vote schema |
+| Result · Disputed, player view | 698:754 | no score/confirmation schema |
+| Empty · New player profile | 697:661 | no public-profile RPC |
+| Account · Edit profile / Delete account / Restricted | 699:534, 699:576, 699:613 | no account-lifecycle backend |
+| Safety · Report a player / Report a message | 699:648, 699:685 | no reports table |
+| Spot · Nobody took it | 701:556 | no waitlist backend |
+| Ops · Check-in stalled | 701:595 | no operator surface |
+| Match · Auto-cancelled / Match-day · Already started / Checked in late | 696:556, 696:585, 701:641 | match-day state machine not built |
+| System · Push notifications | 700:546 | no push infrastructure |
+| Share · Match link and OG card | 700:602 | web surface, not mobile |
+| Brand · Splash / App icon | 700:639, 700:650 | app-config assets, not screens |
+| Booking · Cancel inside 26h | 696:519 | already covered by `app/cancel/[bookingId].tsx` — verify against mock before duplicating |
+
 ## Design-system primitives (from the ⚠️ page annotations)
 
 - `components/Btn3D.tsx` — primary CTA, 350×56 r28, fixed 4-stop orange gradient, one per screen

@@ -7,6 +7,7 @@ import { CalendarDays } from "lucide-react-native";
 import { useGetMyBookings, type MyBooking } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { BookingsSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -17,10 +18,16 @@ const MUTED = "#6C6C70";
 
 export default function MyGames() {
   const router = useRouter();
-  const { data, isLoading, refetch, isRefetching } = useGetMyBookings();
+  const { data, isLoading, isError, refetch, isRefetching } = useGetMyBookings();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
   useEffect(() => { screen("MyGames"); }, []);
+
+  // Held back 300ms (Figma 698:595). The segmented control above stays live
+  // throughout — it's client state, and switching it changes the query.
+  const showSkeleton = useDelayedVisible(isLoading && !data);
+
+  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
 
   const list = (tab === "upcoming" ? data?.upcoming : data?.past) ?? [];
   const soonest = data?.upcoming?.[0];
@@ -59,7 +66,9 @@ export default function MyGames() {
         </View>
       }
       ListEmptyComponent={
-        !isLoading ? (
+        showSkeleton ? (
+          <BookingsSkeleton />
+        ) : !isLoading ? (
           <EmptyState
             icon={<CalendarDays size={38} color="#C2703A" strokeWidth={1.8} />}
             title={tab === "upcoming" ? "no games booked yet" : "no past games yet"}

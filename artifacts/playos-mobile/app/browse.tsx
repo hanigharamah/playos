@@ -5,6 +5,7 @@ import { format, isSameDay } from "date-fns";
 import { Search, ArrowLeft } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -22,11 +23,17 @@ const MUTED = "#6C6C70";
  */
 export default function Browse() {
   const router = useRouter();
-  const { data: games } = useListGames();
+  const { data: games, isLoading, isError } = useListGames();
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"venues" | "matches">("venues");
 
   useEffect(() => { screen("Browse"); }, []);
+
+  // Held back 300ms so a warm cache doesn't flash it (Figma 698:553).
+  const showSkeleton = useDelayedVisible(isLoading && !games);
+
+  // A failed list must not leave the skeleton pulsing.
+  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
 
   const q = query.trim().toLowerCase();
   const matches = (games ?? []).filter(
@@ -71,7 +78,9 @@ export default function Browse() {
       </View>
       <View style={[styles.underline, tab === "matches" && styles.underlineMatches]} />
 
-      {tab === "venues"
+      {showSkeleton && <BrowseSkeleton />}
+
+      {!showSkeleton && (tab === "venues"
         ? venues.map(([name, { count, photo }]) => (
             <Pressable key={name} style={styles.row} onPress={() => { setQuery(name); setTab("matches"); }}>
               <Image source={{ uri: getVenuePhoto(name, photo) }} style={styles.thumb} />
@@ -104,9 +113,9 @@ export default function Browse() {
                 <Text style={styles.chevron}>›</Text>
               </Pressable>
             );
-          })}
+          }))}
 
-      {((tab === "venues" && venues.length === 0) || (tab === "matches" && matches.length === 0)) && (
+      {!showSkeleton && ((tab === "venues" && venues.length === 0) || (tab === "matches" && matches.length === 0)) && (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>Nothing found</Text>
           <Text style={styles.emptyBody}>Try a different search.</Text>
