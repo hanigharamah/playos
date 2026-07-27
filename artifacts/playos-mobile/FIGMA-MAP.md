@@ -69,3 +69,33 @@ only) · waitlist offer 3-min hold + 30s countdown from open · chat T-20→T+20
 soft-close, 30-day retention · commendations at launch (max 3, positive-only,
 +5 XP), sportsmanship score deferred to v1.5 · coin flip server-side, stored
 once · payments mada/Apple Pay/Google Pay (gateway TBD).
+
+## Edge, errors & ops (⚠️ page)
+
+| Screen | Node | Code |
+|---|---|---|
+| Error · Server 500 | 684:494 | `app/error/server.tsx` |
+| Error · Offline | 683:545 | `app/error/offline.tsx` |
+| Error · Session expired | 684:520 | `app/error/session-expired.tsx` |
+| Error · Game not found | 686:586 | `components/MatchGone.tsx` (rendered by `app/game/[id].tsx`) |
+| Error · Check-in not open yet | 684:542 | _not built_ |
+| Empty · Home, nothing booked | 684:570 | _not built_ |
+| Error · Payment declined | 682:482 | _blocked: no payment gateway_ |
+| Error · Spot taken mid-checkout | 682:511 | _blocked: checkout flow_ |
+| Booking · Get alerted when a spot frees | 682:541 | _blocked: no waitlist backend_ |
+| Waitlist · Head start alert | 683:488 | _blocked: no waitlist backend_ |
+| Waitlist · Someone booked it first | 683:516 | _blocked: no waitlist backend_ |
+| Ops · At-risk players T-10 | 685:502 | _blocked: no operator surface_ |
+| Ops · Release spot | 685:558 | _blocked: no operator surface_ |
+| Ops · Cancel match | 685:596 | _blocked: no operator surface_ |
+| Ops · Resolve disputed score | 686:508 | _blocked: no score schema_ |
+| Ops · Review reported player | 686:549 | _blocked: no reports table_ |
+
+## Design-system primitives (from the ⚠️ page annotations)
+
+- `components/Btn3D.tsx` — primary CTA, 350×56 r28, fixed 4-stop orange gradient, one per screen
+- `components/BtnOutline.tsx` — secondary, 350×56 r18, tone: neutral / destructive / warning; never side by side
+- `components/Callout.tsx` — tone map: blocker(red) / warning(amber) / confirm(green) / neutral(grey).
+  Blue = open product question and must never ship.
+- `components/ErrorScreen.tsx` — shared error layout (dot wave 0.75, one glass card, primary + stacked secondary)
+- Dot wave is always the exported image asset, never rebuilt in code.

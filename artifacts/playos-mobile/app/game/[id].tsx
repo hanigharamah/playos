@@ -9,6 +9,7 @@ import { useGetGame, useBookSpot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
 import { Avatar } from "@/components/Avatar";
+import { MatchGone } from "@/components/MatchGone";
 import { colors, spacing } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
@@ -40,13 +41,16 @@ export default function GameDetail() {
 
   useEffect(() => { screen("GameDetail", { gameId: id }); }, [id]);
 
-  if (isLoading || !game) {
+  if (isLoading) {
     return (
       <View style={styles.loading}>
         <ActivityIndicator color={colors.orange} />
       </View>
     );
   }
+
+  // Dead deep link — the game was cancelled or has already kicked off.
+  if (!game) return <MatchGone />;
 
   const kickoff = new Date(game.kickoffTime);
   const bookedCount = game.bookings.filter((b) => b.paymentStatus === "paid").length;
