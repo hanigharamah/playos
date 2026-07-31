@@ -6,6 +6,7 @@ import { Search, ArrowLeft } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
+import { VenuesEmpty, MatchesEmpty } from "@/components/BrowseEmpty";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -115,11 +116,12 @@ export default function Browse() {
             );
           }))}
 
-      {!showSkeleton && ((tab === "venues" && venues.length === 0) || (tab === "matches" && matches.length === 0)) && (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>Nothing found</Text>
-          <Text style={styles.emptyBody}>Try a different search.</Text>
-        </View>
+      {/* Empty states, picked by tab (Figma 697:540 venues / 697:585 matches). */}
+      {!showSkeleton && !isLoading && tab === "venues" && venues.length === 0 && (
+        <VenuesEmpty query={query} allGames={games ?? []} onClearSearch={() => setQuery("")} />
+      )}
+      {!showSkeleton && !isLoading && tab === "matches" && matches.length === 0 && (
+        <MatchesEmpty query={query} allGames={games ?? []} onClearSearch={() => setQuery("")} />
       )}
     </ScrollView>
   );
@@ -159,8 +161,4 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 13, color: MUTED, marginTop: 6 },
   rowSpots: { fontSize: 13, fontWeight: "600", color: "#FF8A00", marginTop: 5 },
   chevron: { fontSize: 18, fontWeight: "700", color: MUTED },
-
-  empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },
-  emptyTitle: { fontSize: 17, fontWeight: "700", color: INK },
-  emptyBody: { fontSize: 13, color: MUTED, marginTop: 4 },
 });

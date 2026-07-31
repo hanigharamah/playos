@@ -10,7 +10,7 @@ regenerating it.)
 
 - Screen bg: `<WarmCanvas />` (cream `colors.canvas` + peach/lavender radial glows)
 - Cards: `<GlassCard />` (blur + white 78% + hairline white stroke + warm shadow — never black shadows)
-- Script accents: `<HandwrittenHeader />` (Pacifico, orange)
+- Script accents: `<HandwrittenHeader />` (Caveat Bold, orange)
 - Ink: `colors.inkNavy` (flashcards) / `colors.inkDeep` (booking flow); secondary `colors.mutedLavender`
 - Teams: `colors.teamOrange` / `colors.teamPurple` · meta icons `colors.purpleSoft`
 - Gradients: `gradients.cta` (join match) · `sharePill` · `checkIn` · `streak`
@@ -78,8 +78,8 @@ once · payments mada/Apple Pay/Google Pay (gateway TBD).
 | Error · Offline | 683:545 | `app/error/offline.tsx` |
 | Error · Session expired | 684:520 | `app/error/session-expired.tsx` |
 | Error · Game not found | 686:586 | `components/MatchGone.tsx` (rendered by `app/game/[id].tsx`) |
-| Error · Check-in not open yet | 684:542 | _not built_ |
-| Empty · Home, nothing booked | 684:570 | _not built_ |
+| Error · Check-in not open yet | 684:542 | `app/check-in/[gameId].tsx` (server clock via `lib/serverTime.ts`) |
+| Empty · Home, nothing booked | 684:570 | `components/HomeNothingBooked.tsx`, used by `app/(tabs)/index.tsx` |
 | Error · Payment declined | 682:482 | _blocked: no payment gateway_ |
 | Error · Spot taken mid-checkout | 682:511 | _blocked: checkout flow_ |
 | Booking · Get alerted when a spot frees | 682:541 | _blocked: no waitlist backend_ |
@@ -100,6 +100,32 @@ Built:
 | Loading · Home skeleton | 698:518 | `components/Skeleton.tsx` → `HomeSkeleton`, used by `app/(tabs)/index.tsx` |
 | Loading · Browse skeleton | 698:553 | `components/Skeleton.tsx` → `BrowseSkeleton`, used by `app/browse.tsx` |
 | Loading · Bookings skeleton | 698:595 | `components/Skeleton.tsx` → `BookingsSkeleton`, used by `app/(tabs)/my-games.tsx` |
+| Loading · Game detail skeleton | 698:636 | `components/Skeleton.tsx` → `GameDetailSkeleton`, used by `app/game/[id].tsx` |
+| Empty · Play tab, nothing live | 697:506 | `components/PlayNothingLive.tsx`, used by `app/(tabs)/play.tsx` |
+| Empty · Venues, no results | 697:540 | `components/BrowseEmpty.tsx` → `VenuesEmpty`, used by `app/browse.tsx` |
+| Empty · Matches, no results | 697:585 | `components/BrowseEmpty.tsx` → `MatchesEmpty`, used by `app/browse.tsx` |
+| Permission · Location denied | 696:620 | `app/permission/location.tsx` |
+| Permission · Notifications off | 696:656 | `app/permission/notifications.tsx` |
+| System · Update required | 696:690 | `app/system/update-required.tsx` |
+| Error · Chat send failed | 698:664 | `app/chat/[conversationId].tsx` (a state of the thread, not a route) |
+| Loading · Reconnecting | 698:699 | `components/ReconnectingState.tsx`, used by `app/match/[id].tsx` |
+| Settings · Notifications | 699:726 | `app/settings/notifications.tsx` |
+
+Shared by the three empty states: `components/EmptyState.tsx` → `EmptyCard`
+(the 350×148 halo card, identical in all three mocks) and `EmptyEyebrow`.
+
+What the empty-state mocks ask for that the schema cannot back, and is
+therefore omitted (same precedent as the venue star rating in Browse):
+- **filter chips** (`indoor`, `under SAR 100`, `5-a-side`, `tonight`, `6v6`,
+  `under SAR 40`), the **"DROP ONE FILTER"** suggestion rows and their per-filter
+  counts, and **"clear my filters"** — Browse has a free-text query only; there
+  is no filter model, no indoor/outdoor column and no price or kickoff filter.
+  The query stands in for the chips and "clear my search" is the one-tap reset.
+- **venue distance in km and indoor/outdoor** on the fallback venue rows — no
+  device location, no venue coordinates, no surface column. Rows show games-open
+  and the cheapest real price instead.
+- **"alert me when one appears"** (matches mock) — needs a saved-search alert
+  plus push delivery; both are blocked below. Replaced with "show all matches".
 
 Skeleton rules, from the annotations and enforced in code:
 - block geometry mirrors the real cards exactly so nothing jumps when data lands
@@ -107,21 +133,11 @@ Skeleton rules, from the annotations and enforced in code:
 - on request failure the screen routes to `/error/server`; the skeleton never keeps pulsing
 - controls that are client state (filter chips, upcoming/past segment) stay live and tappable during load
 
-Not yet built — no product decision or backend needed, next in line:
+Design missing from the file:
 
-| Screen | Node |
-|---|---|
-| Loading · Game detail skeleton | 698:636 |
-| Empty · Play tab, nothing live | 697:506 |
-| Empty · Venues, no results | 697:540 |
-| Empty · Matches, no results | 697:585 |
-| Permission · Location denied | 696:620 |
-| Permission · Notifications off | 696:656 |
-| System · Update required | 696:690 |
-| Booking · Time clash | 700:698 |
-| Loading · Reconnecting | 698:699 |
-| Error · Chat send failed | 698:664 |
-| Settings · Notifications | 699:726 |
+| Screen | Node | Status |
+|---|---|---|
+| Booking · Time clash | 700:698 | node does not resolve — deleted or renumbered. Neighbouring nodes on the same page (700:639) load fine, so the page itself is intact. Needs re-exporting before it can be built. |
 
 Blocked, with reason:
 

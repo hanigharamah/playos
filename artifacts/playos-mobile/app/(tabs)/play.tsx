@@ -7,6 +7,7 @@ import { Search } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { Avatar } from "@/components/Avatar";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { PlayNothingLive } from "@/components/PlayNothingLive";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -137,7 +138,12 @@ export default function Play() {
         </>
       )}
 
-      {filtered.length === 0 && (
+      {/* Nothing live at all (Figma 697:506) — the designed state. A search
+          that happens to match nothing is a different situation and keeps the
+          plain no-results line, since the tab itself is not empty. */}
+      {(games ?? []).length === 0 && <PlayNothingLive />}
+
+      {(games ?? []).length > 0 && filtered.length === 0 && (
         <View style={styles.empty}>
           <Text style={styles.emptyTitle}>No games found</Text>
           <Text style={styles.emptyBody}>Try a different search.</Text>

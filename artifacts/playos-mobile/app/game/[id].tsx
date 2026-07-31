@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
 import { Avatar } from "@/components/Avatar";
 import { MatchGone } from "@/components/MatchGone";
+import { GameDetailSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { colors, spacing } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
@@ -41,12 +42,12 @@ export default function GameDetail() {
 
   useEffect(() => { screen("GameDetail", { gameId: id }); }, [id]);
 
+  const showSkeleton = useDelayedVisible(isLoading);
+
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={colors.orange} />
-      </View>
-    );
+    // Figma 698:636. Held back 300ms so a warm cache doesn't flash it; under
+    // that the screen just stays on the previous view for a beat.
+    return <View style={styles.loading}>{showSkeleton && <GameDetailSkeleton />}</View>;
   }
 
   // Dead deep link — the game was cancelled or has already kicked off.
@@ -319,7 +320,7 @@ export default function GameDetail() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFF8F0" },
+  loading: { flex: 1, backgroundColor: "#FFF8F0" },
   content: { paddingBottom: spacing.xxl },
 
   hero: { position: "absolute", top: 0, left: -32, right: -32, height: 251 },
