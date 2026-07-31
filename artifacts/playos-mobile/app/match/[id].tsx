@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useGameRoster, useClaimSide, useStartMatch } from "@/lib/api";
+import { useGameRoster, useClaimSide, useStartMatch, useGetGame, useGetMyBookings } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PillButton } from "@/components/PillButton";
 import { GlassCard } from "@/components/GlassCard";
+import { ReconnectingState, useIsOffline } from "@/components/ReconnectingState";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 
@@ -25,7 +26,10 @@ export default function MatchDay() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const { data: roster, isLoading } = useGameRoster(id ?? null);
+  const { data: roster, isLoading, refetch } = useGameRoster(id ?? null);
+  const { data: game } = useGetGame(id ?? "");
+  const isOffline = useIsOffline();
+  const { data: myBookings } = useGetMyBookings();
   const claimSide = useClaimSide();
   const startMatch = useStartMatch();
   const [claimedTeam, setClaimedTeam] = useState<1 | 2 | null>(null);
@@ -35,7 +39,8 @@ export default function MatchDay() {
     track("matchday_flashcard_started", { gameId: id });
   }, [id]);
 
-  const myEntry = roster?.entries.find((e) => e.bookingId && e.team !== null && e.checkedIn);
+  const myBookingId = myBookings?.upcoming?.find((b) => b.gameId === id)?.id;
+  const myEntry = myBookingId ? roster?.entries.find((e) => e.bookingId === myBookingId) : undefined;
   const isLocked = !!roster?.teamsLockedAt;
 
   const claim = (team: 1 | 2) => {
@@ -59,6 +64,20 @@ export default function MatchDay() {
       },
     );
   };
+
+  // Connection lost on match day (Figma 698:699). Shown ahead of the loading
+  // spinner: the player needs to know their check-in survived, not watch a
+  // spinner. The last known roster stays on screen, dimmed.
+  if (isOffline && game) {
+    return (
+      <ReconnectingState
+        pitchName={game.pitchName}
+        kickoffTime={game.kickoffTime}
+        isCheckedIn={!!myEntry?.checkedIn}
+        onRetry={() => void refetch()}
+      />
+    );
+  }
 
   if (isLoading || !roster) {
     return (

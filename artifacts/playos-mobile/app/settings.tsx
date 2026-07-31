@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Linking, Alert, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur";
-import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock } from "lucide-react-native";
+import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock, Bell } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
@@ -120,6 +120,15 @@ export default function Settings() {
           ios_backgroundColor="#E2DED8"
         />
       </View>
+      {/* Per-message preferences (Figma 699:726) — only reachable once the
+          OS-level permission is actually granted. */}
+      {pushGranted && (
+        <Row
+          icon={<Bell size={22} color={INK} strokeWidth={1.8} />}
+          label="what we notify you about"
+          onPress={() => router.push("/settings/notifications")}
+        />
+      )}
 
       <Text style={styles.section}>LEGAL</Text>
       <Row

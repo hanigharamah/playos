@@ -1,97 +1,262 @@
-import { useEffect, useRef, useState } from "react";
-import { View, Text, StyleSheet, FlatList, TextInput, Pressable, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  View, Text, StyleSheet, FlatList, TextInput, Pressable,
+  KeyboardAvoidingView, Platform, ActivityIndicator, useWindowDimensions,
+} from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { format } from "date-fns";
-import { ArrowLeft, Send } from "lucide-react-native";
-import { useConversationMessages, useSendMessage } from "@/lib/api";
+import { useConversationMessages, useSendMessage, useMyConversations, useGetGame } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { colors, radius, spacing } from "@/lib/theme";
+import { Avatar } from "@/components/Avatar";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
+import { WarmCanvas } from "@/components/WarmCanvas";
+import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { BtnOutline } from "@/components/BtnOutline";
+import { Callout } from "@/components/Callout";
+import { colors } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
+const INK = "#1C1C1E";
+const MUTED = "#6C6C70";
+const RED = "#BF2626";
+
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
+/** Chat closes this long after full time. Surfaced in the footer. */
+const CHAT_CLOSES_MINUTES_AFTER = 20;
+
+type Pending = { id: string; body: string; failedAt: string };
+
+const pendingKey = (id: string) => `playos.chat.pending.${id}`;
+
+/**
+ * Group chat thread, with the send-failure state from Figma 698:664.
+ *
+ * The annotation's hard rule: a failed message is NEVER silently dropped. It
+ * stays in place with a red edge and a "not sent · tap to retry" affordance.
+ * The callout promises the message is "saved on your phone", so failures are
+ * persisted to AsyncStorage — component state alone would lose them when the
+ * app is killed, which is exactly when a player on a weak signal backgrounds
+ * it. The retention rule (chat closes 20 min after full time) is shown in the
+ * footer so it's visible before it bites.
+ */
 export default function ChatThread() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const router = useRouter();
+  const { width } = useWindowDimensions();
   const { user } = useAuth();
   const { data: messages, isLoading } = useConversationMessages(conversationId ?? null);
+  const { data: conversations } = useMyConversations();
   const sendMessage = useSendMessage();
   const [body, setBody] = useState("");
+  const [pending, setPending] = useState<Pending[]>([]);
   const listRef = useRef<FlatList>(null);
 
+  const conversation = conversations?.find((c) => c.id === conversationId);
+  const { data: game } = useGetGame(conversation?.gameId ?? "");
+
   useEffect(() => { screen("ChatThread", { conversationId }); }, [conversationId]);
+
+  // Restore anything that failed to send in a previous session.
+  useEffect(() => {
+    if (!conversationId) return;
+    void AsyncStorage.getItem(pendingKey(conversationId)).then((raw) => {
+      if (raw) setPending(JSON.parse(raw) as Pending[]);
+    });
+  }, [conversationId]);
+
+  const persist = useCallback(async (next: Pending[]) => {
+    setPending(next);
+    if (conversationId) await AsyncStorage.setItem(pendingKey(conversationId), JSON.stringify(next));
+  }, [conversationId]);
+
   useEffect(() => {
     if (messages?.length) setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
   }, [messages?.length]);
 
-  const send = () => {
-    if (!body.trim() || !conversationId) return;
-    sendMessage.mutate({ conversationId, body }, { onSuccess: () => setBody("") });
+  const trySend = (text: string, pendingId?: string) => {
+    if (!conversationId) return;
+    sendMessage.mutate(
+      { conversationId, body: text },
+      {
+        onSuccess: () => {
+          setBody("");
+          if (pendingId) void persist(pending.filter((p) => p.id !== pendingId));
+        },
+        onError: () => {
+          // Keep it on screen rather than dropping it.
+          if (pendingId) return;
+          setBody("");
+          void persist([...pending, { id: `p${Date.now()}`, body: text, failedAt: new Date().toISOString() }]);
+        },
+      },
+    );
   };
 
+  const retryAll = () => pending.forEach((p) => trySend(p.body, p.id));
+
+  const teamSize = game ? game.capacity / 2 : null;
+  const kickoff = game ? new Date(game.kickoffTime) : null;
+  const hasFailed = pending.length > 0;
+
   return (
-    <KeyboardAvoidingView style={styles.wrap} behavior={Platform.OS === "ios" ? "padding" : undefined} keyboardVerticalOffset={90}>
+    <KeyboardAvoidingView
+      style={styles.wrap}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      keyboardVerticalOffset={90}
+    >
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <DotWaveBackground width={width} height={600} />
+
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={10}>
-          <ArrowLeft size={20} color={colors.ink} />
+        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+          <Text style={styles.backGlyph}>‹</Text>
         </Pressable>
-        <Text style={styles.headerTitle}>Group chat</Text>
-        <View style={{ width: 20 }} />
+        <View style={styles.headerText}>
+          <HandwrittenHeader style={styles.title}>
+            {conversation?.pitchName?.toLowerCase() ?? "group chat"}
+          </HandwrittenHeader>
+          {teamSize !== null && kickoff && (
+            <Text style={styles.subtitle}>
+              {teamSize}v{teamSize}  ·  {kickoff.getTime() < Date.now() ? "kicked off" : "kicks off"} {format(kickoff, "h:mm a")}
+            </Text>
+          )}
+        </View>
       </View>
 
       {isLoading ? (
-        <ActivityIndicator color={colors.orange} style={{ marginTop: spacing.xl }} />
+        <ActivityIndicator color={colors.orange} style={{ marginTop: 40 }} />
       ) : (
         <FlatList
           ref={listRef}
           data={messages ?? []}
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.list}
-          ListEmptyComponent={<Text style={styles.empty}>No messages yet — say hi 👋</Text>}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={<Text style={styles.empty}>no messages yet — say hi</Text>}
           renderItem={({ item }) => {
             const mine = item.senderId === user?.id;
             return (
-              <View style={[styles.bubbleRow, mine && styles.bubbleRowMine]}>
+              <View style={[styles.row, mine && styles.rowMine]}>
+                {!mine && <Avatar name={item.senderName ?? "?"} size={32} />}
                 <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
-                  <Text style={[styles.bubbleText, mine && styles.bubbleTextMine]}>{item.body}</Text>
+                  <Text style={styles.bubbleText}>{item.body}</Text>
                 </View>
-                <Text style={styles.bubbleTime}>{format(new Date(item.createdAt), "h:mm a")}</Text>
+                {mine && (
+                  <Text style={styles.meta}>{format(new Date(item.createdAt), "h:mm a")}  ·  sent</Text>
+                )}
               </View>
             );
           }}
+          ListFooterComponent={
+            hasFailed ? (
+              <View>
+                {pending.map((p) => (
+                  <Pressable key={p.id} onPress={() => trySend(p.body, p.id)} style={styles.failedWrap}>
+                    <View style={styles.failedRow}>
+                      <Text style={styles.bang}>!</Text>
+                      <View style={[styles.bubble, styles.bubbleMine, styles.bubbleFailed]}>
+                        <Text style={styles.bubbleText}>{p.body}</Text>
+                      </View>
+                    </View>
+                    <Text style={styles.metaFailed}>not sent  ·  tap to retry</Text>
+                  </Pressable>
+                ))}
+
+                <Callout
+                  tone="neutral"
+                  icon={<Text style={styles.disc}>●</Text>}
+                  title="you are on a weak signal"
+                  body="the message is saved on your phone. we will send it the moment you reconnect, or you can retry now."
+                  style={{ marginTop: 26 }}
+                />
+
+                <BtnOutline
+                  label="retry sending"
+                  tone="warning"
+                  onPress={retryAll}
+                  disabled={sendMessage.isPending}
+                  style={{ marginTop: 20 }}
+                />
+              </View>
+            ) : null
+          }
         />
       )}
 
-      <View style={styles.inputRow}>
-        <TextInput
-          style={styles.input}
-          placeholder="Message"
-          placeholderTextColor={colors.inkFaint}
-          value={body}
-          onChangeText={setBody}
-          multiline
-        />
-        <Pressable onPress={send} disabled={!body.trim() || sendMessage.isPending} style={styles.sendBtn}>
-          <Send size={16} color="#FFFFFF" />
-        </Pressable>
+      <View style={styles.inputWrap}>
+        <View style={styles.inputPill}>
+          <TextInput
+            style={styles.input}
+            placeholder="message the group…"
+            placeholderTextColor="#ADADB2"
+            value={body}
+            onChangeText={setBody}
+            multiline
+          />
+          <Pressable
+            onPress={() => trySend(body.trim())}
+            disabled={!body.trim() || sendMessage.isPending}
+            style={[styles.sendBtn, !body.trim() && styles.sendBtnOff]}
+          >
+            <Text style={styles.sendGlyph}>↑</Text>
+          </Pressable>
+        </View>
+        <Text style={styles.retention}>chat closes {CHAT_CLOSES_MINUTES_AFTER} minutes after full time</Text>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.creamDeep },
-  header: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: spacing.lg, paddingTop: 56, paddingBottom: spacing.md, backgroundColor: "#FFFFFF", borderBottomWidth: 1, borderBottomColor: colors.hairline },
-  headerTitle: { fontSize: 16, fontWeight: "700", color: colors.ink },
-  list: { padding: spacing.lg, gap: spacing.sm, flexGrow: 1 },
-  empty: { textAlign: "center", color: colors.inkMuted, marginTop: spacing.xxl },
-  bubbleRow: { alignItems: "flex-start", maxWidth: "80%" },
-  bubbleRowMine: { alignSelf: "flex-end", alignItems: "flex-end" },
-  bubble: { borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  bubbleTheirs: { backgroundColor: "#FFFFFF", borderWidth: 1, borderColor: colors.hairline, borderBottomLeftRadius: 4 },
-  bubbleMine: { backgroundColor: colors.inkNavy, borderBottomRightRadius: 4 },
-  bubbleText: { fontSize: 14, color: colors.ink },
-  bubbleTextMine: { color: "#FFFFFF" },
-  bubbleTime: { fontSize: 10, color: colors.inkFaint, marginTop: 2 },
-  inputRow: { flexDirection: "row", alignItems: "flex-end", gap: spacing.sm, padding: spacing.md, backgroundColor: "#FFFFFF", borderTopWidth: 1, borderTopColor: colors.hairline },
-  input: { flex: 1, backgroundColor: "#F2F2F7", borderRadius: radius.lg, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: 14, color: colors.ink, maxHeight: 100 },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.pink, alignItems: "center", justifyContent: "center" },
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
+
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 52 },
+  backBtn: {
+    width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#000000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+  },
+  backGlyph: { fontSize: 20, fontWeight: "700", color: INK, lineHeight: 22 },
+  headerText: { marginLeft: 14, flex: 1 },
+  title: { fontSize: 26, color: "#FA810B" },
+  subtitle: { fontSize: 12.5, color: MUTED, marginTop: 2 },
+
+  list: { paddingHorizontal: 20, paddingTop: 24, paddingBottom: 20, flexGrow: 1 },
+  empty: { textAlign: "center", color: MUTED, marginTop: 60 },
+
+  row: { flexDirection: "row", alignItems: "flex-start", marginBottom: 22 },
+  rowMine: { flexDirection: "column", alignItems: "flex-end" },
+  bubble: { borderRadius: 16, paddingHorizontal: 13, paddingVertical: 11, maxWidth: 250 },
+  bubbleTheirs: {
+    backgroundColor: "rgba(255,255,255,0.7)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)", marginLeft: 8,
+  },
+  bubbleMine: {
+    backgroundColor: "rgba(255,138,0,0.14)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)", maxWidth: 220,
+  },
+  bubbleFailed: { borderWidth: 1.5, borderColor: "rgba(191,38,38,0.5)" },
+  bubbleText: { fontSize: 14, color: INK },
+  meta: { fontSize: 11, color: MUTED, marginTop: 6 },
+
+  failedWrap: { alignItems: "flex-end", marginBottom: 22 },
+  failedRow: { flexDirection: "row", alignItems: "center" },
+  bang: { fontSize: 13, fontWeight: "700", color: RED, marginRight: 12 },
+  metaFailed: { fontSize: 11.5, fontWeight: "600", color: RED, marginTop: 6 },
+  disc: { fontSize: 13, fontWeight: "700", color: "#3A3A3E" },
+
+  inputWrap: { paddingHorizontal: 20, paddingBottom: 20 },
+  inputPill: {
+    flexDirection: "row", alignItems: "center", minHeight: 52, borderRadius: 26, paddingLeft: 17, paddingRight: 7,
+    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
+    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+  },
+  input: { flex: 1, fontSize: 14, color: INK, maxHeight: 100, paddingVertical: 14 },
+  sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.orange, alignItems: "center", justifyContent: "center" },
+  sendBtnOff: { backgroundColor: "#E8E0D8" },
+  sendGlyph: { fontSize: 16, fontWeight: "700", color: "#FFFFFF" },
+  retention: { fontSize: 12, color: MUTED, textAlign: "center", marginTop: 14 },
 });
