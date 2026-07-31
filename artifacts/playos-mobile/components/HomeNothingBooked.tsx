@@ -26,7 +26,10 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
   const router = useRouter();
 
   const [next, ...rest] = games;
-  const alsoTonight = rest.slice(0, 2);
+  // The header says "also tonight", so only same-day games belong under it.
+  // It previously took the next two by kickoff regardless of date and showed
+  // time only, so a Saturday game read "8:00 PM" under a "tonight" heading.
+  const alsoTonight = rest.filter((g) => isSameDay(new Date(g.kickoffTime), new Date())).slice(0, 2);
 
   if (!next) {
     return (

@@ -47,7 +47,13 @@ export default function PostMatch() {
   };
 
   if (submitted) {
-    const xpGained = 100 + Number(goals) * 20 + Number(assists) * 10;
+    // get_my_activity() awards the flat 100 for the CHECKED-IN booking, which
+    // was already credited before this screen opened. Adding it here again
+    // claimed XP that /activity would never show. Only the stats just
+    // submitted are earned here.
+    const goalsNum = Number(goals) || 0;
+    const assistsNum = Number(assists) || 0;
+    const xpGained = goalsNum * 20 + assistsNum * 10;
     return (
       <View style={styles.wrap}>
         <HandwrittenHeader style={styles.celebrateTitle}>great game! 🔥</HandwrittenHeader>
@@ -59,13 +65,15 @@ export default function PostMatch() {
               <Text style={styles.ratingLabel}>match rating</Text>
               <Text style={styles.ratingValue}>{rating ?? "—"}</Text>
             </View>
-            <View style={styles.xpBadge}>
-              <Text style={styles.xpBadgeText}>+{xpGained} XP</Text>
-            </View>
+            {xpGained > 0 && (
+              <View style={styles.xpBadge}>
+                <Text style={styles.xpBadgeText}>+{xpGained} XP</Text>
+              </View>
+            )}
           </View>
           <View style={styles.statsGrid}>
-            <View style={styles.statCol}><Text style={styles.statNum}>{goals}</Text><Text style={styles.statLabel}>GOALS</Text></View>
-            <View style={styles.statCol}><Text style={styles.statNum}>{assists}</Text><Text style={styles.statLabel}>ASSISTS</Text></View>
+            <View style={styles.statCol}><Text style={styles.statNum}>{goalsNum}</Text><Text style={styles.statLabel}>GOALS</Text></View>
+            <View style={styles.statCol}><Text style={styles.statNum}>{assistsNum}</Text><Text style={styles.statLabel}>ASSISTS</Text></View>
           </View>
         </GlassCard>
 

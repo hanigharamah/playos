@@ -5,23 +5,37 @@ import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
 import { format } from "date-fns";
 import { useGetGame, useGameRoster } from "@/lib/api";
+import { serverNow } from "@/lib/serverTime";
 import { AvatarStack } from "@/components/AvatarStack";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
-function useCountdown(target: Date) {
-  const [remaining, setRemaining] = useState(target.getTime() - Date.now());
+function useCountdown(target: Date | null) {
+  // `null` until the game loads. Previously the caller passed `new Date()` as a
+  // placeholder, so the first render computed 0 remaining and the screen showed
+  // "kickoff! your match has started" for a beat before snapping to the real
+  // time. Keying the effect on the timestamp rather than the Date object also
+  // stops the interval being rebuilt on every render.
+  const targetMs = target ? target.getTime() : null;
+  const [remaining, setRemaining] = useState(() =>
+    targetMs === null ? null : targetMs - serverNow(),
+  );
+
   useEffect(() => {
-    const t = setInterval(() => setRemaining(target.getTime() - Date.now()), 1000);
+    if (targetMs === null) { setRemaining(null); return; }
+    const tick = () => setRemaining(targetMs - serverNow());
+    tick();
+    const t = setInterval(tick, 1000);
     return () => clearInterval(t);
-  }, [target]);
-  const clamped = Math.max(0, remaining);
+  }, [targetMs]);
+
+  const clamped = Math.max(0, remaining ?? 0);
   return {
     hours: Math.floor(clamped / 3_600_000),
     minutes: Math.floor((clamped % 3_600_000) / 60_000),
     seconds: Math.floor((clamped % 60_000) / 1000),
-    isPast: remaining <= 0,
+    isPast: remaining !== null && remaining <= 0,
   };
 }
 
@@ -34,7 +48,7 @@ export default function Countdown() {
 
   useEffect(() => { screen("Countdown", { gameId: id }); }, [id]);
 
-  const kickoff = game ? new Date(game.kickoffTime) : new Date();
+  const kickoff = game ? new Date(game.kickoffTime) : null;
   const { hours, minutes, seconds, isPast } = useCountdown(kickoff);
 
   if (isLoading || !game) {
@@ -71,7 +85,7 @@ export default function Countdown() {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{game.pitchName}</Text>
-          <Text style={styles.cardMeta}>{format(kickoff, "EEE, h:mm a")} · {teamSize}v{teamSize}</Text>
+          <Text style={styles.cardMeta}>{format(new Date(game.kickoffTime), "EEE, h:mm a")} · {teamSize}v{teamSize}</Text>
           {names.length > 0 && (
             <View style={styles.avatarRow}>
               <AvatarStack names={names} max={4} size={28} />

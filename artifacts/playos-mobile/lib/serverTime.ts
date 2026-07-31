@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AppState } from "react-native";
 import Constants from "expo-constants";
 
 /**
@@ -31,6 +32,7 @@ export async function syncServerTime(): Promise<void> {
   if (!SUPABASE_URL) return;
   if (inFlight) return inFlight;
 
+  lastAttemptAt = Date.now();
   inFlight = (async () => {
     try {
       // Round-trip is halved to approximate the instant the server stamped it.
@@ -58,9 +60,16 @@ export async function syncServerTime(): Promise<void> {
   return inFlight;
 }
 
+/** Retry cadence while we have never successfully synced. */
+const RETRY_UNSYNCED_MS = 15 * 1000;
+let lastAttemptAt = 0;
+
 /** Best available "now". Equals Date.now() until the first sync lands. */
 export function serverNow(): number {
-  if (synced && Date.now() - lastSyncAt > RESYNC_AFTER_MS) void syncServerTime();
+  const since = Date.now() - (synced ? lastSyncAt : lastAttemptAt);
+  // Previously this only retried once already synced, so a failed first sync
+  // (offline at launch) meant raw device time forever with no further attempt.
+  if (since > (synced ? RESYNC_AFTER_MS : RETRY_UNSYNCED_MS)) void syncServerTime();
   return Date.now() + offsetMs;
 }
 
@@ -79,7 +88,16 @@ export function useServerCountdown(target: number | null): { remainingMs: number
   const [syncedState, setSyncedState] = useState(isServerTimeSynced);
 
   useEffect(() => {
-    void syncServerTime().then(() => setSyncedState(isServerTimeSynced()));
+    let alive = true;
+    void syncServerTime().then(() => { if (alive) setSyncedState(isServerTimeSynced()); });
+
+    // A user can change the device clock while the app is backgrounded, so
+    // re-derive the offset on every return to the foreground.
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active") return;
+      void syncServerTime().then(() => { if (alive) setSyncedState(isServerTimeSynced()); });
+    });
+    return () => { alive = false; sub.remove(); };
   }, []);
 
   useEffect(() => {

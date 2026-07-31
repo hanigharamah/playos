@@ -69,7 +69,7 @@ export default function Home() {
         {/* Header (Figma 2:4) */}
         <View style={styles.header}>
           <Text style={styles.logo}>PLAYOS</Text>
-          <Pressable hitSlop={12}>
+          <Pressable hitSlop={12} onPress={() => router.push("/activity")}>
             <Bell size={22} color={INK} strokeWidth={1.8} />
             {upcoming.length > 0 && <View style={styles.bellDot} />}
           </Pressable>
@@ -79,7 +79,7 @@ export default function Home() {
         <HandwrittenHeader style={styles.headline}>
           {featured
             ? `your next\nmatch is\n${isTonight ? "tonight." : "coming up."}`
-            : `hey ${me?.name?.trim().split(" ")[0]?.toLowerCase() ?? "there"}`}
+            : `hey ${me?.name?.trim().split(" ")[0]?.toLowerCase() || "there"}`}
         </HandwrittenHeader>
 
         {/* Cold start with no cached payload (Figma 698:518) */}
@@ -183,7 +183,10 @@ const styles = StyleSheet.create({
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.14, shadowRadius: 32, elevation: 6,
   },
   heroCard: {
-    height: 238, borderRadius: 28, overflow: "hidden", padding: 23,
+    // minHeight, not height: the mock is 238 but the stacked content reaches
+    // ~254 at default line heights, and with overflow hidden that clipped the
+    // bottom of the join circle. Larger Dynamic Type made it worse.
+    minHeight: 238, borderRadius: 28, overflow: "hidden", padding: 23,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
   },
   heroLabel: { fontSize: 13, fontWeight: "600", color: CARD_LABEL, letterSpacing: 1.04 },

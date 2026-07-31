@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Linking, Alert, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Linking, Alert, Platform, AppState } from "react-native";
 import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur";
 import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock, Bell } from "lucide-react-native";
@@ -35,7 +35,12 @@ export default function Settings() {
 
   useEffect(() => {
     screen("Settings");
-    Notifications.getPermissionsAsync().then(({ status }) => setPushGranted(status === "granted"));
+    const read = () => Notifications.getPermissionsAsync().then(({ status }) => setPushGranted(status === "granted"));
+    read();
+    // The switch sends the user to iOS Settings to change this, so re-read it
+    // when they come back — otherwise it keeps showing the old value.
+    const sub = AppState.addEventListener("change", (state) => { if (state === "active") read(); });
+    return () => sub.remove();
   }, []);
 
   const togglePush = async (next: boolean) => {

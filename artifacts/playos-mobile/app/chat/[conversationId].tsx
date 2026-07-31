@@ -5,6 +5,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import NetInfo from "@react-native-community/netinfo";
 import { format } from "date-fns";
 import { useConversationMessages, useSendMessage, useMyConversations, useGetGame } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -122,6 +123,20 @@ export default function ChatThread() {
   };
 
   const retryAll = () => pending.forEach((p) => trySend(p.body, p.id));
+
+  // The callout tells the player we'll send queued messages the moment they
+  // reconnect, so actually do it rather than waiting for a manual tap.
+  const wasOffline = useRef(false);
+  useEffect(() => {
+    const unsub = NetInfo.addEventListener((state) => {
+      const online = state.isConnected !== false && state.isInternetReachable !== false;
+      if (online && wasOffline.current) retryAllRef.current();
+      wasOffline.current = !online;
+    });
+    return () => unsub();
+  }, []);
+  const retryAllRef = useRef(retryAll);
+  retryAllRef.current = retryAll;
 
   const teamSize = game ? game.capacity / 2 : null;
   const kickoff = game ? new Date(game.kickoffTime) : null;

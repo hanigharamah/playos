@@ -13,6 +13,7 @@ import { Callout } from "@/components/Callout";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { useServerCountdown, formatCountdown, serverNow } from "@/lib/serverTime";
 import { colors } from "@/lib/theme";
+import { shouldPromptForNotifications } from "@/app/permission/notifications";
 import { screen } from "@/lib/analytics";
 
 const INK = "#1C1C1E";
@@ -55,13 +56,17 @@ export default function CheckInNotOpen() {
 
   const kickoff = game ? new Date(game.kickoffTime).getTime() : null;
   const opensAt = kickoff === null ? null : kickoff - CHECK_IN_OPENS_MINUTES_BEFORE * 60_000;
-  const { remainingMs } = useServerCountdown(opensAt);
+  const { remainingMs, synced } = useServerCountdown(opensAt);
 
   // Swap to the live check-in the instant the window opens — no refresh.
   useEffect(() => {
     if (opensAt === null) return;
+    // Wait for the server clock before opening the window. Without this the
+    // first render used raw device time, so a phone set an hour fast walked
+    // straight into check-in — the one thing this screen exists to prevent.
+    if (!synced) return;
     if (remainingMs <= 0 && serverNow() >= opensAt) router.replace(`/match/${gameId}`);
-  }, [remainingMs, opensAt, gameId, router]);
+  }, [synced, remainingMs, opensAt, gameId, router]);
 
   const booking = bookings?.upcoming?.find((b) => b.gameId === gameId);
 
@@ -70,7 +75,9 @@ export default function CheckInNotOpen() {
     const { status: existing } = await Notifications.getPermissionsAsync();
     const status = existing === "granted" ? existing : (await Notifications.requestPermissionsAsync()).status;
     if (status !== "granted") {
-      router.push("/permission/notifications");
+      // Respect the "must not reappear more than twice" rule instead of
+      // pushing the primer every time the button is tapped.
+      if (await shouldPromptForNotifications()) router.push("/permission/notifications");
       return;
     }
     // A local notification, so it fires whether or not the backend is up.

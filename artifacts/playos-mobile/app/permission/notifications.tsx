@@ -60,6 +60,9 @@ export default function NotificationsPermission() {
         // iOS only shows the system sheet once. After that the only route
         // back is Settings, so send them there rather than no-opping.
         await Linking.openSettings();
+        // Don't leave "you will miss these" sitting there for the user to
+        // come back to with permission already granted.
+        router.back();
         return;
       }
       if (user) await registerForPush(user.id);

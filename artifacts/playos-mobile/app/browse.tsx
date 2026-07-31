@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
 import { Search, ArrowLeft } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
@@ -24,6 +25,7 @@ const MUTED = "#6C6C70";
  */
 export default function Browse() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: games, isLoading, isError } = useListGames();
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<"venues" | "matches">("venues");
@@ -51,7 +53,7 @@ export default function Browse() {
   }, [matches]);
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
       <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
         <ArrowLeft size={20} color={INK} strokeWidth={2} />
       </Pressable>
@@ -134,7 +136,7 @@ export default function Browse() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: 130 },
+  content: { paddingHorizontal: 20, paddingBottom: 130 },
 
   back: { height: 28, justifyContent: "center", marginBottom: 8 },
 
