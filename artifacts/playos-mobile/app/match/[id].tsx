@@ -39,7 +39,12 @@ export default function MatchDay() {
     track("matchday_flashcard_started", { gameId: id });
   }, [id]);
 
-  const myBookingId = myBookings?.upcoming?.find((b) => b.gameId === id)?.id;
+  // Search past as well as upcoming: the moment kickoff passes, useGetMyBookings
+  // moves the booking to `past`, and this screen deliberately stays alive to
+  // T+15. Looking only at `upcoming` told every player "not checked in yet"
+  // from kickoff onward.
+  const myBookingId = [...(myBookings?.upcoming ?? []), ...(myBookings?.past ?? [])]
+    .find((b) => b.gameId === id)?.id;
   const myEntry = myBookingId ? roster?.entries.find((e) => e.bookingId === myBookingId) : undefined;
   const isLocked = !!roster?.teamsLockedAt;
 
@@ -68,11 +73,11 @@ export default function MatchDay() {
   // Connection lost on match day (Figma 698:699). Shown ahead of the loading
   // spinner: the player needs to know their check-in survived, not watch a
   // spinner. The last known roster stays on screen, dimmed.
-  if (isOffline && game) {
+  if (isOffline) {
     return (
       <ReconnectingState
-        pitchName={game.pitchName}
-        kickoffTime={game.kickoffTime}
+        pitchName={game?.pitchName ?? "your match"}
+        kickoffTime={game?.kickoffTime ?? new Date().toISOString()}
         isCheckedIn={!!myEntry?.checkedIn}
         onRetry={() => void refetch()}
       />

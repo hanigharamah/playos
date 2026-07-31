@@ -118,7 +118,12 @@ export default function Browse() {
 
       {/* Empty states, picked by tab (Figma 697:540 venues / 697:585 matches). */}
       {!showSkeleton && !isLoading && tab === "venues" && venues.length === 0 && (
-        <VenuesEmpty query={query} allGames={games ?? []} onClearSearch={() => setQuery("")} />
+        <VenuesEmpty
+            query={query}
+            allGames={games ?? []}
+            onClearSearch={() => setQuery("")}
+            onPickVenue={(name) => { setQuery(name); setTab("matches"); }}
+          />
       )}
       {!showSkeleton && !isLoading && tab === "matches" && matches.length === 0 && (
         <MatchesEmpty query={query} allGames={games ?? []} onClearSearch={() => setQuery("")} />

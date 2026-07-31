@@ -8,6 +8,7 @@ import { useListGames } from "@/lib/api";
 import { Avatar } from "@/components/Avatar";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { PlayNothingLive } from "@/components/PlayNothingLive";
+import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -19,10 +20,15 @@ const CARD_SUB = "#B3B3B3";
 
 export default function Play() {
   const router = useRouter();
-  const { data: games } = useListGames();
+  const { data: games, isLoading, isError } = useListGames();
   const [query, setQuery] = useState("");
 
   useEffect(() => { screen("Play"); }, []);
+
+  const showSkeleton = useDelayedVisible(isLoading && !games);
+
+  // A failed feed must not masquerade as an empty one.
+  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
 
   // Areas are derived from the games feed: one tile per venue, most games first.
   const areas = useMemo(() => {
@@ -115,7 +121,7 @@ export default function Play() {
             </Text>
             <Text style={styles.cardTitle} numberOfLines={1}>{closest.title}</Text>
             <Text style={styles.cardSub}>
-              {closest.capacity / 2}v{closest.capacity / 2}  •  Outdoor  •  Competitive
+              {Math.floor(closest.capacity / 2)}v{Math.floor(closest.capacity / 2)}
             </Text>
 
             <View style={styles.cardAvatars}>
@@ -141,7 +147,10 @@ export default function Play() {
       {/* Nothing live at all (Figma 697:506) — the designed state. A search
           that happens to match nothing is a different situation and keeps the
           plain no-results line, since the tab itself is not empty. */}
-      {(games ?? []).length === 0 && <PlayNothingLive />}
+      {/* Without this gate the tab flashed "nothing is live right now" during
+          every cold fetch, and showed it permanently when the request failed. */}
+      {showSkeleton && <BrowseSkeleton />}
+      {!showSkeleton && !isLoading && (games ?? []).length === 0 && <PlayNothingLive />}
 
       {(games ?? []).length > 0 && filtered.length === 0 && (
         <View style={styles.empty}>

@@ -7,6 +7,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
+import { serverNow, syncServerTime } from "./serverTime";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -299,25 +300,38 @@ export function useBookSpot() {
       if (game.status === "cancelled") throw { data: { error: "Game is cancelled" } };
       if (game.status === "full") throw { data: { error: "Game is full" } };
 
-      const paidBookings = (game.bookings as any[]).filter((b) => b.payment_status === "paid");
-      if (paidBookings.some((b) => b.user_id === user.id)) {
+      // A spot is occupied the moment it's booked, not when it's marked paid.
+      // Filtering to "paid" here made every guard below dead code: the app only
+      // ever inserts "pending", so the same user could book a game repeatedly
+      // and two users could land on one slot. This matches PitchSVG, which
+      // already treated any non-refunded booking as occupied.
+      const activeBookings = (game.bookings as any[]).filter((b) => b.payment_status !== "refunded");
+      if (activeBookings.some((b) => b.user_id === user.id)) {
         throw { data: { error: "You already have a spot in this game" } };
       }
 
-      const slotsPerTeam = game.capacity / 2;
+      if (!game.kickoff_time || new Date(game.kickoff_time).getTime() <= Date.now()) {
+        throw { data: { error: "This match has already kicked off" } };
+      }
+
+      // Floor: an odd capacity would otherwise yield a fractional bound and let
+      // the loops below hand out one slot per team more than the game holds.
+      const slotsPerTeam = Math.floor(game.capacity / 2);
+      if (slotsPerTeam < 1) throw { data: { error: "This match has no open slots" } };
+      if (activeBookings.length >= game.capacity) throw { data: { error: "Game is full" } };
       let assignedTeam = vars.team;
       let assignedSlot = vars.slotIndex;
 
-      const slotTaken = paidBookings.some((b) => b.team === assignedTeam && b.slot_index === assignedSlot);
+      const slotTaken = activeBookings.some((b) => b.team === assignedTeam && b.slot_index === assignedSlot);
       if (slotTaken) {
-        const used = new Set(paidBookings.filter((b) => b.team === assignedTeam).map((b) => b.slot_index));
+        const used = new Set(activeBookings.filter((b) => b.team === assignedTeam).map((b) => b.slot_index));
         let found = false;
         for (let s = 0; s < slotsPerTeam; s++) {
           if (!used.has(s)) { assignedSlot = s; found = true; break; }
         }
         if (!found) {
           const other = assignedTeam === 1 ? 2 : 1;
-          const otherUsed = new Set(paidBookings.filter((b) => b.team === other).map((b) => b.slot_index));
+          const otherUsed = new Set(activeBookings.filter((b) => b.team === other).map((b) => b.slot_index));
           for (let s = 0; s < slotsPerTeam; s++) {
             if (!otherUsed.has(s)) { assignedTeam = other; assignedSlot = s; found = true; break; }
           }
@@ -333,6 +347,8 @@ export function useBookSpot() {
       if (insErr) throw insErr;
 
       queryClient.invalidateQueries({ queryKey: qk.game(vars.gameId) });
+      queryClient.invalidateQueries({ queryKey: qk.games() });
+      queryClient.invalidateQueries({ queryKey: qk.myBookings });
       return { bookingId };
     },
   });
@@ -351,6 +367,16 @@ export function useConfirmPaymentMethod() {
 }
 
 /**
+ * The one place the cancellation cutoff is defined. Callers must import this
+ * rather than repeating the number — it was previously hardcoded in five
+ * places across two codebases.
+ */
+export const FREE_CANCEL_HOURS = 26;
+
+/** Auto-start floor at T+15; below this the match auto-cancels. */
+export const MIN_PLAYERS_TO_START = 6;
+
+/**
  * Flat 26h policy (July 2026): > 26h → full refund, otherwise nothing.
  * Mirrors the web's useCancelBooking; keep both in sync with the policy page.
  * Resale-triggered token issuance is deliberately not implemented — it depends
@@ -360,18 +386,32 @@ export function useCancelBooking() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (vars: { bookingId: string }): Promise<{ message: string }> => {
-      const { data: booking } = await supabase
+      const { data: booking, error: readErr } = await supabase
         .from("bookings").select("game_id, user_id, games(kickoff_time)").eq("id", vars.bookingId).single();
+
+      // Refund eligibility must be decided BEFORE anything is written. This
+      // previously flipped the row to "refunded" first and only used the
+      // eligibility check to pick the message, so a cancellation inside 26h
+      // told the player "no refund" while recording a refund in the database.
+      const kickoff = (booking?.games as any)?.kickoff_time;
+      if (readErr || !booking || !kickoff) {
+        // Falling back to 0 hours here would silently deny a refund the player
+        // was entitled to. Refuse instead of guessing.
+        throw { data: { error: "Couldn't load this booking — please try again." } };
+      }
+
+      // Server clock, not the device clock: this decides money, so a phone with
+      // a wound-back clock must not be able to buy itself a refund.
+      await syncServerTime();
+      const hoursUntil = (new Date(kickoff).getTime() - serverNow()) / 3_600_000;
+      const eligible = hoursUntil > FREE_CANCEL_HOURS;
 
       const { error } = await supabase.from("bookings").update({ payment_status: "refunded" }).eq("id", vars.bookingId);
       if (error) throw error;
 
-      const kickoff = (booking?.games as any)?.kickoff_time;
-      const hoursUntil = kickoff ? (new Date(kickoff).getTime() - Date.now()) / 3_600_000 : 0;
-
-      const message = hoursUntil > 26
+      const message = eligible
         ? "Booking cancelled. You'll receive a full refund."
-        : "Booking cancelled. No refund applies less than 26 hours before kickoff.";
+        : `Booking cancelled. No refund applies ${FREE_CANCEL_HOURS} hours or less before kickoff.`;
 
       if (booking?.game_id) {
         await supabase.from("games").update({ status: "open" }).eq("id", booking.game_id).eq("status", "full");
@@ -413,7 +453,11 @@ export function useGetMyBookings() {
         .order("booked_at", { ascending: false });
       if (error) throw error;
 
-      const rows = data ?? [];
+      // A booking whose game row is missing (deleted, or hidden by RLS) used to
+      // throw here on `g.id`, failing the whole query — which made Home render
+      // "nothing booked yet" to a player who had bookings. Skip the orphan
+      // instead of losing every other booking with it.
+      const rows = (data ?? []).filter((b: any) => b.games && b.games.kickoff_time);
       const photos = await fetchPitchPhotos(rows.map((b: any) => b.games?.pitch_name).filter(Boolean));
 
       const now = new Date();
@@ -434,6 +478,14 @@ export function useGetMyBookings() {
         };
         (new Date(g.kickoff_time) > now ? upcoming : past).push(item);
       }
+
+      // The query orders by booked_at so the newest booking lands first, but
+      // every consumer means "the match happening soonest" by upcoming[0] —
+      // Home's hero, its headline, and the my-games cancel nudge all read it
+      // that way. Sort by kickoff here rather than in each caller.
+      upcoming.sort((a, b) => +new Date(a.game.kickoffTime) - +new Date(b.game.kickoffTime));
+      past.sort((a, b) => +new Date(b.game.kickoffTime) - +new Date(a.game.kickoffTime));
+
       return { upcoming, past };
     },
   });

@@ -96,10 +96,10 @@ export default function Home() {
               <View style={styles.heroMetaRow}>
                 <Users size={20} color={CARD_META} strokeWidth={1.7} />
                 <Text style={styles.heroMeta}>{featured.capacity / 2}v{featured.capacity / 2}</Text>
-                <MapPin size={20} color={CARD_META} strokeWidth={1.7} style={styles.heroMetaGap} />
-                <Text style={styles.heroMeta}>Outdoor</Text>
-                <User size={20} color={CARD_META} strokeWidth={1.7} style={styles.heroMetaGap} />
-                <Text style={styles.heroMeta}>Intermediate</Text>
+                {/* The mock also shows surface and skill level. Neither has a
+                    column on `games`, so both are omitted rather than
+                    hardcoded — they used to read "Outdoor · Intermediate" for
+                    every match regardless of the pitch. */}
               </View>
               <View style={styles.heroAvatars}>
                 {Array.from({ length: shownAvatars }).map((_, i) => (
@@ -149,7 +149,7 @@ export default function Home() {
                           : format(new Date(b.game.kickoffTime), "EEE • h:mm a").toUpperCase()}
                       </Text>
                       <Text style={styles.miniTitle} numberOfLines={1}>{b.game.title}</Text>
-                      <Text style={styles.miniSub}>{teamSize}v{teamSize} • Outdoor</Text>
+                      <Text style={styles.miniSub}>{teamSize}v{teamSize}</Text>
                     </View>
                   </View>
                 </Pressable>

@@ -71,7 +71,7 @@ export default function Countdown() {
 
         <View style={styles.card}>
           <Text style={styles.cardTitle}>{game.pitchName}</Text>
-          <Text style={styles.cardMeta}>{format(kickoff, "EEE, h:mm a")} · {teamSize}v{teamSize} · Outdoor</Text>
+          <Text style={styles.cardMeta}>{format(kickoff, "EEE, h:mm a")} · {teamSize}v{teamSize}</Text>
           {names.length > 0 && (
             <View style={styles.avatarRow}>
               <AvatarStack names={names} max={4} size={28} />

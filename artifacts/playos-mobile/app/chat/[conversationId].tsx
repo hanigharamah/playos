@@ -61,17 +61,38 @@ export default function ChatThread() {
 
   useEffect(() => { screen("ChatThread", { conversationId }); }, [conversationId]);
 
-  // Restore anything that failed to send in a previous session.
+  // Restore anything that failed to send in a previous session. Merge rather
+  // than overwrite: a send can fail while this read is still in flight, and a
+  // blind setPending would drop the message we just promised to keep.
   useEffect(() => {
     if (!conversationId) return;
+    let cancelled = false;
     void AsyncStorage.getItem(pendingKey(conversationId)).then((raw) => {
-      if (raw) setPending(JSON.parse(raw) as Pending[]);
+      if (cancelled || !raw) return;
+      let stored: Pending[] = [];
+      try {
+        stored = JSON.parse(raw) as Pending[];
+      } catch {
+        // Storage truncated by a kill mid-write. Drop it rather than crash.
+        void AsyncStorage.removeItem(pendingKey(conversationId));
+        return;
+      }
+      setPending((live) => {
+        const seen = new Set(live.map((p) => p.id));
+        return [...stored.filter((p) => !seen.has(p.id)), ...live];
+      });
     });
+    return () => { cancelled = true; };
   }, [conversationId]);
 
-  const persist = useCallback(async (next: Pending[]) => {
-    setPending(next);
-    if (conversationId) await AsyncStorage.setItem(pendingKey(conversationId), JSON.stringify(next));
+  // Always derive the next queue from the live state, never from a captured
+  // snapshot — concurrent retries otherwise write over each other.
+  const persist = useCallback((update: (live: Pending[]) => Pending[]) => {
+    setPending((live) => {
+      const next = update(live);
+      if (conversationId) void AsyncStorage.setItem(pendingKey(conversationId), JSON.stringify(next));
+      return next;
+    });
   }, [conversationId]);
 
   useEffect(() => {
@@ -84,14 +105,17 @@ export default function ChatThread() {
       { conversationId, body: text },
       {
         onSuccess: () => {
-          setBody("");
-          if (pendingId) void persist(pending.filter((p) => p.id !== pendingId));
+          // Only clear the composer for a fresh send; a retry must not wipe a
+          // draft the player has since typed.
+          if (pendingId) persist((live) => live.filter((p) => p.id !== pendingId));
+          else setBody("");
         },
         onError: () => {
-          // Keep it on screen rather than dropping it.
+          // Keep it on screen rather than dropping it. A retry that fails again
+          // stays queued where it already is.
           if (pendingId) return;
           setBody("");
-          void persist([...pending, { id: `p${Date.now()}`, body: text, failedAt: new Date().toISOString() }]);
+          persist((live) => [...live, { id: `p${Date.now()}-${live.length}`, body: text, failedAt: new Date().toISOString() }]);
         },
       },
     );
@@ -107,7 +131,9 @@ export default function ChatThread() {
     <KeyboardAvoidingView
       style={styles.wrap}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
-      keyboardVerticalOffset={90}
+      // Root-level view with no header, so no offset — 90 left the input
+      // pill floating ~90pt above the keyboard on iOS.
+      keyboardVerticalOffset={0}
     >
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
@@ -142,7 +168,9 @@ export default function ChatThread() {
             const mine = item.senderId === user?.id;
             return (
               <View style={[styles.row, mine && styles.rowMine]}>
-                {!mine && <Avatar name={item.senderName ?? "?"} size={32} />}
+                {/* ChatMessage carries sender_id but no name, so an avatar
+                    here could only ever render "?". Omitted until the query
+                    joins the sender's profile. */}
                 <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleTheirs]}>
                   <Text style={styles.bubbleText}>{item.body}</Text>
                 </View>

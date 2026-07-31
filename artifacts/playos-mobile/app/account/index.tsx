@@ -126,7 +126,7 @@ export default function Settings() {
         <Row
           icon={<Bell size={22} color={INK} strokeWidth={1.8} />}
           label="what we notify you about"
-          onPress={() => router.push("/settings/notifications")}
+          onPress={() => router.push("/account/notifications")}
         />
       )}
 

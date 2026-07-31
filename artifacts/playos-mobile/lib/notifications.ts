@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
@@ -85,8 +86,17 @@ export async function registerForPush(userId: string): Promise<RegisterResult> {
  * "20 min to kickoff" push opens straight into the flashcard flow.
  */
 export function useNotificationTapNavigator(onOpen: (url: string) => void) {
-  Notifications.addNotificationResponseReceivedListener((response) => {
-    const url = response.notification.request.content.data?.url as string | undefined;
-    if (url) onOpen(url);
-  });
+  // Previously registered straight from the render body with no cleanup, so
+  // every root re-render added another listener and one notification tap
+  // pushed the match screen once per listener.
+  const handler = useRef(onOpen);
+  handler.current = onOpen;
+
+  useEffect(() => {
+    const sub = Notifications.addNotificationResponseReceivedListener((response) => {
+      const url = response.notification.request.content.data?.url as string | undefined;
+      if (url) handler.current(url);
+    });
+    return () => sub.remove();
+  }, []);
 }

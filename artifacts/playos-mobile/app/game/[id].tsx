@@ -5,6 +5,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { format } from "date-fns";
 import { ArrowLeft, ArrowRight, Share2, Users, Clock, Navigation, MapPin, Calendar, Grid3x3, BarChart3, Lock, ShieldCheck } from "lucide-react-native";
+import { MIN_PLAYERS_TO_START } from "@/lib/api";
 import { useGetGame, useBookSpot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
@@ -57,7 +58,10 @@ export default function GameDetail() {
   const bookedCount = game.bookings.filter((b) => b.paymentStatus === "paid").length;
   const spotsLeft = game.capacity - bookedCount;
   const teamSize = game.capacity / 2;
-  const minPlayers = Math.max(2, Math.floor(game.capacity / 2));
+  // Decided product rule (FIGMA-MAP "Product rules"): a match auto-starts at
+  // T+15 with 6 or more, otherwise it auto-cancels. The old formula here was
+  // half of capacity, which told an 8-player game it needed 4.
+  const minPlayers = MIN_PLAYERS_TO_START;
   const gameOpen = game.status === "open";
   const shownAvatars = Math.min(bookedCount, 3);
   const overflow = bookedCount - shownAvatars;
@@ -127,7 +131,7 @@ export default function GameDetail() {
           </View>
           <View style={styles.metaPill}>
             <Clock size={13} color={INK} strokeWidth={2} />
-            <Text style={styles.metaText}>{game.durationMinutes ?? 90} mins</Text>
+            <Text style={styles.metaText}>{game.durationMinutes ? `${game.durationMinutes} mins` : "—"}</Text>
           </View>
           <View style={styles.metaPill}>
             <Navigation size={13} color={INK} strokeWidth={2} />
@@ -169,19 +173,13 @@ export default function GameDetail() {
         <View style={styles.aboutRow}>
           <View style={{ flex: 1 }}>
             <Text style={styles.aboutLabel}>about the match</Text>
-            <Text style={styles.aboutBody}>Good vibes and great players.</Text>
-            <Text style={styles.aboutBody}>Competitive game.</Text>
+            {/* `games` has no description column; the mock's blurb was
+                hardcoded and identical on every match. Show the real title. */}
+            <Text style={styles.aboutBody}>{game.title}</Text>
           </View>
-          <View style={styles.rulePills}>
-            <View style={[styles.card, styles.rulePill]}>
-              <ShieldCheck size={13} color={INK} strokeWidth={2} />
-              <Text style={styles.rulePillText}>Fair play</Text>
-            </View>
-            <View style={[styles.card, styles.rulePill]}>
-              <Users size={12} color={INK} strokeWidth={2} />
-              <Text style={styles.rulePillText}>No slide tackles</Text>
-            </View>
-          </View>
+          {/* The mock's rule pills ("Fair play", "No slide tackles") have no
+              rules column behind them and rendered identically on every match,
+              so they're omitted until per-game rules exist. */}
         </View>
 
         {/* Venue (flat, sits directly on the canvas per the design) */}
@@ -238,7 +236,7 @@ export default function GameDetail() {
               <Text style={styles.infoLabel}>Level</Text>
             </View>
             {/* TODO: bind to game.skillLevel once the backend field exists */}
-            <Text style={styles.infoValueSm}>Intermediate</Text>
+            <Text style={styles.infoValueSm}>—</Text>
           </View>
         </View>
 

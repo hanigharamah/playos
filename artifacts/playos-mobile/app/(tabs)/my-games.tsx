@@ -101,7 +101,7 @@ export default function MyGames() {
                 {tonight ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()} • {format(kickoff, "h:mm a")}
               </Text>
               <Text style={styles.rowTitle} numberOfLines={1}>{item.game.title}</Text>
-              <Text style={styles.rowSub}>{teamSize}v{teamSize} • Outdoor</Text>
+              <Text style={styles.rowSub}>{teamSize}v{teamSize}</Text>
             </View>
           </Pressable>
         );

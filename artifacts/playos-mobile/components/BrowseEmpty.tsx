@@ -59,11 +59,14 @@ interface Props {
   /** Every open game, unfiltered — what we offer instead. */
   allGames: GameSummary[];
   onClearSearch: () => void;
+  /** Jump to a venue's matches. Rendered inside Browse, so pushing /browse
+      again would stack a second copy of the screen the user is already on. */
+  onPickVenue?: (name: string) => void;
 }
 
 /* ── Venues, no results (697:540) ─────────────────────────────────────── */
 
-export function VenuesEmpty({ query, allGames, onClearSearch }: Props) {
+export function VenuesEmpty({ query, allGames, onClearSearch, onPickVenue }: Props) {
   const router = useRouter();
   const q = query.trim();
   const others = summarise(allGames).slice(0, 2);
@@ -94,7 +97,7 @@ export function VenuesEmpty({ query, allGames, onClearSearch }: Props) {
               these are the busiest venues instead and the label says so. */}
           <View style={styles.eyebrowWrap}><EmptyEyebrow>WHERE GAMES ARE OPEN</EmptyEyebrow></View>
           {others.map((v) => (
-            <Pressable key={v.name} style={styles.venueRow} onPress={() => router.push("/browse")}>
+            <Pressable key={v.name} style={styles.venueRow} onPress={() => onPickVenue?.(v.name)}>
               <Image source={{ uri: getVenuePhoto(v.name, v.photo) }} style={styles.venueThumb} />
               <View style={styles.venueText}>
                 <Text style={styles.venueName} numberOfLines={1}>{v.name}</Text>

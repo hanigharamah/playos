@@ -5,9 +5,10 @@ import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { format, isSameDay } from "date-fns";
 import { ArrowLeft, Check, AlertTriangle } from "lucide-react-native";
-import { useGetMyBookings, useCancelBooking } from "@/lib/api";
+import { useGetMyBookings, useCancelBooking, FREE_CANCEL_HOURS } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { serverNow, syncServerTime } from "@/lib/serverTime";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -18,7 +19,7 @@ const GREEN = "#268033";
 const RED = "#DB2626";
 
 /** Free-cancellation cutoff — must stay in sync with the web policy page. */
-const FREE_CANCEL_HOURS = 26;
+// Cutoff lives in lib/api.ts so the screen and the mutation cannot drift.
 
 export default function CancellationConfirm() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
@@ -41,7 +42,7 @@ export default function CancellationConfirm() {
 
   const kickoff = new Date(booking.game.kickoffTime);
   const teamSize = booking.game.capacity / 2;
-  const hoursUntil = (kickoff.getTime() - Date.now()) / 3_600_000;
+  const hoursUntil = (kickoff.getTime() - serverNow()) / 3_600_000;
   const isFree = hoursUntil > FREE_CANCEL_HOURS;
 
   const confirmCancel = () => {
