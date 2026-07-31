@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { useNotificationPrefs, useSetNotificationPrefs, DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from "@/lib/api";
+import { Callout } from "@/components/Callout";
 import { colors } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -16,14 +17,7 @@ const GLOWS = [
   { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
 ];
 
-const STORE_KEY = "playos.notificationPrefs";
-
-type PrefKey =
-  | "matchReminders" | "teamsAndCheckIn"
-  | "spotOpened" | "headStart"
-  | "matchChat"
-  | "resultsAndAwards"
-  | "newsAndOffers";
+type PrefKey = keyof NotificationPrefs;
 
 /**
  * Every switch maps to exactly one real message in the notification spine —
@@ -60,42 +54,33 @@ const SECTIONS: { label: string; rows: { key: PrefKey; title: string; sub: strin
   },
 ];
 
-/** Everything on except marketing — matches the mock's default state. */
-const DEFAULTS: Record<PrefKey, boolean> = {
-  matchReminders: true, teamsAndCheckIn: true,
-  spotOpened: true, headStart: true,
-  matchChat: true,
-  resultsAndAwards: true,
-  newsAndOffers: false,
-};
-
 /**
  * Notification preferences (Figma 699:726). Writes immediately, no save button.
  *
- * IMPORTANT LIMITATION: these preferences are stored on the device only.
- * There is no `notification_preferences` table, and the send-match-reminders
- * edge function doesn't read one, so switching a toggle off does NOT yet stop
- * the server from sending that push. The screen is correct and complete; the
- * suppression it implies needs the table plus a change to the edge function.
- * Until then this is a stated preference, not an enforced one.
+ * Preferences persist to `notification_preferences` when that table exists and
+ * fall back to the device otherwise. When they are device-only the screen says
+ * so rather than implying an enforcement that isn't there — this matters
+ * because the forfeit model assumes the player was told before he was
+ * penalised, so an unenforceable preference is a fairness problem, not a
+ * cosmetic one. See supabase/2026-07-notification-preferences.sql.
  */
 export default function NotificationSettings() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const [prefs, setPrefs] = useState<Record<PrefKey, boolean>>(DEFAULTS);
+  const { data } = useNotificationPrefs();
+  const setPrefs = useSetNotificationPrefs();
+  // Local echo so a switch responds instantly rather than after a round trip.
+  const [pending, setPending] = useState<Partial<NotificationPrefs>>({});
 
   useEffect(() => { screen("SettingsNotifications"); }, []);
 
-  useEffect(() => {
-    void AsyncStorage.getItem(STORE_KEY).then((raw) => {
-      if (raw) setPrefs({ ...DEFAULTS, ...(JSON.parse(raw) as Partial<Record<PrefKey, boolean>>) });
-    });
-  }, []);
+  const prefs: NotificationPrefs = { ...DEFAULT_NOTIFICATION_PREFS, ...(data?.prefs ?? {}), ...pending };
+  const serverBacked = data?.synced ?? false;
 
   const toggle = (key: PrefKey, value: boolean) => {
     const next = { ...prefs, [key]: value };
-    setPrefs(next);
-    void AsyncStorage.setItem(STORE_KEY, JSON.stringify(next));
+    setPending((p) => ({ ...p, [key]: value }));
+    setPrefs.mutate(next, { onSettled: () => setPending({}) });
   };
 
   return (
@@ -131,6 +116,16 @@ export default function NotificationSettings() {
           </View>
         ))}
 
+        {!serverBacked && (
+          <Callout
+            tone="warning"
+            icon={<Text style={styles.bang}>!</Text>}
+            title="saved on this phone only"
+            body="these choices aren't reaching our servers yet, so they don't stop a message being sent. we're fixing that."
+            style={{ marginTop: 22 }}
+          />
+        )}
+
         <Text style={styles.footnote}>
           booking confirmations, cancellations and refunds always arrive. they are transactional and cannot be
           switched off.
@@ -164,5 +159,6 @@ const styles = StyleSheet.create({
   rowTitle: { fontSize: 14.5, fontWeight: "600", color: INK },
   rowSub: { fontSize: 11.5, color: MUTED, marginTop: 4 },
 
+  bang: { fontSize: 13, fontWeight: "700", color: "#C96A00" },
   footnote: { fontSize: 12, color: MUTED, marginTop: 28, marginLeft: 4, lineHeight: 18 },
 });

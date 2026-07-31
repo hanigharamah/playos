@@ -20,7 +20,7 @@ export default function Onboarding() {
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
 
   useEffect(() => {
-    track("reminder_onboarding_shown", { source: "signup", platform: "native" });
+    track("reminder_onboarding_shown", { source: "manual", platform: "native" });
   }, []);
 
   const enable = async () => {

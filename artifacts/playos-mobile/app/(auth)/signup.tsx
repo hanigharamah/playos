@@ -28,7 +28,11 @@ export default function Signup() {
           track("player_signed_up");
           // Onboarding first — this is the single moment every new player
           // passes through, where we ask about match reminders (SPEC.md §5).
-          router.replace("/onboarding");
+          // Push permission is asked at first payment, not at install: a
+          // player who has paid has a reason to want the check-in message,
+          // and the opt-in rate at signup is not one we can build a forfeit
+          // policy on. See app/checkout/[bookingId].tsx.
+          router.replace("/(tabs)");
         },
         onError: (err: any) => setError(err?.data?.error ?? "Signup failed"),
       },

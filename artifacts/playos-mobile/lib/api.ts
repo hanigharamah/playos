@@ -6,6 +6,7 @@
  */
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { supabase } from "./supabase";
 import { serverNow, syncServerTime } from "./serverTime";
 
@@ -997,5 +998,104 @@ export function useCancelMatch() {
       queryClient.invalidateQueries({ queryKey: qk.games() });
       queryClient.invalidateQueries({ queryKey: qk.myBookings });
     },
+  });
+}
+
+// ─── Notification preferences ──────────────────────────────────────────────
+//
+// Backed by supabase/2026-07-notification-preferences.sql, NOT YET APPLIED.
+// These were device-local, which the product owner correctly escalated to a
+// blocker: the forfeit model assumes the player was told before he was
+// penalised, and a preference the server cannot read suppresses nothing and
+// proves nothing.
+//
+// While the table is missing the hooks fall back to the device copy so the
+// screen still works, and `synced` reports false so the UI can say plainly
+// that the setting is not yet enforced.
+
+export interface NotificationPrefs {
+  matchReminders: boolean;
+  teamsAndCheckIn: boolean;
+  spotOpened: boolean;
+  headStart: boolean;
+  matchChat: boolean;
+  resultsAndAwards: boolean;
+  newsAndOffers: boolean;
+}
+
+export const DEFAULT_NOTIFICATION_PREFS: NotificationPrefs = {
+  matchReminders: true, teamsAndCheckIn: true,
+  spotOpened: true, headStart: true,
+  matchChat: true, resultsAndAwards: true,
+  newsAndOffers: false,
+};
+
+const PREFS_LOCAL_KEY = "playos.notificationPrefs";
+
+const rowToPrefs = (r: any): NotificationPrefs => ({
+  matchReminders: r.match_reminders, teamsAndCheckIn: r.teams_and_check_in,
+  spotOpened: r.spot_opened, headStart: r.head_start,
+  matchChat: r.match_chat, resultsAndAwards: r.results_and_awards,
+  newsAndOffers: r.news_and_offers,
+});
+
+const prefsToRow = (p: NotificationPrefs) => ({
+  match_reminders: p.matchReminders, teams_and_check_in: p.teamsAndCheckIn,
+  spot_opened: p.spotOpened, head_start: p.headStart,
+  match_chat: p.matchChat, results_and_awards: p.resultsAndAwards,
+  news_and_offers: p.newsAndOffers,
+});
+
+/** Postgres/PostgREST codes for "that table isn't there". */
+const MISSING_TABLE = new Set(["42P01", "PGRST205"]);
+
+export function useNotificationPrefs() {
+  return useQuery({
+    queryKey: ["notification-prefs"],
+    queryFn: async (): Promise<{ prefs: NotificationPrefs; synced: boolean }> => {
+      const local = await AsyncStorage.getItem(PREFS_LOCAL_KEY);
+      const fallback: NotificationPrefs = local
+        ? { ...DEFAULT_NOTIFICATION_PREFS, ...(JSON.parse(local) as Partial<NotificationPrefs>) }
+        : DEFAULT_NOTIFICATION_PREFS;
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return { prefs: fallback, synced: false };
+
+      const { data, error } = await supabase
+        .from("notification_preferences").select("*").eq("user_id", userId).maybeSingle();
+
+      if (error) {
+        if (MISSING_TABLE.has(error.code ?? "")) return { prefs: fallback, synced: false };
+        throw error;
+      }
+      if (!data) return { prefs: fallback, synced: false };
+      return { prefs: rowToPrefs(data), synced: true };
+    },
+  });
+}
+
+export function useSetNotificationPrefs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (prefs: NotificationPrefs): Promise<{ synced: boolean }> => {
+      // Always keep the device copy so the screen survives a cold start.
+      await AsyncStorage.setItem(PREFS_LOCAL_KEY, JSON.stringify(prefs));
+
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return { synced: false };
+
+      const { error } = await supabase
+        .from("notification_preferences")
+        .upsert({ user_id: userId, ...prefsToRow(prefs), updated_at: new Date().toISOString() });
+
+      if (error) {
+        if (MISSING_TABLE.has(error.code ?? "")) return { synced: false };
+        throw error;
+      }
+      return { synced: true };
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification-prefs"] }),
   });
 }
