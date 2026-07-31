@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
   back: { height: 28, justifyContent: "center", marginBottom: 8 },
 
   searchBar: {
-    flexDirection: "row", alignItems: "center", gap: 11,
+    flexDirection: "row", alignItems: "center", gap: 2,
     height: 44, borderRadius: 14, paddingHorizontal: 11,
     backgroundColor: "rgba(255,255,255,0.4)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
@@ -149,8 +149,8 @@ const styles = StyleSheet.create({
   },
   searchInput: { flex: 1, fontSize: 14, color: INK, padding: 0 },
 
-  tabs: { flexDirection: "row", gap: 26, marginTop: spacing.xl },
-  tab: { fontSize: 15, color: "#99999E" },
+  tabs: { flexDirection: "row", gap: 34, marginTop: spacing.xl },
+  tab: { fontSize: 15, color: "#6C6C70" },
   tabActive: { fontWeight: "700", color: INK },
   underline: { width: 54, height: 2, backgroundColor: colors.orange, marginTop: 6, marginBottom: 18 },
   underlineMatches: { marginLeft: 80, width: 64 },

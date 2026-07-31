@@ -240,10 +240,10 @@ const styles = StyleSheet.create({
     shadowColor: "#FF6B33", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.35, shadowRadius: 14, elevation: 4,
   },
   streakLabel: { fontSize: 13, fontWeight: "600", color: MUTED },
-  streakValue: { fontSize: 32, fontWeight: "700", color: INK, marginTop: 2 },
+  streakValue: { fontSize: 36, fontWeight: "700", color: INK, marginTop: 2 },
   streakBest: { fontSize: 13, color: MUTED, alignSelf: "flex-end", marginBottom: 12 },
 
-  levelCard: { ...glassCard, borderRadius: 22, marginTop: spacing.lg, padding: 20, minHeight: 200 },
+  levelCard: { ...glassCard, borderRadius: 22, marginTop: spacing.lg, padding: 20, minHeight: 284 },
   levelTop: { flexDirection: "row", alignItems: "flex-start" },
   levelLabel: { fontSize: 13, fontWeight: "600", color: MUTED },
   levelValue: { fontSize: 48, fontWeight: "700", color: INK, marginTop: 2 },

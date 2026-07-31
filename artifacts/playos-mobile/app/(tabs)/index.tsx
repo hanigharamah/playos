@@ -173,7 +173,7 @@ function isSameDay(a: Date, b: Date) {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   scroll: { flex: 1 },
-  content: { padding: spacing.lg, paddingTop: spacing.xxl + 16, paddingBottom: 130 },
+  content: { paddingHorizontal: 20, paddingTop: spacing.xxl + 16, paddingBottom: 130 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   logo: { fontSize: 17, fontWeight: "700", color: INK },
   bellDot: { position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.orange },
@@ -201,7 +201,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center", marginLeft: -8,
   },
   heroOverflowText: { fontSize: 13, fontWeight: "600", color: "#F07C1A" },
-  heroJoinRow: { flexDirection: "row", alignItems: "center", gap: 15, marginTop: 12 },
+  heroJoinRow: { flexDirection: "row", alignItems: "center", gap: 15, marginTop: 6 },
   heroJoinCircle: {
     width: 56, height: 56, borderRadius: 28, backgroundColor: colors.orange,
     alignItems: "center", justifyContent: "center",

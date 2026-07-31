@@ -168,10 +168,10 @@ export default function Play() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: spacing.lg, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
+  content: { paddingHorizontal: 20, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
 
   searchBar: {
-    flexDirection: "row", alignItems: "center", gap: 11,
+    flexDirection: "row", alignItems: "center", gap: 2,
     height: 44, borderRadius: 14, paddingHorizontal: 11,
     backgroundColor: "rgba(255,255,255,0.4)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",

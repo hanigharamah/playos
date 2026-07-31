@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
   },
   segmentHalf: { flex: 1, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   segmentActive: {
-    backgroundColor: "rgba(255,255,255,0.65)",
+    backgroundColor: "rgba(255,255,255,0.4)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   segmentText: { fontSize: 14, color: MUTED },
   segmentTextActive: { fontWeight: "600", color: INK },
-  underline: { width: 70, height: 2, backgroundColor: colors.orange, marginTop: 27, marginBottom: 9 },
+  underline: { width: 70, height: 2, backgroundColor: colors.orange, marginTop: 27, marginBottom: 34 },
   underlinePast: { marginLeft: 179 },
 
   row: {

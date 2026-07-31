@@ -877,3 +877,125 @@ export function useDeleteGame() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.games() }),
   });
 }
+
+
+// ─── Operator surface ──────────────────────────────────────────────────────
+//
+// The T-10 at-risk list (Figma 685:502). Kept separate from useGameRoster
+// because it needs columns players must never see — phone numbers and booking
+// age — and because it is gated on the operator role.
+
+export interface OpsRosterEntry {
+  bookingId: string;
+  userId: string;
+  name: string;
+  /** Null when the player never added one; the call action hides in that case. */
+  phone: string | null;
+  bookedAt: string;
+  checkedIn: boolean;
+}
+
+/** True when the signed-in user may see operator surfaces. */
+export function useIsOperator() {
+  return useQuery({
+    queryKey: ["is-operator"],
+    queryFn: async (): Promise<boolean> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return false;
+      const { data } = await supabase.from("users").select("role").eq("id", userId).single();
+      return ["admin", "organiser", "host"].includes(data?.role ?? "");
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+const opsRosterKey = (gameId: string) => ["ops-roster", gameId] as const;
+
+/**
+ * Everyone holding a spot, with the detail an operator needs to work the
+ * phone. Ordered longest-standing booking first, which is the calling order
+ * the screen's annotation specifies.
+ */
+export function useOpsRoster(gameId: string | null) {
+  return useQuery({
+    queryKey: opsRosterKey(gameId ?? ""),
+    enabled: !!gameId,
+    // The annotation asks for a 15s refresh while the screen is open.
+    refetchInterval: 15_000,
+    queryFn: async (): Promise<OpsRosterEntry[]> => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("id, user_id, booked_at, checked_in, users(name, phone)")
+        .eq("game_id", gameId!)
+        .neq("payment_status", "refunded")
+        .order("booked_at", { ascending: true });
+      if (error) throw error;
+
+      return (data ?? []).map((b: any) => ({
+        bookingId: b.id,
+        userId: b.user_id,
+        name: b.users?.name ?? "Player",
+        phone: b.users?.phone ?? null,
+        bookedAt: b.booked_at,
+        checkedIn: b.checked_in ?? false,
+      }));
+    },
+  });
+}
+
+export type ReleaseSpotResult = "ok" | "not_found" | "already_released" | "forbidden";
+
+/**
+ * Release a no-show's spot at T-10 so the pitch can be refilled.
+ *
+ * Backed by the `release_spot` RPC in supabase/2026-07-operator-surface.sql,
+ * which is NOT YET APPLIED. Until it is, this throws and the screen surfaces
+ * the error rather than pretending the spot was released.
+ */
+export function useReleaseSpot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { bookingId: string; gameId: string; operatorInitial: string }): Promise<ReleaseSpotResult> => {
+      const { data, error } = await supabase.rpc("release_spot", {
+        p_booking_id: vars.bookingId,
+        p_operator_initial: vars.operatorInitial,
+      });
+      if (error) throw error;
+      return data as ReleaseSpotResult;
+    },
+    onSuccess: (_r, vars) => {
+      queryClient.invalidateQueries({ queryKey: opsRosterKey(vars.gameId) });
+      queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(vars.gameId) });
+    },
+  });
+}
+
+export type CancelReason = "venue_closed" | "weather" | "not_enough_players";
+
+/**
+ * Operator cancellation (Figma 685:596). Writes the reason, moves every
+ * booking to refund_pending, and notifies each booked player.
+ *
+ * Backed by the `cancel_match` RPC in supabase/2026-07-operator-surface.sql,
+ * which is NOT YET APPLIED. Until then this throws and the screen reports that
+ * nothing was sent, rather than claiming players were notified.
+ */
+export function useCancelMatch() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { gameId: string; reason: CancelReason }) => {
+      const { data, error } = await supabase.rpc("cancel_match", {
+        p_game_id: vars.gameId,
+        p_reason: vars.reason,
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (_r, vars) => {
+      queryClient.invalidateQueries({ queryKey: qk.game(vars.gameId) });
+      queryClient.invalidateQueries({ queryKey: qk.games() });
+      queryClient.invalidateQueries({ queryKey: qk.myBookings });
+    },
+  });
+}

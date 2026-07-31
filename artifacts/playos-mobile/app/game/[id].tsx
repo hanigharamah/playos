@@ -377,8 +377,8 @@ const styles = StyleSheet.create({
   getReadyText: { fontSize: 13, fontWeight: "700", color: colors.orange },
 
   aboutRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 22, paddingHorizontal: 22, gap: 12 },
-  aboutLabel: { fontSize: 12, fontWeight: "600", color: INK },
-  aboutBody: { fontSize: 10, color: BODY, marginTop: 6 },
+  aboutLabel: { fontSize: 10, fontWeight: "600", color: INK },
+  aboutBody: { fontSize: 8, color: BODY, marginTop: 6 },
   rulePills: { gap: 8, alignItems: "flex-end" },
   rulePill: { flexDirection: "row", alignItems: "center", gap: 5, height: 25, paddingHorizontal: 8, borderRadius: 16 },
   rulePillText: { fontSize: 8.5, fontWeight: "600", color: INK },

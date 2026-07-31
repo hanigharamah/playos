@@ -133,11 +133,29 @@ Skeleton rules, from the annotations and enforced in code:
 - on request failure the screen routes to `/error/server`; the skeleton never keeps pulsing
 - controls that are client state (filter chips, upcoming/past segment) stay live and tappable during load
 
-Design missing from the file:
+Booking · Time clash (700:698) was deleted deliberately and is out of scope
+for this phase. Do not re-export it.
 
-| Screen | Node | Status |
+Operator surface (ratified as the highest-priority area):
+
+| Screen | Node | Code |
 |---|---|---|
-| Booking · Time clash | 700:698 | node does not resolve — deleted or renumbered. Neighbouring nodes on the same page (700:639) load fine, so the page itself is intact. Needs re-exporting before it can be built. |
+| Ops · At-risk players T-10 | 685:502 | `app/ops/at-risk/[gameId].tsx` |
+| Ops · Cancel match | 685:596 | `app/ops/cancel/[gameId].tsx` |
+
+Both call RPCs in `supabase/2026-07-operator-surface.sql`, NOT YET APPLIED.
+Until it runs they surface the failure rather than reporting work that never
+happened.
+
+Venue cancellation policy (ratified, no longer blocked): PlayOS or the venue
+cancels; the player chooses cash or a game token; streak preserved either way;
+no XP either way; 48 hours to choose; after that we auto-refund CASH and never
+default anyone into a token. Game tokens expire in **30 days** — any Figma copy
+saying 60 is stale and needs correcting at source. Auto-cancel fires when fewer
+than 10 of 12 are checked in at T-10.
+
+Still blocked on a product decision: award categories. MVP / Fair Play / Engine
+is placeholder text in Figma, not a decision — do not build the voting screen.
 
 Blocked, with reason:
 
