@@ -46,7 +46,10 @@ export default function Play() {
   const filtered = (games ?? []).filter(
     (g) => !q || g.title.toLowerCase().includes(q) || g.pitchName.toLowerCase().includes(q),
   );
-  const closest = filtered[0];
+  // filtered is ordered by kickoff (useListGames sorts kickoff_time ASC), so
+  // this is the next match, not the nearest one. There is no device location
+  // and no venue coordinates, so nothing here can rank by distance.
+  const nextUp = filtered[0];
 
   return (
     <ScrollView style={styles.wrap} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -85,7 +88,7 @@ export default function Play() {
                 />
                 {i === 0 && (
                   <View style={styles.closestBadge}>
-                    <Text style={styles.closestBadgeText}>closest</Text>
+                    <Text style={styles.closestBadgeText}>most games</Text>
                   </View>
                 )}
                 <View style={styles.areaTileText}>
@@ -99,13 +102,14 @@ export default function Play() {
         </>
       )}
 
-      {/* Closest to you (Figma 3:23 + 3:24) */}
-      {closest && (
+      {/* Figma 3:23 + 3:24 label this "Closest to you". Renamed: there is no
+          location data, so claiming proximity would be a lie. */}
+      {nextUp && (
         <>
-          <HandwrittenHeader style={[styles.sectionLabel, styles.closestLabel]}>Closest to you</HandwrittenHeader>
-          <Pressable style={styles.matchCard} onPress={() => router.push(`/game/${closest.id}`)}>
+          <HandwrittenHeader style={[styles.sectionLabel, styles.closestLabel]}>Next up</HandwrittenHeader>
+          <Pressable style={styles.matchCard} onPress={() => router.push(`/game/${nextUp.id}`)}>
             <Image
-              source={{ uri: getVenuePhoto(closest.pitchName, closest.pitchPhotoUrl) }}
+              source={{ uri: getVenuePhoto(nextUp.pitchName, nextUp.pitchPhotoUrl) }}
               style={StyleSheet.absoluteFill}
             />
             <LinearGradient
@@ -113,26 +117,26 @@ export default function Play() {
               style={StyleSheet.absoluteFill}
             />
             <Text style={styles.cardMeta}>
-              {isSameDay(new Date(closest.kickoffTime), new Date())
+              {isSameDay(new Date(nextUp.kickoffTime), new Date())
                 ? "TONIGHT"
-                : format(new Date(closest.kickoffTime), "EEE").toUpperCase()}
+                : format(new Date(nextUp.kickoffTime), "EEE").toUpperCase()}
               {" • "}
-              {format(new Date(closest.kickoffTime), "h:mm a")}
+              {format(new Date(nextUp.kickoffTime), "h:mm a")}
             </Text>
-            <Text style={styles.cardTitle} numberOfLines={1}>{closest.title}</Text>
+            <Text style={styles.cardTitle} numberOfLines={1}>{nextUp.title}</Text>
             <Text style={styles.cardSub}>
-              {Math.floor(closest.capacity / 2)}v{Math.floor(closest.capacity / 2)}
+              {Math.floor(nextUp.capacity / 2)}v{Math.floor(nextUp.capacity / 2)}
             </Text>
 
             <View style={styles.cardAvatars}>
-              {Array.from({ length: Math.min(closest.bookedCount, 4) }).map((_, i) => (
+              {Array.from({ length: Math.min(nextUp.bookedCount, 4) }).map((_, i) => (
                 <View key={i} style={[styles.cardAvatar, { marginLeft: i === 0 ? 0 : -8 }]}>
                   <Avatar name={`P${i + 1}`} size={28} />
                 </View>
               ))}
-              {closest.bookedCount > 4 && (
+              {nextUp.bookedCount > 4 && (
                 <View style={styles.avatarBadge}>
-                  <Text style={styles.avatarBadgeText}>+{closest.bookedCount - 4}</Text>
+                  <Text style={styles.avatarBadgeText}>+{nextUp.bookedCount - 4}</Text>
                 </View>
               )}
             </View>

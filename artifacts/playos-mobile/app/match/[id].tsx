@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useGameRoster, useClaimSide, useStartMatch, useGetGame, useGetMyBookings } from "@/lib/api";
+import { useGameRoster, useClaimSide, useStartMatch, useGetGame, useGetMyBookings, MIN_PLAYERS_TO_START } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PillButton } from "@/components/PillButton";
 import { GlassCard } from "@/components/GlassCard";
@@ -47,9 +47,16 @@ export default function MatchDay() {
     .find((b) => b.gameId === id)?.id;
   const myEntry = myBookingId ? roster?.entries.find((e) => e.bookingId === myBookingId) : undefined;
   const isLocked = !!roster?.teamsLockedAt;
+  // Seed from the roster so a pick survives leaving and reopening the screen —
+  // it was local state only, so both buttons looked unclaimed on return and
+  // tapping either just produced an "already picked" alert.
+  const shownTeam = claimedTeam ?? myEntry?.team ?? null;
+
+  const [claimingTeam, setClaimingTeam] = useState<1 | 2 | null>(null);
 
   const claim = (team: 1 | 2) => {
     if (!id) return;
+    setClaimingTeam(team);
     claimSide.mutate(
       { gameId: id, team },
       {
@@ -92,13 +99,35 @@ export default function MatchDay() {
     );
   }
 
+  const canStart = roster.checkedInCount >= MIN_PLAYERS_TO_START;
+
+  const start = () => {
+    if (!id) return;
+    startMatch.mutate({ gameId: id }, {
+      onSuccess: (result) => {
+        if (result === "ok" || result === "already_locked") {
+          track("matchday_started", { gameId: id });
+          return;
+        }
+        if (result === "too_few") {
+          Alert.alert("Not enough players", `At least ${MIN_PLAYERS_TO_START} players need to be checked in.`);
+        } else {
+          Alert.alert("Couldn't start", "Please try again.");
+        }
+      },
+      onError: () => Alert.alert("Couldn't start", "Please try again."),
+    });
+  };
+
   if (isLocked) {
     return (
       <View style={styles.wrap}>
         <GlassCard style={styles.card}>
           <Text style={styles.title}>Teams are locked in</Text>
           <Text style={styles.sub}>
-            {roster.kickoffTeam === 1 ? "Yellow" : "Purple"} kicks off first.
+            {roster.kickoffTeam === null
+              ? "Kickoff side is being decided."
+              : `${roster.kickoffTeam === 1 ? "Yellow" : "Purple"} kicks off first.`}
           </Text>
           <PillButton label="Back to game" onPress={() => router.replace(`/game/${id}`)} fullWidth />
         </GlassCard>
@@ -115,19 +144,42 @@ export default function MatchDay() {
         <View style={styles.teamsRow}>
           <PillButton
             label={`Yellow (${roster.yellowCount})`}
-            variant={claimedTeam === 1 ? "primary" : "outline"}
+            variant={shownTeam === 1 ? "primary" : "outline"}
             onPress={() => claim(1)}
-            loading={claimSide.isPending}
+            loading={claimSide.isPending && claimingTeam === 1}
+            disabled={claimSide.isPending || startMatch.isPending}
           />
           <PillButton
             label={`Purple (${roster.purpleCount})`}
-            variant={claimedTeam === 2 ? "secondary" : "outline"}
+            variant={shownTeam === 2 ? "secondary" : "outline"}
             onPress={() => claim(2)}
-            loading={claimSide.isPending}
+            loading={claimSide.isPending && claimingTeam === 2}
+            disabled={claimSide.isPending || startMatch.isPending}
           />
         </View>
 
-        {claimedTeam && <Text style={styles.confirmed}>You're on {claimedTeam === 1 ? "Yellow" : "Purple"} ✓</Text>}
+        {shownTeam && <Text style={styles.confirmed}>You're on {shownTeam === 1 ? "Yellow" : "Purple"} ✓</Text>}
+
+        {/* Locking teams runs the server-side coin flip and balances anyone who
+            never picked. Gated on the decided auto-start floor. */}
+        {canStart && (
+          <View style={styles.startBlock}>
+            <PillButton
+              label={startMatch.isPending ? "starting…" : "lock teams and start"}
+              onPress={start}
+              loading={startMatch.isPending}
+              fullWidth
+            />
+            <Text style={styles.startHint}>
+              {roster.checkedInCount} checked in · balances anyone who hasn't picked
+            </Text>
+          </View>
+        )}
+        {!canStart && (
+          <Text style={styles.startHint}>
+            {MIN_PLAYERS_TO_START - roster.checkedInCount} more to check in before the match can start
+          </Text>
+        )}
       </GlassCard>
     </View>
   );
@@ -140,5 +192,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 22, fontWeight: "800", color: colors.inkNavy, textAlign: "center" },
   sub: { fontSize: 14, color: colors.inkMuted, textAlign: "center" },
   teamsRow: { flexDirection: "row", gap: spacing.md, width: "100%" },
+  startBlock: { marginTop: spacing.lg, width: "100%" },
+  startHint: { fontSize: 12, color: colors.inkMuted, textAlign: "center", marginTop: spacing.sm },
   confirmed: { color: colors.success, fontWeight: "700" },
 });

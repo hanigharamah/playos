@@ -38,7 +38,13 @@ export default function Checkout() {
       {
         onSuccess: () => {
           track("booking_confirmed", { method, fee: game?.price ?? null, gameId: gameId ?? null });
-          setDone(method);
+          // The designed confirmation screen (Figma 369:568) exists and was
+          // dead code — checkout used to render its own inline success view
+          // and the real screen never showed. Route to it instead.
+          router.replace({
+            pathname: "/booking-confirmed/[bookingId]",
+            params: { bookingId: bookingId!, gameId: gameId ?? "" },
+          });
         },
       },
     );
@@ -109,7 +115,7 @@ export default function Checkout() {
           <Text style={styles.linkText}>Share with friends</Text>
         </Pressable>
 
-        <PillButton label="Back to game" variant="outline" onPress={() => router.replace(`/game/${gameId}`)} fullWidth />
+        <PillButton label="Back to game" variant="outline" onPress={() => router.replace(gameId ? `/game/${gameId}` : "/(tabs)")} fullWidth />
       </ScrollView>
     );
   }

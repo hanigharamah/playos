@@ -93,7 +93,7 @@ export function HomeSkeleton() {
       <SkelBlock w={150} h={14} r={7} style={{ marginLeft: 4 }} />
 
       {/* hero card — 350×196, mirrors the featured match card */}
-      <SkelCard h={196} style={{ marginTop: 24 }}>
+      <SkelCard h={238} style={{ marginTop: 24 }}>
         <SkelBlock x={13} y={13} w={322} h={110} r={14} />
         <SkelBlock x={13} y={137} w={200} h={16} r={8} />
         <SkelBlock x={13} y={161} w={140} h={12} r={6} />
@@ -103,11 +103,11 @@ export function HomeSkeleton() {
       <SkelBlock w={120} h={12} r={6} style={{ marginTop: 24, marginLeft: 4 }} />
 
       {[0, 1].map((i) => (
-        <SkelCard key={i} h={64} style={{ marginTop: i === 0 ? 12 : 16 }}>
-          <SkelBlock x={11} y={11} w={40} h={40} r={10} />
-          <SkelBlock x={65} y={13} w={180} h={14} r={7} />
-          <SkelBlock x={65} y={35} w={120} h={11} r={5} />
-          <SkelBlock xr={15} y={21} w={54} h={20} r={10} tone="b" />
+        <SkelCard key={i} h={68} style={{ marginTop: i === 0 ? 12 : 12 }}>
+          <SkelBlock x={6} y={7} w={54} h={54} r={12} />
+          <SkelBlock x={71} y={14} w={180} h={14} r={7} />
+          <SkelBlock x={71} y={36} w={120} h={11} r={5} />
+          <SkelBlock xr={15} y={24} w={54} h={20} r={10} tone="b" />
         </SkelCard>
       ))}
 
@@ -142,13 +142,16 @@ export function BrowseSkeleton({ withSearch = false }: { withSearch?: boolean })
         </>
       )}
 
+      {/* Geometry follows app/browse.tsx's real row (92 tall, 68 thumb, text
+          at x=91), not the mock's 80/56/81 — the annotation's rule is that
+          nothing jumps when data lands, and the mock disagreed with the row. */}
       {[0, 1, 2, 3].map((i) => (
-        <SkelCard key={i} h={80} style={{ marginTop: i === 0 ? (withSearch ? 20 : 0) : 14 }}>
-          <SkelBlock x={11} y={11} w={56} h={56} r={12} />
-          <SkelBlock x={81} y={13} w={190} h={16} r={8} />
-          <SkelBlock x={81} y={37} w={130} h={12} r={6} />
-          <SkelBlock x={81} y={57} w={90} h={12} r={6} />
-          <SkelBlock xr={15} y={27} w={50} h={24} r={12} tone="b" />
+        <SkelCard key={i} h={92} style={{ marginTop: i === 0 ? (withSearch ? 20 : 0) : 12 }}>
+          <SkelBlock x={11} y={11} w={68} h={68} r={14} />
+          <SkelBlock x={91} y={17} w={190} h={17} r={8} />
+          <SkelBlock x={91} y={43} w={130} h={13} r={6} />
+          <SkelBlock x={91} y={64} w={90} h={12} r={6} />
+          <SkelBlock xr={15} y={34} w={50} h={24} r={12} tone="b" />
         </SkelCard>
       ))}
     </View>

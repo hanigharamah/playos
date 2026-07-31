@@ -19,10 +19,19 @@ const MUTED = "#6C6C70";
 const TERMS_URL = "https://playos.sa/terms";
 const PRIVACY_URL = "https://playos.sa/privacy";
 
+/**
+ * Mask the stored number without inventing its shape. The previous version
+ * rendered every value as `+966 5• ••• ••XX`, so a landline or a non-Saudi
+ * number was displayed as a Saudi mobile — a country code and leading digit
+ * that were never in the data.
+ */
 function maskPhone(phone?: string | null) {
-  if (!phone) return "not set";
-  const tail = phone.slice(-2);
-  return `+966 5• ••• ••${tail}`;
+  const raw = phone?.trim();
+  if (!raw) return "not set";
+  if (raw.length <= 2) return raw;
+  const tail = raw.slice(-2);
+  const head = raw.startsWith("+") ? raw.slice(0, 4) : "";
+  return `${head}${head ? " " : ""}${"•".repeat(Math.max(2, Math.min(8, raw.length - tail.length - head.length)))}${tail}`;
 }
 
 export default function Settings() {

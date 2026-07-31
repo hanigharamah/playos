@@ -344,7 +344,15 @@ export function useBookSpot() {
         id: bookingId, game_id: vars.gameId, user_id: user.id,
         team: assignedTeam, slot_index: assignedSlot, payment_status: "pending",
       });
-      if (insErr) throw insErr;
+      if (insErr) {
+        // 23505 = unique violation. Once 2026-07-booking-integrity.sql is
+        // applied this is how a genuine race loses: two devices both passed
+        // the client-side check above and the database rejected the second.
+        if ((insErr as any).code === "23505") {
+          throw { data: { error: "Someone just took that spot — pick another." } };
+        }
+        throw insErr;
+      }
 
       queryClient.invalidateQueries({ queryKey: qk.game(vars.gameId) });
       queryClient.invalidateQueries({ queryKey: qk.games() });
@@ -609,12 +617,15 @@ export type ClaimSideResult = "ok" | "full" | "already_picked" | "not_checked_in
 
 /** Atomic, race-safe side-claim via RPC — never assign a side client-side. */
 export function useClaimSide() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (vars: { gameId: string; team: 1 | 2 }): Promise<ClaimSideResult> => {
       const { data, error } = await supabase.rpc("claim_side", { p_game_id: vars.gameId, p_team: vars.team });
       if (error) throw error;
       return data as ClaimSideResult;
     },
+    // Realtime is the usual path, but match day is exactly when it drops.
+    onSuccess: (_r, vars) => queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(vars.gameId) }),
   });
 }
 
@@ -622,12 +633,14 @@ export type StartMatchResult = "ok" | "already_locked" | "not_found" | "too_few"
 
 /** Balances unpicked players/guests, locks teams, coin-flips kickoff side. */
 export function useStartMatch() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (vars: { gameId: string }): Promise<StartMatchResult> => {
       const { data, error } = await supabase.rpc("start_match", { p_game_id: vars.gameId });
       if (error) throw error;
       return data as StartMatchResult;
     },
+    onSuccess: (_r, vars) => queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(vars.gameId) }),
   });
 }
 
