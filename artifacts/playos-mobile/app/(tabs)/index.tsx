@@ -4,11 +4,12 @@ import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur";
 import { format } from "date-fns";
 import { Bell, Users, MapPin, User, ArrowRight } from "lucide-react-native";
-import { useListGames, useGetMyBookings } from "@/lib/api";
+import { useListGames, useGetMyBookings, useGetMe } from "@/lib/api";
 import { Avatar } from "@/components/Avatar";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { HomeSkeleton, useDelayedVisible } from "@/components/Skeleton";
+import { HomeNothingBooked } from "@/components/HomeNothingBooked";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
@@ -31,6 +32,7 @@ export default function Home() {
   const { width } = useWindowDimensions();
   const { data: games, isLoading, isError, refetch, isRefetching } = useListGames();
   const { data: bookings } = useGetMyBookings();
+  const { data: me } = useGetMe();
 
   // Skeleton is held back 300ms so a fast response doesn't flash it (698:518).
   const showSkeleton = useDelayedVisible(isLoading && !games);
@@ -41,8 +43,14 @@ export default function Home() {
   // server error screen, which owns retry.
   useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
 
-  const featured = games?.[0];
   const upcoming = bookings?.upcoming ?? [];
+  // "your next match" means a match you actually booked. Before this, the hero
+  // showed games[0] — any open game — under a headline claiming it was yours.
+  const nextBooking = upcoming[0];
+  const featured = nextBooking
+    ? games?.find((g) => g.id === nextBooking.gameId)
+    : undefined;
+  const nothingBooked = !isLoading && upcoming.length === 0;
   const isTonight = featured && isSameDay(new Date(featured.kickoffTime), new Date());
   const featuredCount = featured?.bookedCount ?? 0;
   const shownAvatars = Math.min(featuredCount, 4);
@@ -71,7 +79,7 @@ export default function Home() {
         <HandwrittenHeader style={styles.headline}>
           {featured
             ? `your next\nmatch is\n${isTonight ? "tonight." : "coming up."}`
-            : "let's get you\non the pitch."}
+            : `hey ${me?.name?.trim().split(" ")[0]?.toLowerCase() ?? "there"}`}
         </HandwrittenHeader>
 
         {/* Cold start with no cached payload (Figma 698:518) */}
@@ -150,12 +158,9 @@ export default function Home() {
           </View>
         )}
 
-        {!isLoading && !featured && (
-          <View style={styles.empty}>
-            <Text style={styles.emptyTitle}>No games nearby yet</Text>
-            <Text style={styles.emptyBody}>Check the Play tab to browse all venues.</Text>
-          </View>
-        )}
+        {/* Nothing booked (Figma 684:570) — the default home for most players,
+            so it lists real open games rather than being a dead end. */}
+        {nothingBooked && !showSkeleton && <HomeNothingBooked games={games ?? []} />}
       </ScrollView>
     </View>
   );
