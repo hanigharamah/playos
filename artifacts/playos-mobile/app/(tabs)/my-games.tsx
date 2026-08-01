@@ -9,8 +9,16 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { BookingsSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { serverNow } from "@/lib/serverTime";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
+
+/** Check-in opens 20 minutes before kickoff. */
+const CHECK_IN_OPENS_MS = 20 * 60_000;
+/** How long after kickoff the match-day screen stays the right destination. */
+const MATCH_LIVE_MS = 2 * 60 * 60_000;
+/** Stats submission closes 24h after kickoff — matches the RPC's own window. */
+const STATS_WINDOW_MS = 24 * 60 * 60_000;
 
 // Exact palette from the Figma Bookings screen (node 1:5)
 const INK = "#1C1C1E";
@@ -34,6 +42,35 @@ export default function MyGames() {
 
   /** Routes to the designed confirmation screen (Figma 345:400). */
   const handleCancel = (booking: MyBooking) => router.push(`/cancel/${booking.id}`);
+
+  /**
+   * Where a booking row goes depends on where the match is in its life.
+   *
+   * Before this, every row went to game detail, which left the whole match-day
+   * flow unreachable: nothing in the app linked to the check-in waiting screen
+   * or to post-match stats, so both were deep-link only. Times come from the
+   * server clock, since the check-in window is not the device's to decide.
+   */
+  const destinationFor = (b: MyBooking) => {
+    const kickoff = new Date(b.game.kickoffTime).getTime();
+    const now = serverNow();
+    const sinceKickoff = now - kickoff;
+
+    // Check-in is open, or the match is under way.
+    if (sinceKickoff >= -CHECK_IN_OPENS_MS && sinceKickoff < MATCH_LIVE_MS) {
+      return `/match/${b.gameId}` as const;
+    }
+    // Kicking off today but the window hasn't opened — the waiting screen
+    // answers "when can I check in", which game detail does not.
+    if (sinceKickoff < 0 && isSameDay(new Date(kickoff), new Date())) {
+      return `/check-in/${b.gameId}` as const;
+    }
+    // Recently finished: stats can still be submitted.
+    if (sinceKickoff >= MATCH_LIVE_MS && sinceKickoff < STATS_WINDOW_MS) {
+      return `/post-match/${b.gameId}` as const;
+    }
+    return `/game/${b.gameId}` as const;
+  };
 
   return (
     <FlatList
@@ -89,7 +126,7 @@ export default function MyGames() {
         return (
           <Pressable
             style={styles.row}
-            onPress={() => router.push(`/game/${item.gameId}`)}
+            onPress={() => router.push(destinationFor(item))}
             onLongPress={() => handleCancel(item)}
           >
             <Image
