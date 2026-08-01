@@ -4,7 +4,7 @@ import { useRouter } from "expo-router";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { useIsOffline } from "@/components/ReconnectingState";
+import { useConnectivity } from "@/components/ReconnectingState";
 import { screen } from "@/lib/analytics";
 
 const GLOWS = [
@@ -27,14 +27,16 @@ const GLOWS = [
 export default function Offline() {
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const offline = useIsOffline();
+  const { offline, known } = useConnectivity();
 
   useEffect(() => { screen("ErrorOffline"); }, []);
 
-  // Clears itself, exactly as the annotation requires.
+  // Clears itself when connectivity returns, exactly as the annotation
+  // requires — but only once NetInfo has actually reported. Acting on the
+  // pre-measurement default dismissed the screen before it could be seen.
   useEffect(() => {
-    if (!offline) router.back();
-  }, [offline, router]);
+    if (known && !offline) router.back();
+  }, [known, offline, router]);
 
   return (
     <View style={styles.wrap}>

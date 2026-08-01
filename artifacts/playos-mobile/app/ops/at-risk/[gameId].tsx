@@ -4,7 +4,8 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { format, formatDistanceToNowStrict, isToday } from "date-fns";
-import { useGetGame, useOpsRoster, useIsOperator, useReleaseSpot, MIN_PLAYERS_TO_START } from "@/lib/api";
+import { useGetGame, useOpsRoster, useIsOperator, useReleaseSpot } from "@/lib/api";
+import { AUTO_CANCEL_MIN_CHECKED_IN } from "@/lib/refunds";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
@@ -58,7 +59,6 @@ export default function OpsAtRisk() {
   useEffect(() => { screen("OpsAtRisk", { gameId }); }, [gameId]);
 
   const kickoff = game ? new Date(game.kickoffTime).getTime() : null;
-  const reviewAt = kickoff === null ? null : kickoff - AT_RISK_MINUTES_BEFORE * 60_000;
   const { remainingMs } = useServerCountdown(kickoff);
 
   // Ask once per visit. A shared login means the initial is the only
@@ -160,12 +160,15 @@ export default function OpsAtRisk() {
             <Text style={styles.statLabel}>CHECKED IN</Text>
           </View>
           <View>
-            <Text style={[styles.statNum, missing > 0 && styles.statNumBad]}>{missing}</Text>
+            <Text style={[styles.statNum, checkedIn < AUTO_CANCEL_MIN_CHECKED_IN && styles.statNumBad]}>{missing}</Text>
             <Text style={styles.statLabel}>MISSING</Text>
           </View>
           <View style={{ alignItems: "flex-end" }}>
             <Text style={styles.clock}>{clockLabel}</Text>
-            <Text style={styles.statLabel}>AUTO-ADVANCE AT {capacity}</Text>
+            {/* The T-10 rule is the auto-cancel floor, not capacity and not the
+              T+15 start floor. Showing capacity told the operator two more
+              were needed when the ratified threshold had already been met. */}
+          <Text style={styles.statLabel}>AUTO-CANCEL BELOW {AUTO_CANCEL_MIN_CHECKED_IN}</Text>
           </View>
         </View>
 

@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, Platform, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -27,6 +27,8 @@ export default function CancellationConfirm() {
   const { data } = useGetMyBookings();
   const cancelBooking = useCancelBooking();
 
+  const [clockTick, setClockTick] = useState(0);
+
   useEffect(() => { screen("CancellationConfirm", { bookingId }); }, [bookingId]);
 
   const booking =
@@ -42,8 +44,14 @@ export default function CancellationConfirm() {
 
   const kickoff = new Date(booking.game.kickoffTime);
   const teamSize = booking.game.capacity / 2;
+  // Without this the screen decides eligibility on Date.now() until some other
+  // caller happens to sync, so a wound-back clock showed the green "full
+  // refund" banner that the mutation then refused.
+  useEffect(() => { void syncServerTime().then(() => setClockTick((n) => n + 1)); }, []);
+
   const hoursUntil = (kickoff.getTime() - serverNow()) / 3_600_000;
   const isFree = hoursUntil > FREE_CANCEL_HOURS;
+  void clockTick; // re-render once the offset lands
 
   const confirmCancel = () => {
     cancelBooking.mutate(

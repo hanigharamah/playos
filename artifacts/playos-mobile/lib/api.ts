@@ -382,7 +382,11 @@ export function useConfirmPaymentMethod() {
  */
 export const FREE_CANCEL_HOURS = 26;
 
-/** Auto-start floor at T+15; below this the match auto-cancels. */
+/**
+ * Auto-start floor at T+15. Distinct from AUTO_CANCEL_MIN_CHECKED_IN in
+ * lib/refunds.ts, which is the T-10 auto-cancel threshold (10 of 12) — they
+ * are different rules at different moments, not a duplicated constant.
+ */
 export const MIN_PLAYERS_TO_START = 6;
 
 /**

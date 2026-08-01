@@ -124,5 +124,5 @@ commit;
 --    when it returns false. Until both exist, no absence penalty should be
 --    charged at all.
 -- 3. Push permission is now requested at first payment rather than at install
---    (see app/checkout/[bookingId].tsx). Opt-in rate should be measured before
+--    (see app/booking-confirmed/[bookingId].tsx). Opt-in rate should be measured before
 --    any absence penalty goes live, per the product owner.

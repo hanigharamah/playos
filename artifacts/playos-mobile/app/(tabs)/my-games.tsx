@@ -35,7 +35,7 @@ export default function MyGames() {
   // throughout — it's client state, and switching it changes the query.
   const showSkeleton = useDelayedVisible(isLoading && !data);
 
-  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
+  useEffect(() => { if (isError) router.push("/error/server"); }, [isError, router]);
 
   const list = (tab === "upcoming" ? data?.upcoming : data?.past) ?? [];
   const soonest = data?.upcoming?.[0];

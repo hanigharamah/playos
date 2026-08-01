@@ -143,29 +143,34 @@ export default function ChatThread() {
     if (messages?.length) setTimeout(() => listRef.current?.scrollToEnd({ animated: false }), 50);
   }, [messages?.length]);
 
-  const trySend = (text: string, pendingId?: string) => {
+  /**
+   * mutateAsync, not mutate: there is one mutation observer, and per-call
+   * callbacks passed to mutate() are overwritten by the next call. Retrying
+   * three queued messages therefore delivered all three but only dequeued the
+   * last, so the other two re-sent on every reconnect and duplicated in the
+   * thread. Awaiting the promise keeps each result tied to its own message.
+   */
+  const trySend = async (text: string, pendingId?: string) => {
     if (!conversationId) return;
-    sendMessage.mutate(
-      { conversationId, body: text },
-      {
-        onSuccess: () => {
-          // Only clear the composer for a fresh send; a retry must not wipe a
-          // draft the player has since typed.
-          if (pendingId) persist((live) => live.filter((p) => p.id !== pendingId));
-          else setBody("");
-        },
-        onError: () => {
-          // Keep it on screen rather than dropping it. A retry that fails again
-          // stays queued where it already is.
-          if (pendingId) return;
-          setBody("");
-          persist((live) => [...live, { id: `p${Date.now()}-${live.length}`, body: text, failedAt: new Date().toISOString() }]);
-        },
-      },
-    );
+    try {
+      await sendMessage.mutateAsync({ conversationId, body: text });
+      // Only clear the composer for a fresh send; a retry must not wipe a
+      // draft the player has since typed.
+      if (pendingId) persist((live) => live.filter((p) => p.id !== pendingId));
+      else setBody("");
+    } catch {
+      // Keep it on screen rather than dropping it. A retry that fails again
+      // stays queued where it already is.
+      if (pendingId) return;
+      setBody("");
+      persist((live) => [...live, { id: `p${Date.now()}-${live.length}`, body: text, failedAt: new Date().toISOString() }]);
+    }
   };
 
-  const retryAll = () => pending.forEach((p) => trySend(p.body, p.id));
+  const retryAll = async () => {
+    // Sequential: the queue is ordered, and the thread should keep that order.
+    for (const p of pending) await trySend(p.body, p.id);
+  };
 
   // The callout tells the player we'll send queued messages the moment they
   // reconnect, so actually do it rather than waiting for a manual tap.
@@ -173,7 +178,7 @@ export default function ChatThread() {
   useEffect(() => {
     const unsub = NetInfo.addEventListener((state) => {
       const online = state.isConnected !== false && state.isInternetReachable !== false;
-      if (online && wasOffline.current) retryAllRef.current();
+      if (online && wasOffline.current) void retryAllRef.current();
       wasOffline.current = !online;
     });
     return () => unsub();
@@ -242,7 +247,7 @@ export default function ChatThread() {
             hasFailed ? (
               <View>
                 {pending.map((p) => (
-                  <Pressable key={p.id} onPress={() => trySend(p.body, p.id)} style={styles.failedWrap}>
+                  <Pressable key={p.id} onPress={() => void trySend(p.body, p.id)} style={styles.failedWrap}>
                     <View style={styles.failedRow}>
                       <Text style={styles.bang}>!</Text>
                       <View style={[styles.bubble, styles.bubbleMine, styles.bubbleFailed]}>
@@ -264,7 +269,7 @@ export default function ChatThread() {
                 <BtnOutline
                   label="retry sending"
                   tone="warning"
-                  onPress={retryAll}
+                  onPress={() => void retryAll()}
                   disabled={sendMessage.isPending}
                   style={{ marginTop: 20 }}
                 />
@@ -285,7 +290,7 @@ export default function ChatThread() {
             multiline
           />
           <Pressable
-            onPress={() => trySend(body.trim())}
+            onPress={() => void trySend(body.trim())}
             disabled={!body.trim() || sendMessage.isPending}
             style={[styles.sendBtn, !body.trim() && styles.sendBtnOff]}
           >

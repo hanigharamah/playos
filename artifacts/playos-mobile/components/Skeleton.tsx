@@ -92,7 +92,8 @@ export function HomeSkeleton() {
     <View style={styles.body}>
       <SkelBlock w={150} h={14} r={7} style={{ marginLeft: 4 }} />
 
-      {/* hero card — 350×196, mirrors the featured match card */}
+      {/* hero card — 238 tall to match the real featured card, not the
+          mock's 196; see FIGMA-MAP for why the row wins over the mock. */}
       <SkelCard h={238} style={{ marginTop: 24 }}>
         <SkelBlock x={13} y={13} w={322} h={110} r={14} />
         <SkelBlock x={13} y={137} w={200} h={16} r={8} />

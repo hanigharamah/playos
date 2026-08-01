@@ -23,15 +23,28 @@ const STALE_OPACITY = 0.6;
 
 /** True while the device has no usable internet connection. */
 export function useIsOffline(): boolean {
-  const [offline, setOffline] = useState(false);
+  return useConnectivity().offline;
+}
+
+/**
+ * Connectivity, with the distinction between "known online" and "not yet
+ * measured". NetInfo reports asynchronously, so a bare useState(false) reads
+ * as online on the first render — which made the offline screen dismiss itself
+ * on mount before it could ever be seen.
+ */
+export function useConnectivity(): { offline: boolean; known: boolean } {
+  const [state, setState] = useState<{ offline: boolean; known: boolean }>({ offline: false, known: false });
   useEffect(() => {
-    const unsub = NetInfo.addEventListener((s) => {
-      // isInternetReachable is null while it's still being determined.
-      setOffline(s.isConnected === false || s.isInternetReachable === false);
-    });
-    return () => unsub();
+    let alive = true;
+    const apply = (s: { isConnected: boolean | null; isInternetReachable: boolean | null }) => {
+      if (!alive) return;
+      setState({ offline: s.isConnected === false || s.isInternetReachable === false, known: true });
+    };
+    void NetInfo.fetch().then(apply);
+    const unsub = NetInfo.addEventListener(apply);
+    return () => { alive = false; unsub(); };
   }, []);
-  return offline;
+  return state;
 }
 
 /** Slow pulse on the amber status dot so the banner reads as "working on it". */

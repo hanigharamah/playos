@@ -30,7 +30,7 @@ export default function Play() {
   const showSkeleton = useDelayedVisible(isLoading && !games);
 
   // A failed feed must not masquerade as an empty one.
-  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
+  useEffect(() => { if (isError) router.push("/error/server"); }, [isError, router]);
 
   // Areas are derived from the games feed: one tile per venue, most games first.
   const areas = useMemo(() => {

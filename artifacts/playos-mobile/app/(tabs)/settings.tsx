@@ -58,7 +58,14 @@ export default function Profile() {
   const menu = [
     { icon: <UserIcon size={22} color={INK} strokeWidth={1.8} />, label: "personal info", onPress: () => router.push("/account") },
     { icon: <CreditCard size={22} color={INK} strokeWidth={1.8} />, label: "payment methods", onPress: () => router.push("/account") },
-    { icon: <Bell size={22} color={INK} strokeWidth={1.8} />, label: "notifications", onPress: () => router.push("/account/notifications") },
+    // Granting the OS permission and choosing per-message preferences are
+    // different jobs. Sending an ungranted player to the preferences screen
+    // left them with no way to turn push on at all.
+    {
+      icon: <Bell size={22} color={INK} strokeWidth={1.8} />,
+      label: "notifications",
+      onPress: () => (pushGranted ? router.push("/account/notifications") : void togglePush()),
+    },
     { icon: <HelpCircle size={22} color={INK} strokeWidth={1.8} />, label: "help & support", onPress: () => Linking.openURL("https://playos.sa/about") },
   ];
 

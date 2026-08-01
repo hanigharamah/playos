@@ -36,7 +36,7 @@ export default function Browse() {
   const showSkeleton = useDelayedVisible(isLoading && !games);
 
   // A failed list must not leave the skeleton pulsing.
-  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
+  useEffect(() => { if (isError) router.push("/error/server"); }, [isError, router]);
 
   const q = query.trim().toLowerCase();
   const matches = (games ?? []).filter(

@@ -24,16 +24,22 @@ function useCountdown(target: Date | null) {
 
   useEffect(() => {
     if (targetMs === null) { setRemaining(null); return; }
+    // Nothing below zero is displayed, so stop re-rendering once past kickoff
+    // rather than ticking forever behind an unmounted timer. The handle is
+    // held in a box because the first tick runs synchronously, before any
+    // `const` declared after it would be initialised.
+    const handle: { id: ReturnType<typeof setInterval> | null } = { id: null };
+    const stop = () => { if (handle.id !== null) { clearInterval(handle.id); handle.id = null; } };
+
     const tick = () => {
       const next = targetMs - serverNow();
       setRemaining(next);
-      // Nothing below zero is displayed, so stop re-rendering once past
-      // kickoff instead of ticking forever behind an unmounted timer.
-      if (next <= 0) clearInterval(t);
+      if (next <= 0) stop();
     };
+
     tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
+    if (targetMs - serverNow() > 0) handle.id = setInterval(tick, 1000);
+    return stop;
   }, [targetMs]);
 
   const clamped = Math.max(0, remaining ?? 0);

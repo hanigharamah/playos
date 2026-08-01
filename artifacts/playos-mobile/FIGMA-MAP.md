@@ -54,7 +54,7 @@ Checkout is node **345:364** (dev notes 432:550).
 | Booking Confirmed | 369:568 | `app/booking-confirmed/[bookingId].tsx` (wired — checkout routes here on success) |
 | Game Detail — Full (Waitlist) | 351:364 | `app/game/[id].tsx` (full state) |
 | Legal — Terms of Service | 361:544 | new: `app/legal/terms.tsx` |
-| Enable Notifications | 410:478 | new: `app/enable-notifications.tsx` |
+| Enable Notifications | 410:478 | `app/onboarding.tsx` — **ORPHANED**, nothing routes here |
 | Dynamic Island / Live Activity | 383:499 | parked (needs dev build + Apple membership) |
 | Flashcards: Check-in / Waiting / Hold / Starting / Pick side / Coin flip / Teams | 387:632 / 388:478 / 394:478 / 394:507 / 387:649 / 390:478 / 388:496 | `app/matchday/[id].tsx` (single flow, phase-driven like web `MatchDayFlow.tsx`) |
 
@@ -63,6 +63,15 @@ Settings, Player Profile, empty states) live in named sections on the Screens
 page — find node IDs via `get_metadata` on page `0:1`, frames are named exactly
 ("Checkout", "Auth - Phone Entry", …). Each has a `Dev Notes — <name>` frame
 next to it; read it before implementing.
+
+### Two screens now do the same job
+
+`app/onboarding.tsx` (410:478) was the signup-time push primer. Push moved to
+first payment, so signup no longer routes to it and nothing else does either.
+`app/permission/notifications.tsx` (696:656) covers the same ground and is the
+more specified of the two — it names the four concrete things a player misses
+and caps itself at two appearances. One of them should be retired; that is a
+design call, so both are left in place.
 
 ## Product rules (decided — full log on the 📐 Handoff page)
 

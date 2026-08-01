@@ -31,7 +31,7 @@ export default function Home() {
   const router = useRouter();
   const { width } = useWindowDimensions();
   const { data: games, isLoading, isError, refetch, isRefetching } = useListGames();
-  const { data: bookings } = useGetMyBookings();
+  const { data: bookings, isLoading: bookingsLoading } = useGetMyBookings();
   const { data: me } = useGetMe();
 
   // Skeleton is held back 300ms so a fast response doesn't flash it (698:518).
@@ -41,7 +41,7 @@ export default function Home() {
 
   // Never leave the skeleton pulsing on a failed request — hand off to the
   // server error screen, which owns retry.
-  useEffect(() => { if (isError) router.replace("/error/server"); }, [isError, router]);
+  useEffect(() => { if (isError) router.push("/error/server"); }, [isError, router]);
 
   const upcoming = bookings?.upcoming ?? [];
   // "your next match" means a match you actually booked. Before this, the hero
@@ -50,7 +50,10 @@ export default function Home() {
   const featured = nextBooking
     ? games?.find((g) => g.id === nextBooking.gameId)
     : undefined;
-  const nothingBooked = !isLoading && upcoming.length === 0;
+  // Gate on the BOOKINGS query, not the games one. These are independent
+  // parallel queries, so a warm games cache made "nothing booked yet" render
+  // to players who did have bookings, until the second response landed.
+  const nothingBooked = !bookingsLoading && !!bookings && upcoming.length === 0;
   const isTonight = featured && isSameDay(new Date(featured.kickoffTime), new Date());
   const featuredCount = featured?.bookedCount ?? 0;
   const shownAvatars = Math.min(featuredCount, 4);
