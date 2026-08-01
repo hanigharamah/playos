@@ -23,9 +23,10 @@ export default function SessionExpired() {
   return (
     <ErrorScreen
       title="you've been signed out"
-      heroIcon={<LogIn size={32} color="#6C6C70" strokeWidth={2} />}
-      heroTint="rgba(108,108,112,0.12)"
-      heroLine="nothing is lost, we just need you again"
+      titleSize={38}
+      // The mock has no hero card on this screen — the sub-line sits directly
+      // on the page under the title.
+      subline="nothing is lost, we just need you again"
       callout={
         <Callout
           tone="neutral"
@@ -37,8 +38,9 @@ export default function SessionExpired() {
       }
       primaryLabel="sign in again"
       onPrimary={() => router.replace("/(auth)/login")}
-      secondaryLabel="use a different number"
-      onSecondary={() => router.replace("/(auth)/login")}
+      // Plain text link in the mock, not an outline button.
+      textLinkLabel="use a different number"
+      onTextLink={() => router.replace("/(auth)/login")}
     />
   );
 }

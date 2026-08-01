@@ -104,13 +104,15 @@ function whenLabel(iso: string): string {
 
 const styles = StyleSheet.create({
   wrap: { alignItems: "center", alignSelf: "stretch" },
-  lead: { alignSelf: "flex-start", fontSize: 15.5, fontWeight: "600", color: INK, marginBottom: 36 },
+  // 36 is the mock's text-top-to-card-top; as a margin it sits below the
+  // ~19pt line box, so it needs to be that much smaller.
+  lead: { alignSelf: "flex-start", fontSize: 15.5, fontWeight: "600", color: INK, marginBottom: 17 },
 
   eyebrowWrap: { alignSelf: "flex-start", marginTop: 26 },
 
   nextCard: {
     flexDirection: "row", alignItems: "center", alignSelf: "stretch", maxWidth: 350,
-    height: 104, borderRadius: 20, paddingHorizontal: 13, marginTop: 22,
+    height: 104, borderRadius: 20, paddingHorizontal: 13, marginTop: 9,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,

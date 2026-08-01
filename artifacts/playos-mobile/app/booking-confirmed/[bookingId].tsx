@@ -8,7 +8,10 @@ import { useGetGame } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
-import { screen } from "@/lib/analytics";
+import { useAuth } from "@/lib/auth";
+import { registerForPush } from "@/lib/notifications";
+import { shouldPromptForNotifications } from "@/app/permission/notifications";
+import { screen, track } from "@/lib/analytics";
 
 // Exact palette from the Figma Booking Confirmed screen (node 369:568)
 const INK = "#1C1C1E";
@@ -35,6 +38,26 @@ export default function BookingConfirmed() {
   const { data: game } = useGetGame(gameId!, { enabled: !!gameId });
 
   useEffect(() => { screen("BookingConfirmed", { bookingId, gameId }); }, [bookingId, gameId]);
+
+  // Push is asked here, right after the first payment, rather than at install.
+  // A player who has just paid has a concrete reason to want the check-in
+  // message, and the signup-time opt-in rate is not one a forfeit policy can
+  // rest on. Capped at two appearances by shouldPromptForNotifications().
+  const { user } = useAuth();
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (!user?.id) return;
+      if (!(await shouldPromptForNotifications())) return;
+      if (cancelled) return;
+      const result = await registerForPush(user.id);
+      track(result.status === "granted" ? "reminder_enabled" : "reminder_denied", {
+        source: "first_payment",
+        result: result.status,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const kickoff = game ? new Date(game.kickoffTime) : null;
   const teamSize = game ? game.capacity / 2 : 0;

@@ -1,176 +1,219 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, Linking, ActivityIndicator, Share, ScrollView } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { format } from "date-fns";
-import { Banknote, Smartphone, Check, MessageCircle, Bell, Share2 } from "lucide-react-native";
-import { useGetSettings, useConfirmPaymentMethod, useGetGame } from "@/lib/api";
-import { useAuth } from "@/lib/auth";
-import { registerForPush } from "@/lib/notifications";
-import { PillButton } from "@/components/PillButton";
-import { GlassCard } from "@/components/GlassCard";
-import { colors, gradients, spacing, radius } from "@/lib/theme";
+import { format, isSameDay, subHours } from "date-fns";
+import { useGetSettings, useConfirmPaymentMethod, useGetGame, FREE_CANCEL_HOURS } from "@/lib/api";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
+import { WarmCanvas } from "@/components/WarmCanvas";
+import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { Btn3D } from "@/components/Btn3D";
+import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { screen, track } from "@/lib/analytics";
 
 type Method = "cash" | "stcpay";
 
+const INK = "#1C1C1E";
+const MUTED = "#6C6C70";
+const ORANGE = "#FA810B";
+
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 /**
- * Cash / STC Pay checkout — mirrors ../playos/src/pages/payment/checkout.tsx.
- * No card processing anywhere in this flow, matching the web app and the
- * privacy policy's "we don't collect card numbers" claim.
+ * Checkout (Figma 345:364).
+ *
+ * The mock lists mada / Apple Pay / Google Pay / Card. None of those exist —
+ * there is no payment gateway and no saved-card store, and the privacy policy
+ * says we don't collect card numbers. The ratified single-operator methods are
+ * cash at the pitch and STC Pay, so the mock's LAYOUT is followed exactly (one
+ * shared card, hairline dividers, a radio on the selected row, a trailing
+ * badge) while the rows themselves are the two real methods.
+ *
+ * The mock's "use a token for this spot" toggle (368:603) is omitted: there is
+ * no token ledger, so it could only ever read "0 tokens available".
+ *
+ * One behavioural fix, not a fidelity one: this screen used to commit the
+ * booking the instant a method row was tapped — a one-tap irreversible charge
+ * with no confirm step. Selecting now only selects; the CTA commits, which is
+ * what the mock always showed.
  */
 export default function Checkout() {
   const { bookingId, gameId } = useLocalSearchParams<{ bookingId: string; gameId: string }>();
   const router = useRouter();
-  const { user } = useAuth();
+  const { width } = useWindowDimensions();
   const { data: settings } = useGetSettings();
   const { data: game } = useGetGame(gameId!);
   const confirmMethod = useConfirmPaymentMethod();
 
-  const [done, setDone] = useState<Method | null>(null);
-  const [pushState, setPushState] = useState<"idle" | "loading" | "done">("idle");
+  const [method, setMethod] = useState<Method | null>(null);
 
   useEffect(() => { screen("Checkout", { bookingId, gameId }); }, [bookingId, gameId]);
 
-  const choose = (method: Method) => {
+  const kickoff = game ? new Date(game.kickoffTime) : null;
+  const freeUntil = kickoff ? subHours(kickoff, FREE_CANCEL_HOURS) : null;
+  const spotsLeft = game ? game.capacity - game.bookedCount : null;
+
+  const pay = () => {
+    if (!method || !bookingId) return;
     confirmMethod.mutate(
-      { bookingId: bookingId!, method },
+      { bookingId, method },
       {
         onSuccess: () => {
           track("booking_confirmed", { method, fee: game?.price ?? null, gameId: gameId ?? null });
-          // The designed confirmation screen (Figma 369:568) exists and was
-          // dead code — checkout used to render its own inline success view
-          // and the real screen never showed. Route to it instead.
           router.replace({
             pathname: "/booking-confirmed/[bookingId]",
-            params: { bookingId: bookingId!, gameId: gameId ?? "" },
+            params: { bookingId, gameId: gameId ?? "" },
           });
         },
       },
     );
   };
 
-  const enableReminder = async () => {
-    if (!user?.id) return;
-    setPushState("loading");
-    const result = await registerForPush(user.id);
-    setPushState(result.status === "granted" ? "done" : "idle");
-    track(result.status === "granted" ? "reminder_enabled" : "reminder_denied", { source: "checkout", result: result.status });
-  };
-
-  if (done) {
-    const onShare = () => {
-      if (!game) return;
-      Share.share({ message: `I'm playing "${game.title}" on PlayOS`, url: `https://playos.sa/game/${gameId}` });
-    };
-
-    return (
-      <ScrollView style={styles.confirmWrap} contentContainerStyle={styles.confirmContent}>
-        <LinearGradient
-          colors={[gradients.vivid[1], gradients.vivid[3]]}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.confirmIconGrad}
-        >
-          <Check size={30} color="#FFFFFF" strokeWidth={3} />
-        </LinearGradient>
-        <Text style={styles.allSet}>You're all set!</Text>
-        <Text style={styles.allSetSub}>See you on the pitch.</Text>
-
-        {game && (
-          <GlassCard style={styles.summaryCard}>
-            <Text style={styles.summaryTime}>{format(new Date(game.kickoffTime), "EEE, d MMM · h:mm a")}</Text>
-            <Text style={styles.summaryTitle}>{game.title}</Text>
-            <Text style={styles.summarySub}>{game.pitchName}</Text>
-          </GlassCard>
-        )}
-
-        <Text style={styles.confirmBody}>
-          {done === "cash"
-            ? `Pay SAR ${game?.price ?? ""} in cash at the pitch. Your spot is confirmed on payment.`
-            : `Send SAR ${game?.price ?? ""} via STC Pay. Your spot is confirmed once payment is received.`}
-        </Text>
-
-        {settings?.whatsappUrl && (
-          <Pressable style={styles.whatsappBtn} onPress={() => Linking.openURL(settings.whatsappUrl)}>
-            <MessageCircle size={16} color="#FFFFFF" />
-            <Text style={styles.whatsappText}>Join the WhatsApp group</Text>
-          </Pressable>
-        )}
-
-        {pushState !== "done" && (
-          <Pressable style={styles.reminderBtn} onPress={enableReminder} disabled={pushState === "loading"}>
-            {pushState === "loading" ? (
-              <ActivityIndicator size="small" color={colors.orange} />
-            ) : (
-              <Bell size={16} color={colors.orange} />
-            )}
-            <Text style={styles.reminderText}>Get a reminder 20 min before kickoff</Text>
-          </Pressable>
-        )}
-        {pushState === "done" && <Text style={styles.reminderDone}>Reminder enabled ✓</Text>}
-
-        <Pressable style={styles.linkBtn} onPress={onShare}>
-          <Share2 size={14} color={colors.inkMuted} />
-          <Text style={styles.linkText}>Share with friends</Text>
-        </Pressable>
-
-        <PillButton label="Back to game" variant="outline" onPress={() => router.replace(gameId ? `/game/${gameId}` : "/(tabs)")} fullWidth />
-      </ScrollView>
-    );
-  }
+  const METHODS: { key: Method; label: string; badge: string }[] = [
+    { key: "cash", label: "cash at the pitch", badge: "Cash" },
+    { key: "stcpay", label: "STC Pay", badge: "STC" },
+  ];
 
   return (
     <View style={styles.wrap}>
-      <GlassCard style={styles.confirmCard}>
-        <Text style={styles.confirmTitle}>Choose payment method</Text>
-        <Text style={styles.confirmBody}>SAR {game?.price ?? "—"} for your spot</Text>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <DotWaveBackground width={width} height={600} />
 
-        <Pressable style={styles.methodCard} onPress={() => choose("cash")} disabled={confirmMethod.isPending}>
-          <Banknote size={22} color={colors.inkNavy} />
-          <View style={{ flex: 1, marginLeft: spacing.md }}>
-            <Text style={styles.methodTitle}>Cash at the pitch</Text>
-            <Text style={styles.methodSub}>Pay when you arrive</Text>
-          </View>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
+          <Text style={styles.backGlyph}>‹</Text>
         </Pressable>
+        <HandwrittenHeader style={styles.title}>checkout</HandwrittenHeader>
+      </View>
 
-        <Pressable style={styles.methodCard} onPress={() => choose("stcpay")} disabled={confirmMethod.isPending}>
-          <Smartphone size={22} color={colors.inkNavy} />
-          <View style={{ flex: 1, marginLeft: spacing.md }}>
-            <Text style={styles.methodTitle}>STC Pay</Text>
-            <Text style={styles.methodSub}>{settings?.stcpayNumber ?? "—"}</Text>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* What the player is paying for — absent from this screen entirely
+            before now, so they confirmed a charge with nothing to check it
+            against. */}
+        {game && (
+          <View style={styles.matchCard}>
+            <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+            <View style={styles.matchText}>
+              <Text style={styles.matchTitle} numberOfLines={1}>
+                {Math.floor(game.capacity / 2)}v{Math.floor(game.capacity / 2)} · {game.pitchName}
+              </Text>
+              <Text style={styles.matchSub}>
+                {kickoff && isSameDay(kickoff, new Date()) ? "Today" : kickoff ? format(kickoff, "EEE") : ""}
+                {kickoff ? ` · ${format(kickoff, "h:mm a")}` : ""}
+              </Text>
+              {/* The mock also shows "· 2.3 km away". No location data exists. */}
+              {spotsLeft !== null && spotsLeft > 0 && (
+                <Text style={styles.matchSpots}>{spotsLeft} {spotsLeft === 1 ? "spot" : "spots"}</Text>
+              )}
+            </View>
           </View>
-        </Pressable>
+        )}
 
-        {confirmMethod.isPending && <ActivityIndicator color={colors.orange} style={{ marginTop: spacing.md }} />}
-      </GlassCard>
+        <Text style={styles.payWith}>pay with</Text>
+
+        <View style={styles.methodsCard}>
+          {METHODS.map((m, i) => {
+            const selected = method === m.key;
+            return (
+              <View key={m.key}>
+                {i > 0 && <View style={styles.divider} />}
+                <Pressable
+                  style={styles.methodRow}
+                  onPress={() => setMethod(m.key)}
+                  accessibilityRole="radio"
+                  accessibilityState={{ selected }}
+                >
+                  <View style={styles.methodText}>
+                    <Text style={styles.methodLabel}>{m.label}</Text>
+                    {m.key === "stcpay" && settings?.stcpayNumber && (
+                      <Text style={styles.methodSub}>{settings.stcpayNumber}</Text>
+                    )}
+                  </View>
+
+                  {selected ? (
+                    <View style={styles.radioOn}><Text style={styles.radioTick}>✓</Text></View>
+                  ) : (
+                    <View style={styles.badge}><Text style={styles.badgeText}>{m.badge}</Text></View>
+                  )}
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* Computed from kickoff per the dev note, not a fixed string. */}
+        {freeUntil && (
+          <Text style={styles.policy}>
+            Free cancellation until {isSameDay(freeUntil, new Date()) ? "today" : format(freeUntil, "EEE")}{" "}
+            {format(freeUntil, "h:mm a")}{"\n"}({FREE_CANCEL_HOURS}h before kickoff)
+          </Text>
+        )}
+      </ScrollView>
+
+      <View style={styles.actions}>
+        <Btn3D
+          label={game ? `🔒  pay SAR ${game.price}` : "🔒  pay"}
+          disabled={!method}
+          loading={confirmMethod.isPending}
+          onPress={pay}
+        />
+      </View>
     </View>
   );
 }
 
+const card = {
+  backgroundColor: "rgba(255,255,255,0.55)",
+  borderWidth: 1,
+  borderColor: "rgba(255,255,255,0.85)",
+  shadowColor: "#8C5926",
+  shadowOffset: { width: 0, height: 6 },
+  shadowOpacity: 0.12,
+  shadowRadius: 16,
+  elevation: 3,
+};
+
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.creamDeep, alignItems: "center", justifyContent: "center", padding: spacing.lg },
-  confirmCard: { width: "100%", maxWidth: 420, alignItems: "center", padding: spacing.xl, gap: spacing.md },
-  confirmIcon: { width: 56, height: 56, borderRadius: 28, backgroundColor: colors.inkNavy, alignItems: "center", justifyContent: "center" },
-  confirmTitle: { fontSize: 20, fontWeight: "800", color: colors.inkNavy, textAlign: "center" },
-  confirmBody: { fontSize: 14, color: colors.inkMuted, textAlign: "center" },
-  confirmWrap: { flex: 1, backgroundColor: colors.creamDeep },
-  confirmContent: { alignItems: "center", padding: spacing.xl, paddingTop: spacing.xxl * 1.5, gap: spacing.md },
-  confirmIconGrad: { width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center" },
-  allSet: { fontSize: 24, fontWeight: "800", color: colors.inkNavy, marginTop: spacing.sm },
-  allSetSub: { fontSize: 14, color: colors.inkMuted },
-  summaryCard: { width: "100%", maxWidth: 420, marginTop: spacing.sm },
-  summaryTime: { fontSize: 11, fontWeight: "700", color: colors.orange, textTransform: "uppercase" },
-  summaryTitle: { fontSize: 16, fontWeight: "700", color: colors.ink, marginTop: 2 },
-  summarySub: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },
-  linkBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: spacing.sm },
-  linkText: { fontSize: 13, fontWeight: "600", color: colors.inkMuted },
-  whatsappBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, backgroundColor: "#25D366", width: "100%", paddingVertical: 12, borderRadius: radius.md },
-  whatsappText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },
-  reminderBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderWidth: 1, borderColor: colors.hairline, width: "100%", paddingVertical: 12, borderRadius: radius.md },
-  reminderText: { color: colors.inkNavy, fontWeight: "600", fontSize: 14 },
-  reminderDone: { color: colors.success, fontWeight: "600", fontSize: 13 },
-  methodCard: { flexDirection: "row", alignItems: "center", width: "100%", borderWidth: 1, borderColor: colors.hairline, borderRadius: radius.md, padding: spacing.md, marginTop: spacing.sm },
-  methodTitle: { fontSize: 15, fontWeight: "700", color: colors.ink },
-  methodSub: { fontSize: 13, color: colors.inkMuted, marginTop: 2 },
+  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
+
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
+  backBtn: {
+    width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#000000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+  },
+  backGlyph: { fontSize: 20, fontWeight: "700", color: INK, lineHeight: 22 },
+  title: { fontSize: 24, color: ORANGE, marginLeft: 26 },
+
+  content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 140 },
+
+  matchCard: { ...card, flexDirection: "row", height: 92, borderRadius: 18, padding: 11 },
+  thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
+  matchText: { flex: 1, marginLeft: 12, paddingTop: 4 },
+  matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
+  matchSub: { fontSize: 13, color: MUTED, marginTop: 8 },
+  matchSpots: { fontSize: 13, fontWeight: "600", color: ORANGE, marginTop: 6 },
+
+  payWith: { fontSize: 13, color: MUTED, marginTop: 28, marginBottom: 10 },
+
+  methodsCard: { ...card, borderRadius: 18, overflow: "hidden" },
+  divider: { height: 1, backgroundColor: "#E6E6E6", marginHorizontal: 15 },
+  methodRow: { flexDirection: "row", alignItems: "center", minHeight: 52, paddingHorizontal: 19, paddingVertical: 14 },
+  methodText: { flex: 1 },
+  methodLabel: { fontSize: 15, fontWeight: "600", color: INK },
+  methodSub: { fontSize: 13, color: MUTED, marginTop: 4 },
+
+  radioOn: { width: 22, height: 22, borderRadius: 11, backgroundColor: ORANGE, alignItems: "center", justifyContent: "center" },
+  radioTick: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
+  badge: {
+    height: 24, minWidth: 40, borderRadius: 6, paddingHorizontal: 8, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
+  },
+  badgeText: { fontSize: 11, fontWeight: "600", color: INK },
+
+  policy: { fontSize: 13, color: MUTED, marginTop: 26, lineHeight: 19 },
+
+  actions: { position: "absolute", left: 20, right: 20, bottom: 40 },
 });

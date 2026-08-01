@@ -7,6 +7,8 @@ import { Search } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { Avatar } from "@/components/Avatar";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
+import { WarmCanvas } from "@/components/WarmCanvas";
 import { PlayNothingLive } from "@/components/PlayNothingLive";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";

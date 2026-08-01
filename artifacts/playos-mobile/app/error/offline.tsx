@@ -1,49 +1,59 @@
 import { useEffect } from "react";
-import { Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
-import { Zap } from "lucide-react-native";
-import { ErrorScreen } from "@/components/ErrorScreen";
-import { Callout } from "@/components/Callout";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
+import { WarmCanvas } from "@/components/WarmCanvas";
+import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { useIsOffline } from "@/components/ReconnectingState";
 import { screen } from "@/lib/analytics";
 
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 /**
- * Offline (Figma 683:545). Deliberately distinct from Server 500 — here the
- * network is the problem, so retrying immediately usually won't help.
+ * Offline (Figma 683:545).
  *
- * The mock also shows a "waiting to send" queue (check-in, award votes with
- * timestamps). That's omitted: there's no offline mutation queue in the app
- * yet, and rendering a fake queue would promise durability we don't have.
- * Build the queue first, then this section can come back.
+ * A bare takeover: dot wave, a script headline and one line of body. The
+ * annotation is explicit — "no retry button and no cached state: it clears
+ * itself the moment connectivity returns" — so this screen has no buttons and
+ * no back affordance, and dismisses itself when the connection comes back.
+ *
+ * It was previously built on the shared ErrorScreen with a hero card, a
+ * callout, a retry button and a secondary button, none of which are in the
+ * mock, and its copy promised the opposite of what the mock says.
  */
 export default function Offline() {
   const router = useRouter();
+  const { width } = useWindowDimensions();
+  const offline = useIsOffline();
 
   useEffect(() => { screen("ErrorOffline"); }, []);
 
+  // Clears itself, exactly as the annotation requires.
+  useEffect(() => {
+    if (!offline) router.back();
+  }, [offline, router]);
+
   return (
-    <ErrorScreen
-      onBack={() => router.back()}
-      title="you're offline"
-      heroIcon={<Zap size={34} color="#C96A00" strokeWidth={2.2} />}
-      heroTint="rgba(201,106,0,0.12)"
-      heroLine="no connection"
-      callout={
-        <Callout
-          tone="warning"
-          icon={<Text style={styles.glyph}>!</Text>}
-          title="check your connection"
-          body="we couldn't reach PlayOS. once you're back online, pull to refresh and everything picks up where it left off."
-          style={{ marginTop: 20 }}
-        />
-      }
-      primaryLabel="try again"
-      onPrimary={() => router.back()}
-      secondaryLabel="back to home"
-      onSecondary={() => router.replace("/(tabs)")}
-    />
+    <View style={styles.wrap}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <DotWaveBackground width={width} height={600} />
+
+      <View style={styles.centre}>
+        <HandwrittenHeader style={styles.title}>you're offline.</HandwrittenHeader>
+        <Text style={styles.body}>
+          check your connection. nothing was saved, so you'll start again from the beginning.
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  glyph: { fontSize: 13, fontWeight: "700", color: "#C96A00" },
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
+  centre: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
+  title: { fontSize: 36, color: "#FF9F0A", textAlign: "center" },
+  body: { fontSize: 13.5, color: "#6C6C70", textAlign: "center", marginTop: 21, width: 260, lineHeight: 19 },
 });

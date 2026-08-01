@@ -12,7 +12,7 @@ const TONE: Record<CalloutTone, { bg: string; accent: string; disc: string }> = 
   blocker: { bg: "rgba(253,228,228,0.7)", accent: "#BF2626", disc: "rgba(191,38,38,0.15)" },
   warning: { bg: "rgba(255,238,214,0.7)", accent: "#C96A00", disc: "rgba(201,106,0,0.15)" },
   confirm: { bg: "rgba(224,242,224,0.7)", accent: "#268033", disc: "rgba(38,128,51,0.15)" },
-  neutral: { bg: "rgba(242,242,244,0.6)", accent: "#6C6C70", disc: "rgba(108,108,112,0.15)" },
+  neutral: { bg: "rgba(242,242,244,0.7)", accent: "#3A3A3E", disc: "rgba(58,58,62,0.15)" },
 };
 
 interface Props {

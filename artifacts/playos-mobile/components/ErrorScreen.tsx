@@ -10,12 +10,18 @@ import { spacing } from "@/lib/theme";
 interface Props {
   /** Script headline, e.g. "something broke on our end". */
   title: string;
-  /** Big glyph in the 72px tinted disc on the hero card. */
-  heroIcon: React.ReactNode;
-  /** Tint behind the hero glyph. */
-  heroTint: string;
-  /** Reassurance line under the glyph, e.g. "that's on us, not you". */
-  heroLine: string;
+  /**
+   * Hero card. Optional: Session expired (684:520) has no hero card in its
+   * mock — the reassurance line sits directly on the page instead, see
+   * `subline`. Pass all three or none.
+   */
+  heroIcon?: React.ReactNode;
+  heroTint?: string;
+  heroLine?: string;
+  /** Reassurance line rendered on the page rather than inside a hero card. */
+  subline?: string;
+  /** Title size — 26 alongside a back button, 38 when the title owns the row. */
+  titleSize?: number;
   /** Tone-mapped callout under the hero card. */
   callout?: React.ReactNode;
   /** Anything extra between the callout and the buttons. */
@@ -25,6 +31,9 @@ interface Props {
   primaryLoading?: boolean;
   secondaryLabel?: string;
   onSecondary?: () => void;
+  /** Plain centred text link, where the mock has no outline button. */
+  textLinkLabel?: string;
+  onTextLink?: () => void;
   /** Monospace-ish reference chip, e.g. "PL-500 · 21:04 · tap to copy". */
   reference?: string;
   onReferencePress?: () => void;
@@ -41,9 +50,9 @@ interface Props {
  * The status bar is intentionally not drawn — the OS renders it.
  */
 export function ErrorScreen({
-  title, heroIcon, heroTint, heroLine, callout, children,
+  title, heroIcon, heroTint, heroLine, subline, titleSize, callout, children,
   primaryLabel, onPrimary, primaryLoading,
-  secondaryLabel, onSecondary,
+  secondaryLabel, onSecondary, textLinkLabel, onTextLink,
   reference, onReferencePress, footnote, onBack,
 }: Props) {
   const { width } = useWindowDimensions();
@@ -61,14 +70,17 @@ export function ErrorScreen({
               </BlurView>
             </Pressable>
           )}
-          <HandwrittenHeader style={styles.title}>{title}</HandwrittenHeader>
+          <HandwrittenHeader style={[styles.title, titleSize ? { fontSize: titleSize } : null]}>{title}</HandwrittenHeader>
         </View>
 
-        {/* Hero glass card */}
-        <View style={styles.heroCard}>
-          <View style={[styles.heroDisc, { backgroundColor: heroTint }]}>{heroIcon}</View>
-          <Text style={styles.heroLine}>{heroLine}</Text>
-        </View>
+        {heroIcon && heroLine && (
+          <View style={styles.heroCard}>
+            <View style={[styles.heroDisc, { backgroundColor: heroTint }]}>{heroIcon}</View>
+            <Text style={styles.heroLine}>{heroLine}</Text>
+          </View>
+        )}
+
+        {subline && <Text style={styles.subline}>{subline}</Text>}
 
         {callout}
         {children}
@@ -78,6 +90,11 @@ export function ErrorScreen({
             <Btn3D label={primaryLabel} onPress={onPrimary} loading={primaryLoading} />
           )}
           {secondaryLabel && <BtnOutline label={secondaryLabel} onPress={onSecondary} />}
+          {textLinkLabel && (
+            <Pressable onPress={onTextLink} hitSlop={10}>
+              <Text style={styles.textLink}>{textLinkLabel}</Text>
+            </Pressable>
+          )}
         </View>
 
         {reference && (
@@ -93,7 +110,7 @@ export function ErrorScreen({
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: spacing.xxl },
+  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: spacing.xxl },
 
   header: { flexDirection: "row", alignItems: "center", gap: 14 },
   backBtn: {
@@ -112,12 +129,14 @@ const styles = StyleSheet.create({
   heroDisc: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   heroLine: { fontSize: 16, fontWeight: "600", color: "#1C1C1E", marginTop: 12 },
 
-  actions: { marginTop: 26, gap: 12 },
+  actions: { marginTop: 64, gap: 12 },
 
   reference: {
     height: 54, borderRadius: 18, alignItems: "center", justifyContent: "center", marginTop: 20,
     backgroundColor: "rgba(242,242,244,0.6)",
   },
   referenceText: { fontSize: 12, color: "#858091" },
+  subline: { fontSize: 15, fontWeight: "600", color: "#1C1C1E", marginTop: 22, marginLeft: 4 },
+  textLink: { fontSize: 13.5, color: "#6C6C70", textAlign: "center", marginTop: 8 },
   footnote: { fontSize: 12.5, color: "#6C6C70", textAlign: "center", marginTop: 20 },
 });

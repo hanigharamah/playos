@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { format, isSameDay } from "date-fns";
 import { useListGames } from "@/lib/api";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { Callout } from "@/components/Callout";
+import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors } from "@/lib/theme";
 
 /**
@@ -37,14 +39,15 @@ export function MatchGone() {
     >
       {alternatives.length > 0 && (
         <View style={styles.altBlock}>
-          <Text style={styles.altLabel}>happening tonight instead</Text>
+          <HandwrittenHeader style={styles.altLabel}>happening tonight instead</HandwrittenHeader>
           {alternatives.map((g) => {
             const kickoff = new Date(g.kickoffTime);
             const teamSize = g.capacity / 2;
             const spots = g.capacity - g.bookedCount;
             return (
               <Pressable key={g.id} style={styles.altRow} onPress={() => router.replace(`/game/${g.id}`)}>
-                <View style={{ flex: 1 }}>
+                <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.altThumb} />
+                <View style={{ flex: 1, marginLeft: 12 }}>
                   <Text style={styles.altTitle}>{teamSize}v{teamSize}  ·  {g.pitchName}</Text>
                   <Text style={styles.altSub}>
                     {isSameDay(kickoff, new Date()) ? format(kickoff, "h:mm a") : format(kickoff, "EEE · h:mm a")}
@@ -66,14 +69,15 @@ const styles = StyleSheet.create({
   discGlyph: { fontSize: 13, fontWeight: "700", color: "#6C6C70" },
 
   altBlock: { marginTop: 24 },
-  altLabel: { fontSize: 12, fontWeight: "600", color: "#6C6C70", marginBottom: 10, marginLeft: 4 },
+  altLabel: { fontSize: 22, color: "#FF9F0A", marginBottom: 10, marginLeft: 4 },
+  altThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
   altRow: {
-    flexDirection: "row", alignItems: "center", borderRadius: 18, padding: 16, marginBottom: 10,
+    flexDirection: "row", alignItems: "center", height: 68, borderRadius: 18, padding: 9, marginBottom: 12,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
   },
   altTitle: { fontSize: 15, fontWeight: "700", color: "#1C1C1E" },
   altSub: { fontSize: 13, color: "#6C6C70", marginTop: 5 },
-  altPrice: { fontSize: 14, fontWeight: "700", color: colors.orange },
+  altPrice: { fontSize: 14, fontWeight: "600", color: "#1C1C1E" },
 });
