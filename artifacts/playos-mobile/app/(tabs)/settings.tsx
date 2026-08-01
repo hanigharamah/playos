@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   },
   statBlock: { flex: 1, paddingLeft: 27 },
   statNumber: { fontSize: 22, fontWeight: "700", color: INK },
-  statLabel: { fontSize: 11, color: MUTED, marginTop: 4 },
+  statLabel: { fontSize: 11, color: MUTED, marginTop: 0 },
   statDivider: { width: 1, height: 40, backgroundColor: "#E6E6E6" },
 
   menuRow: {

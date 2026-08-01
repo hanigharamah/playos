@@ -36,19 +36,22 @@ regenerating it.)
 
 ## Screens (Screens page — key node IDs)
 
+Checkout is node **345:364** (dev notes 432:550).
+
 | Screen | Node | Code route |
 |---|---|---|
 | Home | 1:2 | `app/(tabs)/index.tsx` |
+| Checkout | 345:364 | `app/checkout/[bookingId].tsx` |
 | Play | 1:3 | `app/(tabs)/play.tsx` |
 | Game Detail (standalone Figma page) | 552:483 | `app/game/[id].tsx` |
 | Bookings | 1:5 | `app/(tabs)/my-games.tsx` |
 | Chats | 1:6 | `app/(tabs)/chat.tsx` |
-| Profile | 1:7 | `app/(tabs)/profile.tsx` |
+| Profile | 1:7 | `app/(tabs)/settings.tsx` |
 | Browse + Browse-Matches | 1:8 / 324:315 | `app/browse.tsx` (tabbed) |
 | Activity | 1:9 | `app/activity.tsx` |
 | Countdown | 1:10 | `app/countdown/[id].tsx` |
 | Post-match | 1:11 | `app/post-match/[id].tsx` |
-| Booking Confirmed | 369:568 | `app/booking-confirmed/[bookingId].tsx` (built, not yet wired — see note) |
+| Booking Confirmed | 369:568 | `app/booking-confirmed/[bookingId].tsx` (wired — checkout routes here on success) |
 | Game Detail — Full (Waitlist) | 351:364 | `app/game/[id].tsx` (full state) |
 | Legal — Terms of Service | 361:544 | new: `app/legal/terms.tsx` |
 | Enable Notifications | 410:478 | new: `app/enable-notifications.tsx` |
@@ -68,7 +71,15 @@ T+5 anyone-start, T+15 auto-start ≥6 else auto-cancel (tokens to checked-in
 only) · waitlist offer 3-min hold + 30s countdown from open · chat T-20→T+20
 soft-close, 30-day retention · commendations at launch (max 3, positive-only,
 +5 XP), sportsmanship score deferred to v1.5 · coin flip server-side, stored
-once · payments mada/Apple Pay/Google Pay (gateway TBD).
+once · payments cash + STC Pay, single operator (the Checkout mock 345:364 and
+its dev note 432:555 still show mada/Apple Pay/Google Pay/Card and saved cards
+— stale, correct at source).
+
+Venue cancellation (ratified): PlayOS or the venue cancels; the player chooses
+cash or a game token; streak preserved either way; no XP either way; 48h to
+choose; after that auto-refund CASH, never a token by default. Tokens expire
+**30 days** (Figma 680:542 still says 60 — stale). Auto-cancel when fewer than
+10 of 12 are checked in at T-10.
 
 ## Edge, errors & ops (⚠️ page)
 
@@ -85,9 +96,9 @@ once · payments mada/Apple Pay/Google Pay (gateway TBD).
 | Booking · Get alerted when a spot frees | 682:541 | _blocked: no waitlist backend_ |
 | Waitlist · Head start alert | 683:488 | _blocked: no waitlist backend_ |
 | Waitlist · Someone booked it first | 683:516 | _blocked: no waitlist backend_ |
-| Ops · At-risk players T-10 | 685:502 | _blocked: no operator surface_ |
-| Ops · Release spot | 685:558 | _blocked: no operator surface_ |
-| Ops · Cancel match | 685:596 | _blocked: no operator surface_ |
+| Ops · At-risk players T-10 | 685:502 | `app/ops/at-risk/[gameId].tsx` (RPCs in 2026-07-operator-surface.sql, unapplied) |
+| Ops · Release spot | 685:558 | folded into the at-risk list as the per-player release action |
+| Ops · Cancel match | 685:596 | `app/ops/cancel/[gameId].tsx` (RPCs in 2026-07-operator-surface.sql, unapplied) |
 | Ops · Resolve disputed score | 686:508 | _blocked: no score schema_ |
 | Ops · Review reported player | 686:549 | _blocked: no reports table_ |
 
@@ -109,7 +120,7 @@ Built:
 | System · Update required | 696:690 | `app/system/update-required.tsx` |
 | Error · Chat send failed | 698:664 | `app/chat/[conversationId].tsx` (a state of the thread, not a route) |
 | Loading · Reconnecting | 698:699 | `components/ReconnectingState.tsx`, used by `app/match/[id].tsx` |
-| Settings · Notifications | 699:726 | `app/settings/notifications.tsx` |
+| Settings · Notifications | 699:726 | `app/account/notifications.tsx` |
 
 Shared by the three empty states: `components/EmptyState.tsx` → `EmptyCard`
 (the 350×148 halo card, identical in all three mocks) and `EmptyEyebrow`.
@@ -126,6 +137,13 @@ therefore omitted (same precedent as the venue star rating in Browse):
   and the cheapest real price instead.
 - **"alert me when one appears"** (matches mock) — needs a saved-search alert
   plus push delivery; both are blocked below. Replaced with "show all matches".
+
+HomeSkeleton was ported number-for-number from 698:518, then deliberately
+changed: its hero block was 196 and its rows 64, but the real Home hero is 238
+and its rows 68. The annotation's own rule — block geometry matches the real
+cards so nothing jumps when data lands — outranks the mock's numbers where the
+two disagree. Same call as BrowseSkeleton. This is a documented divergence, not
+an unverified screen.
 
 Skeleton rules, from the annotations and enforced in code:
 - block geometry mirrors the real cards exactly so nothing jumps when data lands

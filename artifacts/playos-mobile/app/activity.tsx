@@ -191,7 +191,7 @@ export default function Activity() {
 }
 
 const glassCard = {
-  backgroundColor: "rgba(255,255,255,0.55)",
+  backgroundColor: "rgba(255,255,255,0.38)",
   borderWidth: 1,
   borderColor: "rgba(255,255,255,0.75)",
   overflow: "hidden" as const,

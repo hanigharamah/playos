@@ -126,15 +126,15 @@ export default function GameDetail() {
         {/* Meta pills (Figma 585:482-484) */}
         <View style={styles.metaRow}>
           <View style={styles.metaPill}>
-            <Users size={13} color={INK} strokeWidth={2} />
+            <Users size={17} color={INK} strokeWidth={2} />
             <Text style={styles.metaText}>{teamSize}v{teamSize}</Text>
           </View>
           <View style={styles.metaPill}>
-            <Clock size={13} color={INK} strokeWidth={2} />
+            <Clock size={17} color={INK} strokeWidth={2} />
             <Text style={styles.metaText}>{game.durationMinutes ? `${game.durationMinutes} mins` : "—"}</Text>
           </View>
           <View style={styles.metaPill}>
-            <Navigation size={13} color={INK} strokeWidth={2} />
+            <Navigation size={17} color={INK} strokeWidth={2} />
             <Text style={styles.metaText} numberOfLines={1}>{game.pitchName}</Text>
           </View>
         </View>
@@ -404,7 +404,7 @@ const styles = StyleSheet.create({
   infoSub: { fontSize: 8.5, color: "#8A7D73", marginTop: 4 },
   infoDivider: { width: 1, backgroundColor: "rgba(33,28,51,0.08)", marginVertical: 4 },
 
-  pitchCard: { marginHorizontal: 15, marginTop: 22, borderRadius: 18, padding: 11 },
+  pitchCard: { marginLeft: 15, marginRight: 25, marginTop: 33, borderRadius: 18, padding: 11 },
   pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
   pitchLabel: { fontSize: 12.5, fontWeight: "600", color: INK },
   legend: { flexDirection: "row", alignItems: "center", gap: 4 },
@@ -419,7 +419,7 @@ const styles = StyleSheet.create({
 
   ctaCard: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginHorizontal: 12, marginTop: 22, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 7,
+    marginHorizontal: 12, marginTop: 33, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 7,
   },
   ctaPrice: { fontSize: 17.5, fontWeight: "700", color: INK },
   ctaPer: { fontSize: 10, color: MUTED, marginTop: 4 },
@@ -432,6 +432,6 @@ const styles = StyleSheet.create({
   ctaBtnText: { fontSize: 13.5, fontWeight: "600", color: "#FFFFFF" },
   ctaOrb: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
 
-  secureRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 22 },
+  secureRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 33 },
   secureText: { fontSize: 13, color: "#807873" },
 });

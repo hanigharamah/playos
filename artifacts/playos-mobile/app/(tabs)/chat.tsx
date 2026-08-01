@@ -92,7 +92,7 @@ export default function Chat() {
             />
             <View style={styles.rowText}>
               <Text style={styles.name} numberOfLines={1}>{item.gameTitle ?? "Group chat"}</Text>
-              <Text style={styles.preview} numberOfLines={1}>{item.lastMessage ?? "No messages yet"}</Text>
+              <Text style={styles.preview} numberOfLines={2}>{item.lastMessage ?? "No messages yet"}</Text>
             </View>
             <View style={styles.rowMeta}>
               <Text style={styles.time}>{stamp(item.lastMessageAt)}</Text>
@@ -131,7 +131,12 @@ const styles = StyleSheet.create({
   segmentText: { fontSize: 14, color: MUTED },
   segmentTextActive: { fontWeight: "600", color: INK },
 
-  row: { flexDirection: "row", alignItems: "center", paddingVertical: 14 },
+  row: {
+    flexDirection: "row", alignItems: "center", paddingVertical: 12, minHeight: 84,
+    // Mock 69:191 rules a 1px #EDEDED line under every row, inset to the
+    // text column so it starts past the avatar.
+    borderBottomWidth: 1, borderBottomColor: "#EDEDED",
+  },
   avatar: { width: 48, height: 48, borderRadius: 24 },
   rowText: { flex: 1, marginLeft: 12 },
   name: { fontSize: 15, fontWeight: "700", color: INK },
