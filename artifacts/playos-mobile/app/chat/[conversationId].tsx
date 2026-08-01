@@ -32,7 +32,44 @@ const CHAT_CLOSES_MINUTES_AFTER = 20;
 
 type Pending = { id: string; body: string; failedAt: string };
 
-const pendingKey = (id: string) => `playos.chat.pending.${id}`;
+const PENDING_PREFIX = "playos.chat.pending.";
+const pendingKey = (id: string) => `${PENDING_PREFIX}${id}`;
+
+/**
+ * Cap on the local failed-send queue. A player typing into airplane mode can
+ * otherwise accumulate unbounded entries, all re-serialised on every write and
+ * all rendered in the footer. Oldest are dropped first.
+ */
+const MAX_PENDING = 20;
+
+/**
+ * Chat closes 20 minutes after full time and messages are retained 30 days, so
+ * a queue older than that can never be delivered. Sweeping on mount also
+ * clears keys left behind by conversations that have since ended — they were
+ * never deleted, so they accumulated one per conversation forever.
+ */
+const PENDING_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+async function sweepStalePendingQueues() {
+  const keys = await AsyncStorage.getAllKeys();
+  const mine = keys.filter((k) => k.startsWith(PENDING_PREFIX));
+  if (mine.length === 0) return;
+
+  const entries = await AsyncStorage.multiGet(mine);
+  const expired: string[] = [];
+  for (const [key, raw] of entries) {
+    if (!raw) { expired.push(key); continue; }
+    try {
+      const rows = JSON.parse(raw) as Pending[];
+      if (rows.length === 0) { expired.push(key); continue; }
+      const newest = Math.max(...rows.map((r) => Date.parse(r.failedAt) || 0));
+      if (Date.now() - newest > PENDING_TTL_MS) expired.push(key);
+    } catch {
+      expired.push(key);
+    }
+  }
+  if (expired.length > 0) await AsyncStorage.multiRemove(expired);
+}
 
 /**
  * Group chat thread, with the send-failure state from Figma 698:664.
@@ -86,12 +123,18 @@ export default function ChatThread() {
     return () => { cancelled = true; };
   }, [conversationId]);
 
+  // Drop queues that can never be delivered, and keys from conversations that
+  // have already ended.
+  useEffect(() => { void sweepStalePendingQueues(); }, []);
+
   // Always derive the next queue from the live state, never from a captured
   // snapshot — concurrent retries otherwise write over each other.
   const persist = useCallback((update: (live: Pending[]) => Pending[]) => {
     setPending((live) => {
-      const next = update(live);
-      if (conversationId) void AsyncStorage.setItem(pendingKey(conversationId), JSON.stringify(next));
+      const next = update(live).slice(-MAX_PENDING);
+      if (!conversationId) return next;
+      if (next.length === 0) void AsyncStorage.removeItem(pendingKey(conversationId));
+      else void AsyncStorage.setItem(pendingKey(conversationId), JSON.stringify(next));
       return next;
     });
   }, [conversationId]);
