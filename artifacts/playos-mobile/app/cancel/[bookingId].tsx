@@ -31,6 +31,12 @@ export default function CancellationConfirm() {
 
   useEffect(() => { screen("CancellationConfirm", { bookingId }); }, [bookingId]);
 
+  // Sync before deciding eligibility: serverNow() returns raw device time until
+  // an offset lands, so a wound-back clock would show the green "full refund"
+  // banner that the mutation then refuses. Must sit above the early return
+  // below — hooks cannot be called conditionally.
+  useEffect(() => { void syncServerTime().then(() => setClockTick((n) => n + 1)); }, []);
+
   const booking =
     data?.upcoming?.find((b) => b.id === bookingId) ?? data?.past?.find((b) => b.id === bookingId);
 
@@ -44,14 +50,11 @@ export default function CancellationConfirm() {
 
   const kickoff = new Date(booking.game.kickoffTime);
   const teamSize = booking.game.capacity / 2;
-  // Without this the screen decides eligibility on Date.now() until some other
-  // caller happens to sync, so a wound-back clock showed the green "full
-  // refund" banner that the mutation then refused.
-  useEffect(() => { void syncServerTime().then(() => setClockTick((n) => n + 1)); }, []);
 
+  // clockTick is not read: bumping it re-renders, and serverNow() is re-read
+  // on that render with the offset applied.
   const hoursUntil = (kickoff.getTime() - serverNow()) / 3_600_000;
   const isFree = hoursUntil > FREE_CANCEL_HOURS;
-  void clockTick; // re-render once the offset lands
 
   const confirmCancel = () => {
     cancelBooking.mutate(
