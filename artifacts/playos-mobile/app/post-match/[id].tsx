@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator , useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Star, Trophy, Users2 } from "lucide-react-native";
-import { useGetGame, useSubmitMatchStats } from "@/lib/api";
+import { useGetGame, useSubmitMatchStats, useMyMatchStats } from "@/lib/api";
 import { PillButton } from "@/components/PillButton";
 import { GlassCard } from "@/components/GlassCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { WarmCanvas } from "@/components/WarmCanvas";
+import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { colors, radius, spacing } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 
@@ -17,15 +19,34 @@ import { screen, track } from "@/lib/analytics";
  * this be submitted for a game the player actually checked into, within
  * 24h of it ending.
  */
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 export default function PostMatch() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data: game } = useGetGame(id!);
+  const { width } = useWindowDimensions();
   const submitStats = useSubmitMatchStats();
 
+  // Prefill from what was already submitted. The write is an upsert, so
+  // opening this again inside the 24h window and submitting used to overwrite
+  // real figures with zeroes and take the player's XP down with them.
+  const { data: existing, isLoading: statsLoading } = useMyMatchStats(id ?? null);
   const [goals, setGoals] = useState("0");
   const [assists, setAssists] = useState("0");
   const [rating, setRating] = useState<number | null>(null);
+  const [prefilled, setPrefilled] = useState(false);
+
+  useEffect(() => {
+    if (prefilled || !existing) return;
+    setGoals(String(existing.goals));
+    setAssists(String(existing.assists));
+    setRating(existing.rating);
+    setPrefilled(true);
+  }, [existing, prefilled]);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +59,7 @@ export default function PostMatch() {
       { gameId: id, goals: Number(goals) || 0, assists: Number(assists) || 0, rating: rating ?? undefined },
       {
         onSuccess: () => {
-          track("match_stats_submitted", { gameId: id, goals: Number(goals), assists: Number(assists), rating });
+          track("match_stats_submitted", { gameId: id, goals: Number(goals) || 0, assists: Number(assists) || 0, rating });
           setSubmitted(true);
         },
         onError: (err: any) => setError(err?.data?.error ?? "Could not submit — you may not be checked in to this game, or the 24h window has closed."),
@@ -56,6 +77,8 @@ export default function PostMatch() {
     const xpGained = goalsNum * 20 + assistsNum * 10;
     return (
       <View style={styles.wrap}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <DotWaveBackground width={width} height={600} />
         <HandwrittenHeader style={styles.celebrateTitle}>great game! 🔥</HandwrittenHeader>
         <Text style={styles.celebrateSub}>here's how you did</Text>
 
@@ -79,7 +102,7 @@ export default function PostMatch() {
 
         <View style={styles.actions}>
           <PillButton label="view your activity" onPress={() => router.push("/activity")} fullWidth />
-          <Pressable onPress={() => router.push("/(tabs)")}><Text style={styles.backLink}>back to home</Text></Pressable>
+          <Pressable onPress={() => router.replace("/(tabs)")}><Text style={styles.backLink}>back to home</Text></Pressable>
         </View>
       </View>
     );
@@ -122,7 +145,7 @@ export default function PostMatch() {
         )}
       </GlassCard>
 
-      <Pressable onPress={() => router.push("/(tabs)")}><Text style={styles.skipLink}>skip for now</Text></Pressable>
+      <Pressable onPress={() => router.replace("/(tabs)")}><Text style={styles.skipLink}>skip for now</Text></Pressable>
     </View>
   );
 }
@@ -139,12 +162,12 @@ const styles = StyleSheet.create({
   input: { backgroundColor: "#F2F2F7", borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: 16, color: colors.ink, textAlign: "center" },
   error: { color: colors.danger, fontSize: 13, textAlign: "center", marginTop: spacing.md },
   skipLink: { color: colors.inkMuted, fontSize: 13, fontWeight: "600", marginTop: spacing.lg },
-  celebrateTitle: { fontSize: 34, color: colors.orange, marginTop: spacing.xxl },
-  celebrateSub: { fontSize: 14, color: colors.inkMuted, marginTop: -spacing.sm },
+  celebrateTitle: { fontSize: 38, color: colors.orange, marginTop: spacing.xxl },
+  celebrateSub: { fontSize: 15, fontWeight: "600", color: "#1C1C1E", marginTop: -spacing.sm },
   summaryCard: { width: "100%", marginTop: spacing.xl },
   summaryRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   ratingLabel: { fontSize: 12, color: colors.inkMuted, fontWeight: "700", textTransform: "uppercase" },
-  ratingValue: { fontSize: 32, fontWeight: "800", color: colors.ink, marginTop: 2 },
+  ratingValue: { fontSize: 44, fontWeight: "800", color: colors.ink, marginTop: 2 },
   xpBadge: { backgroundColor: colors.orange + "1F", paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.pill },
   xpBadgeText: { color: colors.orange, fontWeight: "800", fontSize: 14 },
   statsGrid: { flexDirection: "row", marginTop: spacing.lg, gap: spacing.xl },

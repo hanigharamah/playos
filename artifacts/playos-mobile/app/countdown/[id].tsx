@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable, ImageBackground, ActivityIndicator }
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { useGetGame, useGameRoster } from "@/lib/api";
 import { serverNow } from "@/lib/serverTime";
 import { AvatarStack } from "@/components/AvatarStack";
@@ -24,7 +24,13 @@ function useCountdown(target: Date | null) {
 
   useEffect(() => {
     if (targetMs === null) { setRemaining(null); return; }
-    const tick = () => setRemaining(targetMs - serverNow());
+    const tick = () => {
+      const next = targetMs - serverNow();
+      setRemaining(next);
+      // Nothing below zero is displayed, so stop re-rendering once past
+      // kickoff instead of ticking forever behind an unmounted timer.
+      if (next <= 0) clearInterval(t);
+    };
     tick();
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
@@ -59,7 +65,7 @@ export default function Countdown() {
     );
   }
 
-  const teamSize = game.capacity / 2;
+  const teamSize = Math.floor(game.capacity / 2);
   const names = (roster?.entries ?? []).map((e) => e.name);
 
   return (
@@ -84,8 +90,16 @@ export default function Countdown() {
         )}
 
         <View style={styles.card}>
-          <Text style={styles.cardTitle}>{game.pitchName}</Text>
-          <Text style={styles.cardMeta}>{format(new Date(game.kickoffTime), "EEE, h:mm a")} · {teamSize}v{teamSize}</Text>
+          <Text style={styles.cardTitle} numberOfLines={1}>{game.pitchName}</Text>
+          <Text style={styles.cardWhen}>
+            {isSameDay(new Date(game.kickoffTime), new Date())
+              ? "TONIGHT"
+              : format(new Date(game.kickoffTime), "EEE").toUpperCase()}
+            {"  •  "}{format(new Date(game.kickoffTime), "h:mm a")}
+          </Text>
+          {/* The mock's second half of this line is "Outdoor" — no surface
+              column exists, so only the real format is shown. */}
+          <Text style={styles.cardMeta}>{teamSize}v{teamSize}</Text>
           {names.length > 0 && (
             <View style={styles.avatarRow}>
               <AvatarStack names={names} max={4} size={28} />
@@ -116,15 +130,16 @@ const styles = StyleSheet.create({
   back: { position: "absolute", top: 56, left: spacing.lg, width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.15)", alignItems: "center", justifyContent: "center" },
   content: { flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.xl },
   headline: { fontSize: 30, fontWeight: "800", color: "#FFFFFF" },
-  sub: { fontSize: 14, color: "rgba(255,255,255,0.7)", marginTop: 4 },
+  sub: { fontSize: 14, color: "#99999E", marginTop: 4 },
   timerRow: { flexDirection: "row", alignItems: "center", gap: spacing.sm, marginTop: spacing.xl },
   timeBlock: { alignItems: "center" },
   timeValue: { fontSize: 40, fontWeight: "800", color: "#FFFFFF", fontVariant: ["tabular-nums"] },
-  timeLabel: { fontSize: 10, color: "rgba(255,255,255,0.6)", fontWeight: "700", letterSpacing: 1, marginTop: 2 },
+  timeLabel: { fontSize: 10, color: "#99999E", fontWeight: "700", letterSpacing: 1, marginTop: 2 },
   colon: { fontSize: 32, fontWeight: "700", color: "rgba(255,255,255,0.5)", marginBottom: 14 },
   card: { width: "100%", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.xxl, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
-  cardTitle: { fontSize: 17, fontWeight: "800", color: "#FFFFFF" },
-  cardMeta: { fontSize: 13, color: "rgba(255,255,255,0.7)", marginTop: 4 },
+  cardTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
+  cardWhen: { fontSize: 12, fontWeight: "600", color: "#FF9F0A", marginTop: 8 },
+  cardMeta: { fontSize: 13, color: "#99999E", marginTop: 4 },
   avatarRow: { marginTop: spacing.md },
   detailsBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.pill, paddingVertical: spacing.md, marginTop: spacing.lg },
   detailsBtnText: { color: "#FFFFFF", fontWeight: "700", fontSize: 14 },

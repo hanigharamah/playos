@@ -710,6 +710,44 @@ export interface GamePlayerStats {
   rating: number | null;
 }
 
+const matchStatsKey = (gameId: string) => ["match-stats", gameId] as const;
+
+/**
+ * This player's already-submitted stats for a game, so the form can prefill.
+ *
+ * Without this the post-match form always opened at 0/0/null while the write
+ * is an upsert, so re-opening it inside the 24h window and tapping submit
+ * silently overwrote real figures with zeroes — and because get_my_activity()
+ * recomputes XP from the row, the player's XP went DOWN.
+ */
+export function useMyMatchStats(gameId: string | null) {
+  return useQuery({
+    queryKey: matchStatsKey(gameId ?? ""),
+    enabled: !!gameId,
+    queryFn: async (): Promise<GamePlayerStats | null> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) return null;
+
+      const { data, error } = await supabase
+        .from("game_player_stats")
+        .select("goals, assists, distance_km, rating")
+        .eq("game_id", gameId!)
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (error) throw error;
+      if (!data) return null;
+
+      return {
+        goals: data.goals ?? 0,
+        assists: data.assists ?? 0,
+        distanceKm: data.distance_km ?? null,
+        rating: data.rating ?? null,
+      };
+    },
+  });
+}
+
 export function useSubmitMatchStats() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -723,7 +761,8 @@ export function useSubmitMatchStats() {
       });
       if (error) throw { data: { error: error.message } };
     },
-    onSuccess: () => {
+    onSuccess: (_r, vars) => {
+      queryClient.invalidateQueries({ queryKey: matchStatsKey(vars.gameId) });
       queryClient.invalidateQueries({ queryKey: ["my-activity"] });
       queryClient.invalidateQueries({ queryKey: ["my-stats"] });
     },
