@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, type LayoutChangeEvent } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
@@ -15,6 +15,8 @@ import { screen } from "@/lib/analytics";
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
 
+type Tab = "venues" | "matches";
+
 /**
  * Browse — venues / matches toggle (Figma 1:8 and Browse-Matches 324:315).
  *
@@ -28,7 +30,7 @@ export default function Browse() {
   const insets = useSafeAreaInsets();
   const { data: games, isLoading, isError } = useListGames();
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<"venues" | "matches">("venues");
+  const [tab, setTab] = useState<Tab>("venues");
 
   useEffect(() => { screen("Browse"); }, []);
 
@@ -42,6 +44,19 @@ export default function Browse() {
   const matches = (games ?? []).filter(
     (g) => !q || g.title.toLowerCase().includes(q) || g.pitchName.toLowerCase().includes(q),
   );
+
+  // Underline position comes from the tabs' own layout.
+  const [tabRects, setTabRects] = useState<Record<Tab, { x: number; w: number }>>({
+    venues: { x: 0, w: 54 },
+    matches: { x: 88, w: 64 },
+  });
+  const measure = (key: Tab) => (e: LayoutChangeEvent) => {
+    const { x, width } = e.nativeEvent.layout;
+    setTabRects((prev) =>
+      prev[key].x === x && prev[key].w === width ? prev : { ...prev, [key]: { x, w: width } },
+    );
+  };
+  const tabBar = tabRects[tab];
 
   const venues = useMemo(() => {
     const map = new Map<string, { count: number; photo: string | null }>();
@@ -72,14 +87,16 @@ export default function Browse() {
 
       {/* Tabs (Figma 9:7 / 9:8) */}
       <View style={styles.tabs}>
-        <Pressable onPress={() => setTab("venues")}>
+        <Pressable onPress={() => setTab("venues")} onLayout={measure("venues")}>
           <Text style={[styles.tab, tab === "venues" && styles.tabActive]}>venues</Text>
         </Pressable>
-        <Pressable onPress={() => setTab("matches")}>
+        <Pressable onPress={() => setTab("matches")} onLayout={measure("matches")}>
           <Text style={[styles.tab, tab === "matches" && styles.tabActive]}>matches</Text>
         </Pressable>
       </View>
-      <View style={[styles.underline, tab === "matches" && styles.underlineMatches]} />
+      {/* Measured rather than hard-coded: the offsets were pixel values tied to
+          a tab gap that has since changed, so the bar drifted off its label. */}
+      <View style={[styles.underline, { marginLeft: tabBar.x, width: tabBar.w }]} />
 
       {showSkeleton && <BrowseSkeleton />}
 
@@ -153,10 +170,13 @@ const styles = StyleSheet.create({
   tab: { fontSize: 15, color: "#6C6C70" },
   tabActive: { fontWeight: "700", color: INK },
   underline: { width: 54, height: 2, backgroundColor: colors.orange, marginTop: 6, marginBottom: 18 },
-  underlineMatches: { marginLeft: 80, width: 64 },
 
   row: {
-    flexDirection: "row", alignItems: "center", height: 92, borderRadius: 18, padding: 11,
+    // minHeight, not height: the matches rows stack three lines of text plus
+    // their margins inside 70pt of inner box, which overflows at larger text
+    // sizes. With a fixed height and centred content the spill lands on the
+    // neighbouring row instead of growing the card.
+    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     marginBottom: 12,
