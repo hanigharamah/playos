@@ -1,33 +1,35 @@
-import { Image } from "react-native";
-
 /**
- * Flowing halftone dot-wave — exported straight from the Figma "Dot Wave"
- * component (390×600 @3x, see FIGMA-MAP.md), so it is pixel-identical to the
- * design. Re-export from Figma node 71:248 if the design changes; do not
- * regenerate procedurally.
+ * Dot wave background — DISABLED.
  *
- * Every mock places this layer at **opacity 0.75** (`opacity-75` on the Dot
- * Wave node of 684:494, 684:542, 697:506, 698:518 and the rest). That was
- * missing here, so it rendered at full strength and competed with the content
- * on top of it — most visible on a sparse screen such as an empty Home.
+ * Turned off across the app on request: the source art in Figma is an imported
+ * bitmap capped at 780×1200, so on a 3x screen it renders soft, and there is
+ * no higher-resolution original anywhere in the file. Figma's own 4x export is
+ * measurably softer than the raw source (it upscales the same bitmap), and the
+ * node carries no shader or vector to re-render from.
  *
- * Operator screens deliberately pass 0.35 instead: ops chrome has to read
- * differently from a player screen at a glance.
+ * This renders nothing rather than being ripped out of ~15 screens, so turning
+ * it back on is a one-line change here and every call site stays correct.
+ *
+ * To restore, put the body back:
+ *
+ *   import { Image } from "react-native";
+ *   <Image
+ *     source={require("../assets/dotwave.png")}
+ *     style={{ position: "absolute", top: 0, left: 0, width, height, opacity }}
+ *     resizeMode="cover"
+ *   />
+ *
+ * The mocks place this layer at opacity 0.75 (operator screens at 0.35), which
+ * is what the `opacity` prop defaults to. assets/dotwave.png is kept in the
+ * repo — it is no longer required by any module, so it is not bundled.
+ *
+ * Getting to HD needs one of: a re-render of the original art at 3-4x and a
+ * re-import to Figma, or a procedural generator drawn at device resolution.
  */
-export function DotWaveBackground({
-  width,
-  height,
-  opacity = 0.75,
-}: {
+export function DotWaveBackground(_props: {
   width: number;
   height: number;
   opacity?: number;
 }) {
-  return (
-    <Image
-      source={require("../assets/dotwave.png")}
-      style={{ position: "absolute", top: 0, left: 0, width, height, opacity }}
-      resizeMode="cover"
-    />
-  );
+  return null;
 }
