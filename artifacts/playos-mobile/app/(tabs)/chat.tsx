@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Image, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isToday, isYesterday } from "date-fns";
 import { MessageCircle } from "lucide-react-native";
 import { useMyConversations } from "@/lib/api";
@@ -30,6 +31,7 @@ function stamp(iso?: string | null) {
  */
 export default function Chat() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: conversations, isLoading, refetch, isRefetching } = useMyConversations();
   const [tab, setTab] = useState<"messages" | "groups">("groups");
 
@@ -45,7 +47,7 @@ export default function Chat() {
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 
       <FlatList
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
         data={list}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
@@ -110,7 +112,10 @@ export default function Chat() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
+    // paddingTop is applied at the call site from the safe-area inset: the
+  // fixed value here was smaller than the Dynamic Island's inset, so the first
+  // element rendered underneath it.
+  content: { paddingHorizontal: 20, paddingBottom: 130 },
 
   vortex: { position: "absolute", top: -25, right: -25, width: 320, height: 273, opacity: 0.9 },
 

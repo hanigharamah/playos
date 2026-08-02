@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Image, useWindowDimensions, Platform } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { format } from "date-fns";
 import { Bell, Users, MapPin, User, ArrowRight } from "lucide-react-native";
@@ -29,6 +30,7 @@ const HOME_GLOWS = [
 
 export default function Home() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data: games, isLoading, isError, refetch, isRefetching } = useListGames();
   const { data: bookings, isLoading: bookingsLoading } = useGetMyBookings();
@@ -65,7 +67,7 @@ export default function Home() {
       <DotWaveBackground width={width} height={600} />
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
         showsVerticalScrollIndicator={false}
       >
@@ -176,7 +178,10 @@ function isSameDay(a: Date, b: Date) {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   scroll: { flex: 1 },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl + 16, paddingBottom: 130 },
+    // paddingTop is applied at the call site from the safe-area inset: the
+  // fixed value here was smaller than the Dynamic Island's inset, so the first
+  // element rendered underneath it.
+  content: { paddingHorizontal: 20, paddingBottom: 130 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   logo: { fontSize: 17, fontWeight: "700", color: INK },
   bellDot: { position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.orange },

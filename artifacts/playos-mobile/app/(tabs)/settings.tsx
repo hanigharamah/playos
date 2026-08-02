@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Linking, ScrollView, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CreditCard, Bell, HelpCircle, User as UserIcon, Wallet } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import { useAuth } from "@/lib/auth";
@@ -20,6 +21,7 @@ export default function Profile() {
   const { data: stats } = useGetMyStats();
   const { data: credits = 0 } = useGetMyCredits();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function Profile() {
   ];
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
       {/* Dot vortex corner art (Figma 253:398) */}
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 
@@ -134,7 +136,10 @@ export default function Profile() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
+    // paddingTop is applied at the call site from the safe-area inset: the
+  // fixed value here was smaller than the Dynamic Island's inset, so the first
+  // element rendered underneath it.
+  content: { paddingHorizontal: 20, paddingBottom: 130 },
 
   vortex: { position: "absolute", top: -25, right: -25, width: 320, height: 273, opacity: 0.9 },
 

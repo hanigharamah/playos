@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, useWindowDimensions, Platform } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle, Defs, LinearGradient as SvgGradient, Stop } from "react-native-svg";
@@ -28,6 +29,7 @@ const SUBTLE = "#8C8780";
  */
 export default function Activity() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data } = useGetMyActivity();
 
@@ -53,7 +55,7 @@ export default function Activity() {
   return (
     <View style={styles.wrap}>
       <DotWaveBackground width={width} height={600} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>
           <Pressable onPress={() => router.back()} hitSlop={12}>
             <ArrowLeft size={20} color={INK} strokeWidth={2} />
@@ -204,7 +206,10 @@ const glassCard = {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: 130 },
+    // paddingTop is applied at the call site from the safe-area inset: the
+  // fixed value here was smaller than the Dynamic Island's inset, so the first
+  // element rendered underneath it.
+  content: { paddingHorizontal: 20, paddingBottom: 130 },
 
   topRow: { height: 24, justifyContent: "center" },
   header: { fontSize: 34, marginTop: 10 },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays } from "lucide-react-native";
@@ -26,6 +27,7 @@ const MUTED = "#6C6C70";
 
 export default function MyGames() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data, isLoading, isError, refetch, isRefetching } = useGetMyBookings();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
@@ -75,7 +77,7 @@ export default function MyGames() {
   return (
     <FlatList
       style={styles.wrap}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
       data={list}
       keyExtractor={(item) => item.id}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
@@ -170,7 +172,10 @@ export default function MyGames() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 19, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
+    // paddingTop is applied at the call site from the safe-area inset: the
+  // fixed value here was smaller than the Dynamic Island's inset, so the first
+  // element rendered underneath it.
+  content: { paddingHorizontal: 19, paddingBottom: 130 },
 
   header: { fontSize: 28, marginBottom: spacing.xl },
 

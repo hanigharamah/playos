@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { Search } from "lucide-react-native";
@@ -20,8 +21,15 @@ const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
 const CARD_SUB = "#B3B3B3";
 
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 export default function Play() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
   const { data: games, isLoading, isError } = useListGames();
   const [query, setQuery] = useState("");
 
@@ -54,7 +62,19 @@ export default function Play() {
   const nextUp = filtered[0];
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.wrap}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      {/* Mock 697:507 — this screen has always specified the dot wave. */}
+      <DotWaveBackground width={width} height={600} />
+
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Title (697:509). Missing entirely, which is why the screen started
+            flush against the status bar with nothing above the search field. */}
+        <HandwrittenHeader style={styles.pageTitle}>play</HandwrittenHeader>
+
       {/* Search (Figma 3:3 — glass 350×44) */}
       <View style={styles.searchBar}>
         <Search size={20} color={MUTED} strokeWidth={1.8} />
@@ -158,19 +178,24 @@ export default function Play() {
       {showSkeleton && <BrowseSkeleton />}
       {!showSkeleton && !isLoading && (games ?? []).length === 0 && <PlayNothingLive />}
 
-      {(games ?? []).length > 0 && filtered.length === 0 && (
-        <View style={styles.empty}>
-          <Text style={styles.emptyTitle}>No games found</Text>
-          <Text style={styles.emptyBody}>Try a different search.</Text>
-        </View>
-      )}
-    </ScrollView>
+        {(games ?? []).length > 0 && filtered.length === 0 && (
+          <View style={styles.empty}>
+            <Text style={styles.emptyTitle}>No games found</Text>
+            <Text style={styles.emptyBody}>Try a different search.</Text>
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl + 20, paddingBottom: 130 },
+  // paddingTop comes from the safe-area inset at the call site. It was a fixed
+  // 52, which is less than the Dynamic Island's inset, so the first element sat
+  // under the island.
+  content: { paddingHorizontal: 20, paddingBottom: 130 },
+  pageTitle: { fontSize: 34, color: "#FF9F0A", marginBottom: 18 },
 
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 2,
