@@ -47,7 +47,7 @@ Checkout is node **345:364** (dev notes 432:550).
 | Bookings | 1:5 | `app/(tabs)/my-games.tsx` |
 | Chats | 1:6 | `app/(tabs)/chat.tsx` |
 | Profile | 1:7 | `app/(tabs)/settings.tsx` |
-| Browse + Browse-Matches | 1:8 / 324:315 | `app/browse.tsx` (tabbed) |
+| Browse + Browse-Matches | 1:8 / 324:315 | `app/browse.tsx` (tabbed) — keeps a back arrow the mock omits, by decision |
 | Activity | 1:9 | `app/activity.tsx` |
 | Countdown | 1:10 | `app/countdown/[id].tsx` |
 | Post-match | 1:11 | `app/post-match/[id].tsx` |
@@ -72,6 +72,12 @@ first payment, so signup no longer routes to it and nothing else does either.
 more specified of the two — it names the four concrete things a player misses
 and caps itself at two appearances. One of them should be retired; that is a
 design call, so both are left in place.
+
+### Deliberate deviations to leave alone
+
+- **Browse keeps its back arrow.** Node 1:8 has no back control and puts the
+  search bar at y=52; the arrow pushes it ~36pt lower. Ratified by the product
+  owner — do not remove it to match the mock.
 
 ## Product rules (decided — full log on the 📐 Handoff page)
 
