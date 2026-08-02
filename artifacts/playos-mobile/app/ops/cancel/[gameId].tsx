@@ -106,7 +106,8 @@ export default function OpsCancelMatch() {
   return (
     <View style={styles.wrap}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
-      <View style={styles.dotWrap}><DotWaveBackground width={width} height={600} /></View>
+      {/* 0.35, not the player-facing 0.75 — ops chrome must read differently. */}
+      <DotWaveBackground width={width} height={600} opacity={0.35} />
 
       <View style={styles.header}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
@@ -225,7 +226,6 @@ const card = {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
   centre: { alignItems: "center", justifyContent: "center" },
-  dotWrap: { ...StyleSheet.absoluteFillObject, opacity: 0.35 / 0.75 },
 
   denied: { fontSize: 15, color: INK },
   deniedLink: { fontSize: 15, fontWeight: "600", color: AMBER, marginTop: 12 },
