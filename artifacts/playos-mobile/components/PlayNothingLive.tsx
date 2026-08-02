@@ -103,7 +103,10 @@ function whenLabel(iso: string): string {
 }
 
 const styles = StyleSheet.create({
-  wrap: { alignItems: "center", alignSelf: "stretch" },
+  // Clears whatever precedes it on the Play tab. Without this the lead line
+  // sat flush against the bottom of the search field, since the field carries
+  // no bottom margin (the sections below it bring their own top margin).
+  wrap: { alignItems: "center", alignSelf: "stretch", marginTop: 24 },
   // 36 is the mock's text-top-to-card-top; as a margin it sits below the
   // ~19pt line box, so it needs to be that much smaller.
   lead: { alignSelf: "flex-start", fontSize: 15.5, fontWeight: "600", color: INK, marginBottom: 17 },
