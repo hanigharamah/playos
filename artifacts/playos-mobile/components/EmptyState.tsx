@@ -82,7 +82,11 @@ const styles = StyleSheet.create({
   ctaText: { fontSize: 20, fontWeight: "700", color: "#6630F7" },
 
   card: {
-    alignSelf: "stretch", maxWidth: 350, height: 148, borderRadius: 22, alignItems: "center",
+    // minHeight + real bottom padding, not a fixed 148. The mock's card holds
+    // a one-line body; a two-line body stacks to ~157 and spilled out of the
+    // bottom edge, which is what "overlapping text and boxes" looked like.
+    alignSelf: "stretch", maxWidth: 350, minHeight: 148, paddingBottom: 19,
+    borderRadius: 22, alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,

@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 14, color: MUTED, textAlign: "center", marginTop: 14, paddingHorizontal: spacing.xl },
 
   matchCard: {
-    flexDirection: "row", alignItems: "center", height: 92, borderRadius: 18, padding: 11, marginTop: 34,
+    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11, marginTop: 34,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,

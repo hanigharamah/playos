@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
 
   nextCard: {
     flexDirection: "row", alignItems: "center", alignSelf: "stretch", maxWidth: 350,
-    height: 104, borderRadius: 20, paddingHorizontal: 13, marginTop: 9,
+    minHeight: 104, borderRadius: 20, paddingHorizontal: 13, marginTop: 9,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,

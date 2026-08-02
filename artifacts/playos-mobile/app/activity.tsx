@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   ringPct: { position: "absolute", top: 33, fontSize: 17, fontWeight: "700", color: RING_INK },
   ringLabel: { fontSize: 9, color: SUBTLE, marginTop: 4 },
 
-  weekCard: { ...glassCard, height: 92, borderRadius: 22, marginTop: spacing.xl, justifyContent: "center" },
+  weekCard: { ...glassCard, minHeight: 92, borderRadius: 22, marginTop: spacing.xl, justifyContent: "center" },
   weekRow: { flexDirection: "row", justifyContent: "space-around", paddingHorizontal: 8 },
   dayCol: { alignItems: "center", width: 36 },
   dayLabel: { fontSize: 11, color: MUTED },

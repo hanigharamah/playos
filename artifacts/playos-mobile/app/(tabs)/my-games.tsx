@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   underlinePast: { marginLeft: 179 },
 
   row: {
-    flexDirection: "row", alignItems: "center", height: 104, borderRadius: 18, padding: 13,
+    flexDirection: "row", alignItems: "center", minHeight: 104, borderRadius: 18, padding: 13,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     marginBottom: 16,

@@ -176,7 +176,7 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, color: "#FA810B", marginLeft: 14, flex: 1 },
 
   matchCard: {
-    flexDirection: "row", height: 92, borderRadius: 18, marginTop: 26, padding: 11,
+    flexDirection: "row", minHeight: 92, borderRadius: 18, marginTop: 26, padding: 11,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },

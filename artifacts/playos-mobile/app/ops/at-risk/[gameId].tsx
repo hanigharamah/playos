@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 60 },
 
-  statsCard: { ...card, flexDirection: "row", justifyContent: "space-between", height: 84, borderRadius: 20, paddingHorizontal: 19, paddingTop: 17 },
+  statsCard: { ...card, flexDirection: "row", justifyContent: "space-between", minHeight: 84, borderRadius: 20, paddingHorizontal: 19, paddingTop: 17 },
   statNum: { fontSize: 30, fontWeight: "700", color: INK },
   statNumBad: { color: RED },
   statLabel: { fontSize: 10, fontWeight: "600", color: MUTED, marginTop: 6, letterSpacing: 0.3 },

@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 140 },
 
-  matchCard: { ...card, flexDirection: "row", height: 92, borderRadius: 18, padding: 11 },
+  matchCard: { ...card, flexDirection: "row", minHeight: 92, borderRadius: 18, padding: 11 },
   thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
   matchText: { flex: 1, marginLeft: 12, paddingTop: 4 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },

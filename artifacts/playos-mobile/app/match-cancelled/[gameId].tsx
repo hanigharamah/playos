@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
   sub: { fontSize: 15.5, fontWeight: "600", color: INK, marginTop: 6 },
 
   matchCard: {
-    flexDirection: "row", alignItems: "center", height: 92, borderRadius: 18, padding: 11, marginTop: 25,
+    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11, marginTop: 25,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
