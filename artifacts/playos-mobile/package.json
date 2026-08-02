@@ -8,11 +8,12 @@
     "ios": "expo run:ios",
     "android": "expo run:android",
     "prebuild": "expo prebuild",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && node scripts/check-patterns.mjs",
     "eas:build:ios": "eas build --platform ios --profile development",
     "eas:build:android": "eas build --platform android --profile development",
     "eas:build:preview": "eas build --profile preview",
-    "eas:submit": "eas submit"
+    "eas:submit": "eas submit",
+    "check:patterns": "node scripts/check-patterns.mjs"
   },
   "dependencies": {
     "@babel/runtime": "^7.24.0",
