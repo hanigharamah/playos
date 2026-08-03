@@ -9,6 +9,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { screen } from "@/lib/analytics";
 
 const INK = "#1C1C1E";
@@ -76,13 +77,15 @@ export default function LocationPermission() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statusCard}>
-          <View style={styles.halo}>
-            <Text style={styles.haloGlyph}>◉</Text>
+        <GlassCard variant="soft" round={22} padding={0}>
+          <View style={styles.statusCard}>
+            <View style={styles.halo}>
+              <Text style={styles.haloGlyph}>◉</Text>
+            </View>
+            <Text style={styles.statusTitle}>location is off</Text>
+            <Text style={styles.statusBody}>we cannot sort matches by distance without it</Text>
           </View>
-          <Text style={styles.statusTitle}>location is off</Text>
-          <Text style={styles.statusBody}>we cannot sort matches by distance without it</Text>
-        </View>
+        </GlassCard>
 
         <Callout
           tone="neutral"
@@ -145,11 +148,8 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 180 },
 
-  statusCard: {
-    borderRadius: 22, paddingVertical: 19, alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Layout only — fill, stroke and shadows come from <GlassCard>.
+  statusCard: { paddingVertical: 19, alignItems: "center" },
   halo: {
     width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(58,58,62,0.08)",
