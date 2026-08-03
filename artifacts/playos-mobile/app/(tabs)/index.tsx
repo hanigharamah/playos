@@ -96,6 +96,19 @@ export default function Home() {
     return { label: `check-in opens in ${formatOpensIn(msToCheckIn)}`, href: `/check-in/${featured.id}` as const };
   })();
   const featuredCount = featured?.bookedCount ?? 0;
+
+  /**
+   * Where a booking row leads. The hero already routes by phase; these rows
+   * used to go to game detail unconditionally, so the same match led to two
+   * different places depending on which copy of it you tapped.
+   */
+  const rowHref = (b: (typeof upcoming)[number]) => {
+    if (b.game.status === "cancelled") return `/match-cancelled/${b.gameId}` as const;
+    const msToKickoff = new Date(b.game.kickoffTime).getTime() - serverNow();
+    if (msToKickoff <= CHECK_IN_OPENS_MS) return `/match/${b.gameId}` as const;
+    if (isSameDay(new Date(b.game.kickoffTime), new Date())) return `/check-in/${b.gameId}` as const;
+    return `/game/${b.gameId}` as const;
+  };
   const shownAvatars = Math.min(featuredCount, 4);
   const overflow = featuredCount - shownAvatars;
 
@@ -226,7 +239,7 @@ export default function Home() {
         )}
 
         {/* Coming up (Figma 2:33) */}
-        {upcoming.length > 0 && (
+        {upcoming.length > 1 && (
           <View style={{ marginTop: spacing.xl }}>
             <View style={styles.rowBetween}>
               <HandwrittenHeader style={styles.sectionLabel}>coming up</HandwrittenHeader>
@@ -237,11 +250,15 @@ export default function Home() {
                 <Text style={styles.viewAll}>see all</Text>
               </Pressable>
             </View>
-            {upcoming.slice(0, 2).map((b) => {
+            {/* slice(1) — the hero above IS upcoming[0]. Rendering from 0 put
+                the player's next match on screen twice, as a big card and
+                again as the first row under it, and the two disagreed on
+                where they led. */}
+            {upcoming.slice(1, 3).map((b) => {
               const teamSize = b.game.capacity / 2;
               const rowTonight = isSameDay(new Date(b.game.kickoffTime), new Date());
               return (
-                <Pressable key={b.id} onPress={() => router.push(`/game/${b.gameId}`)}>
+                <Pressable key={b.id} onPress={() => router.push(rowHref(b))}>
                   <View style={styles.miniCard}>
                     <Image
                       source={{ uri: getVenuePhoto(b.game.pitchName, b.game.pitchPhotoUrl) }}
@@ -253,7 +270,7 @@ export default function Home() {
                           ? `TONIGHT • ${format(new Date(b.game.kickoffTime), "h:mm a")}`
                           : format(new Date(b.game.kickoffTime), "EEE • h:mm a").toUpperCase()}
                       </Text>
-                      <Text style={styles.miniTitle} numberOfLines={1}>{b.game.title}</Text>
+                      <Text style={styles.miniTitle} numberOfLines={1}>{b.game.pitchName}</Text>
                       <Text style={styles.miniSub}>{teamSize}v{teamSize}</Text>
                     </View>
                   </View>
