@@ -96,6 +96,27 @@ choose; after that auto-refund CASH, never a token by default. Tokens expire
 **30 days** (Figma 680:542 still says 60 — stale). Auto-cancel when fewer than
 10 of 12 are checked in at T-10.
 
+### Match day — ratified 3 Aug 2026 (supersedes earlier notes)
+
+Four money states, and only four:
+
+| Event | Money | Spot |
+|---|---|---|
+| Cancel > 26h before kickoff | refunded | released |
+| Cancel <= 26h before kickoff | kept | released |
+| Ignores the T-12h reconfirm ask | untouched | keeps it |
+| No-show at T-10 | kept | released to a sub |
+
+- **No auto-anything.** No auto-cancel, no scheduled no-show sweep. The
+  operator calls players at T-10 and marks the no-show by hand.
+- Check-in is bound to the clock, never to a place. **No geofence**, and the
+  button is never gated on location.
+- Squad size is parametric per pitch — read `games.capacity`, never hardcode.
+- Missing check-in costs the FULL fee. The handoff's "loses no money and loses
+  no booking" line is wrong; push 3's "a sub takes your shirt" is right.
+- The T-12h ask carries no money consequence. It is a nudge that keeps the
+  game on, and needs only a `reconfirmed` flag so mini-bar state 1 can vanish.
+
 ## Edge, errors & ops (⚠️ page)
 
 | Screen | Node | Code |
