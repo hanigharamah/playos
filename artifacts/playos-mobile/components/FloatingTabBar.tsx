@@ -1,7 +1,7 @@
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { BlurView } from "expo-blur";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Home, Calendar, MessageCircle, User } from "lucide-react-native";
+import { Home, Calendar, User } from "lucide-react-native";
 
 // Minimal shape of @react-navigation/bottom-tabs' BottomTabBarProps —
 // the package is only a transitive dep of expo-router, so its types
@@ -36,11 +36,16 @@ function FootballIcon({ size = 26, color = ICON }: { size?: number; color?: stri
   );
 }
 
+/**
+ * Four tabs, not five. Apple's guidance is three to five on iPhone, and the
+ * reason for the ceiling is the one that applied here: every extra tab shrinks
+ * the target. Play was a duplicate of Browse — same query, same aggregation —
+ * and Chat was a tab that rendered its empty state for every user, every time.
+ */
 const TABS: Record<string, { label: string; icon: (color: string) => React.ReactNode }> = {
   index: { label: "home", icon: (c) => <Home size={24} color={c} strokeWidth={1.8} /> },
-  play: { label: "play", icon: (c) => <FootballIcon size={24} color={c} /> },
+  browse: { label: "browse", icon: (c) => <FootballIcon size={24} color={c} /> },
   "my-games": { label: "bookings", icon: (c) => <Calendar size={24} color={c} strokeWidth={1.8} /> },
-  chat: { label: "chat", icon: (c) => <MessageCircle size={24} color={c} strokeWidth={1.8} /> },
   settings: { label: "profile", icon: (c) => <User size={24} color={c} strokeWidth={1.8} /> },
 };
 

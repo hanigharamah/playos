@@ -21,7 +21,7 @@ regenerating it.)
 | Figma component | Node | Code |
 |---|---|---|
 | Match Card | 71:276 | `components/MatchCard.tsx` |
-| Bottom Nav | 34:2 | `app/(tabs)/_layout.tsx` (tab bar config) |
+| Bottom Nav | 34:2 | `app/(tabs)/_layout.tsx` + `components/FloatingTabBar.tsx` — **four tabs, not the mock's five** (see "Four tabs" below) |
 | Dot Wave / 2 / Corner / Vortex | 71:247 / 247:399 / 247:400 / 253:398 | `components/DotWaveBackground.tsx` |
 | PlayOS/Pitch + Pitch/Position + Pitch Selector | 213:327 / 213:326 / 215:316 | `components/PitchSVG.tsx` |
 | PlayOS/CTA/Join Match | 214:316 | `components/GradientPillButton.tsx` |
@@ -42,12 +42,12 @@ Checkout is node **345:364** (dev notes 432:550).
 |---|---|---|
 | Home | 1:2 | `app/(tabs)/index.tsx` |
 | Checkout | 345:364 | `app/checkout/[bookingId].tsx` |
-| Play | 1:3 | `app/(tabs)/play.tsx` |
+| Play | 1:3 | **deleted** — was a duplicate of Browse; its `areas near you` strip lives in `app/(tabs)/browse.tsx` |
 | Game Detail (standalone Figma page) | 552:483 | `app/game/[id].tsx` |
 | Bookings | 1:5 | `app/(tabs)/my-games.tsx` |
 | Chats | 1:6 | `app/(tabs)/chat.tsx` |
 | Profile | 1:7 | `app/(tabs)/settings.tsx` |
-| Browse + Browse-Matches | 1:8 / 324:315 | `app/browse.tsx` (tabbed) — keeps a back arrow the mock omits, by decision |
+| Browse + Browse-Matches | 1:8 / 324:315 | `app/(tabs)/browse.tsx` (tabbed) — a tab since the 5→4 cut; keeps a back arrow the mock omits, by decision |
 | Activity | 1:9 | `app/activity.tsx` |
 | Countdown | 1:10 | `app/countdown/[id].tsx` |
 | Post-match | 1:11 | `app/post-match/[id].tsx` |
@@ -77,7 +77,24 @@ design call, so both are left in place.
 
 - **Browse keeps its back arrow.** Node 1:8 has no back control and puts the
   search bar at y=52; the arrow pushes it ~36pt lower. Ratified by the product
-  owner — do not remove it to match the mock.
+  owner — do not remove it to match the mock. Since Browse became a tab it is
+  gated on `router.canGoBack()`: it still renders wherever Browse was pushed
+  from, and gives way to the page title at the tab root, where it would be a
+  dead tap.
+
+- **Four tabs, not the mock's five** (home · browse · bookings · profile).
+  Apple's guidance is three to five on iPhone, and the reason for the ceiling
+  is the one that applied here — each extra tab shrinks the target. Play was a
+  duplicate of Browse (same query, same venue aggregation) and was deleted.
+  Chat left the bar but kept its route (`href: null`). Node 34:2 draws five;
+  that is a component mapping, not a ratified rule, and the four-tab set wins.
+
+- **Chat is a 40-minute surface, reached from the match room only.** It is
+  alive T-20 → T+20 and nowhere else. There is deliberately no player-facing
+  chat history: the 30-day retention is for OPERATORS, and messages a player
+  needs after the soft-close reach them as push. Do not add a chat tab, a
+  profile row, or any other player-side list — that has been tried and cut.
+  `app/(tabs)/chat.tsx` stays on its route for the operator surface to use.
 
 ## Product rules (decided — full log on the 📐 Handoff page)
 
@@ -192,7 +209,7 @@ Built:
 | Loading · Browse skeleton | 698:553 | `components/Skeleton.tsx` → `BrowseSkeleton`, used by `app/browse.tsx` |
 | Loading · Bookings skeleton | 698:595 | `components/Skeleton.tsx` → `BookingsSkeleton`, used by `app/(tabs)/my-games.tsx` |
 | Loading · Game detail skeleton | 698:636 | `components/Skeleton.tsx` → `GameDetailSkeleton`, used by `app/game/[id].tsx` |
-| Empty · Play tab, nothing live | 697:506 | `components/PlayNothingLive.tsx`, used by `app/(tabs)/play.tsx` |
+| Empty · nothing live at all | 697:506 | `components/PlayNothingLive.tsx`, used by `app/(tabs)/browse.tsx` when the whole feed is empty |
 | Empty · Venues, no results | 697:540 | `components/BrowseEmpty.tsx` → `VenuesEmpty`, used by `app/browse.tsx` |
 | Empty · Matches, no results | 697:585 | `components/BrowseEmpty.tsx` → `MatchesEmpty`, used by `app/browse.tsx` |
 | Permission · Location denied | 696:620 | `app/permission/location.tsx` |

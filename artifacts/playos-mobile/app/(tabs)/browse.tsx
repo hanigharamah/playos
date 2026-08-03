@@ -1,14 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, type LayoutChangeEvent } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { Search, ArrowLeft } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { VenuesEmpty, MatchesEmpty } from "@/components/BrowseEmpty";
+import { PlayNothingLive } from "@/components/PlayNothingLive";
+import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
+import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -34,8 +38,14 @@ const GLOWS = [
 export default function Browse() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Browse is a tab screen now, so the match-day bar renders over it and its
+  // content has to drop by the bar's height while it shows (Figma 834:470).
+  const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { data: games, isLoading, isError } = useListGames();
-  const [query, setQuery] = useState("");
+  // permission/location.tsx replaces to /browse with the chosen area. Nothing
+  // read it, so picking an area landed on an unfiltered list.
+  const { area } = useLocalSearchParams<{ area?: string }>();
+  const [query, setQuery] = useState(area ?? "");
   const [tab, setTab] = useState<Tab>("venues");
 
   useEffect(() => { screen("Browse"); }, []);
@@ -73,13 +83,36 @@ export default function Browse() {
     return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
   }, [matches]);
 
+  // Areas near you (Figma 3:12) — carried over from the Play tab, which this
+  // screen absorbed. Derived from the whole feed, not the filtered list, so
+  // the strip stays put while a search narrows the rows beneath it.
+  const areas = useMemo(() => {
+    const map = new Map<string, { count: number; photo: string | null }>();
+    for (const g of games ?? []) {
+      const existing = map.get(g.pitchName);
+      map.set(g.pitchName, { count: (existing?.count ?? 0) + 1, photo: existing?.photo ?? g.pitchPhotoUrl });
+    }
+    return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count).slice(0, 6);
+  }, [games]);
+
+  // At a tab root there is nothing to go back to, so the arrow would be a dead
+  // tap. It still renders when Browse was pushed — from activity, refund, the
+  // location picker or an empty state — which is where it was ratified.
+  const canGoBack = router.canGoBack();
+
   return (
     <View style={{ flex: 1 }}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
-      <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
-      <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
-        <ArrowLeft size={20} color={INK} strokeWidth={2} />
-      </Pressable>
+      <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
+      {canGoBack ? (
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+          <ArrowLeft size={20} color={INK} strokeWidth={2} />
+        </Pressable>
+      ) : (
+        // Without the arrow the screen would start flush against the status
+        // bar, so the tab root gets the title the pushed screen doesn't need.
+        <HandwrittenHeader style={styles.pageTitle}>browse</HandwrittenHeader>
+      )}
 
       {/* Search (Figma 9:3) */}
       <View style={styles.searchBar}>
@@ -92,6 +125,35 @@ export default function Browse() {
           onChangeText={setQuery}
         />
       </View>
+
+      {/* Areas near you (Figma 3:12) */}
+      {areas.length > 0 && (
+        <>
+          <HandwrittenHeader style={styles.areasLabel}>areas near you</HandwrittenHeader>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tileRow}>
+            {areas.map(([name, { count, photo }], i) => (
+              <Pressable
+                key={name}
+                style={styles.areaTile}
+                onPress={() => { setQuery(name); setTab("matches"); }}
+              >
+                <Image source={{ uri: getVenuePhoto(name, photo) }} style={StyleSheet.absoluteFill} />
+                <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(0,0,0,0.62)"]} style={StyleSheet.absoluteFill} />
+                {i === 0 && (
+                  <View style={styles.closestBadge}>
+                    <Text style={styles.closestBadgeText}>most games</Text>
+                  </View>
+                )}
+                <View style={styles.areaTileText}>
+                  <Text style={styles.areaName} numberOfLines={2}>{name}</Text>
+                  {/* TODO: prefix travel time once device location is wired up */}
+                  <Text style={styles.areaMeta}>{count} {count === 1 ? "game" : "games"}</Text>
+                </View>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </>
+      )}
 
       {/* Tabs (Figma 9:7 / 9:8) */}
       <View style={styles.tabs}>
@@ -143,8 +205,13 @@ export default function Browse() {
             );
           }))}
 
+      {/* Nothing live at all (Figma 697:506) — the designed state, carried over
+          from the Play tab. Distinct from a search that matched nothing, which
+          is what the two empties below are for: the feed itself is not empty. */}
+      {!showSkeleton && !isLoading && (games ?? []).length === 0 && <PlayNothingLive />}
+
       {/* Empty states, picked by tab (Figma 697:540 venues / 697:585 matches). */}
-      {!showSkeleton && !isLoading && tab === "venues" && venues.length === 0 && (
+      {!showSkeleton && !isLoading && (games ?? []).length > 0 && tab === "venues" && venues.length === 0 && (
         <VenuesEmpty
             query={query}
             allGames={games ?? []}
@@ -152,7 +219,7 @@ export default function Browse() {
             onPickVenue={(name) => { setQuery(name); setTab("matches"); }}
           />
       )}
-      {!showSkeleton && !isLoading && tab === "matches" && matches.length === 0 && (
+      {!showSkeleton && !isLoading && (games ?? []).length > 0 && tab === "matches" && matches.length === 0 && (
         <MatchesEmpty query={query} allGames={games ?? []} onClearSearch={() => setQuery("")} />
       )}
     </ScrollView>
@@ -165,6 +232,25 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 130 },
 
   back: { height: 28, justifyContent: "center", marginBottom: 8 },
+  pageTitle: { fontSize: 34, color: "#FF9F0A", marginBottom: 18 },
+
+  // Ported from the Play tab, which Browse absorbed — geometry unchanged.
+  areasLabel: { fontSize: 20, marginTop: spacing.xl },
+  tileRow: { gap: 10, marginTop: spacing.md, paddingRight: spacing.lg },
+  areaTile: {
+    width: 105, height: 130, borderRadius: 16, overflow: "hidden", justifyContent: "flex-end",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
+  },
+  closestBadge: {
+    position: "absolute", top: 8, left: 8,
+    backgroundColor: "rgba(255,138,0,0.9)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 11,
+    shadowColor: "#E56600", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 2,
+  },
+  closestBadgeText: { fontSize: 10, fontWeight: "600", color: "#FFFFFF" },
+  areaTileText: { padding: 10 },
+  areaName: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
+  areaMeta: { fontSize: 10, color: "#FFFFFF", marginTop: 4 },
 
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 2,

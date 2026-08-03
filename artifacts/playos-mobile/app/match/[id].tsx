@@ -7,10 +7,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format } from "date-fns";
 import * as Haptics from "expo-haptics";
-import { Check, X } from "lucide-react-native";
+import { Check, MessageCircle, X } from "lucide-react-native";
 import {
   useGameRoster, useGetGame, useGetMyBookings, useCheckIn, useClaimSide, useStartMatch,
-  MIN_PLAYERS_TO_START, type RosterEntry,
+  useGetOrCreateGameChat, MIN_PLAYERS_TO_START, type RosterEntry,
 } from "@/lib/api";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { GlassCard } from "@/components/GlassCard";
@@ -97,9 +97,25 @@ export default function MatchDay() {
   const checkIn = useCheckIn();
   const claimSide = useClaimSide();
   const startMatch = useStartMatch();
+  const gameChat = useGetOrCreateGameChat();
 
   const [pendingTeam, setPendingTeam] = useState<1 | 2 | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+
+  // The RPC creates the conversation on first open and returns the existing one
+  // after that, so the chat starts existing the moment someone asks for it.
+  // Declared after `notice` because it writes to it.
+  const openChat = () => {
+    if (!id) return;
+    gameChat.mutate(
+      { gameId: id },
+      {
+        onSuccess: (conversationId) => router.push(`/chat/${conversationId}`),
+        onError: (err: any) =>
+          setNotice(err?.data?.error ?? "Couldn't open the group chat — try again."),
+      },
+    );
+  };
   /** 3 → 2 → 1 → 0 after our own start succeeds. Null = not counting. */
   const [countdown, setCountdown] = useState<number | null>(null);
   const [sawCoinFlip, setSawCoinFlip] = useState(false);
@@ -252,6 +268,22 @@ export default function MatchDay() {
             <Text style={styles.headerSub}>{format(kickoff, "EEEE, d MMMM")} · {kickoffLabel}</Text>
           )}
         </View>
+        {/* The group chat's only real entry point. It is alive for the same
+            window this room is, so it is reached from here rather than from a
+            permanent tab. The RPC rejects anyone without a booking, and the
+            phases below are the ones inside that window. */}
+        {["check_in", "pick_side", "waiting", "hold", "teams"].includes(phase) && (
+          <Pressable
+            onPress={openChat}
+            disabled={gameChat.isPending}
+            hitSlop={10}
+            style={styles.close}
+            accessibilityRole="button"
+            accessibilityLabel="Open group chat"
+          >
+            <MessageCircle size={15} color={MUTED} strokeWidth={2.2} />
+          </Pressable>
+        )}
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.close} accessibilityLabel="Close">
           <X size={14} color={MUTED} strokeWidth={2.5} />
         </Pressable>
