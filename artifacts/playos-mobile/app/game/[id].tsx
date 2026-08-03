@@ -428,10 +428,13 @@ const styles = StyleSheet.create({
   infoDivider: { width: 1, backgroundColor: "rgba(33,28,51,0.08)", marginVertical: 4 },
 
   pitchCard: { marginHorizontal: GUTTER, marginTop: 20, borderRadius: 18, padding: 11 },
-  pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
+  // Centred: the Team A / Team B legend used to sit opposite the label, so
+  // space-between held it left. With the legend gone it was a lone heading
+  // pinned to one edge of a card whose pitch runs the full width.
+  pitchHeader: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   pitchLabel: { fontSize: 12.5, fontWeight: "600", color: INK },
   pitchWrap: { borderRadius: 12, overflow: "hidden", aspectRatio: 326 / 122, marginTop: 12 },
-  pitchFooter: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12, paddingHorizontal: 4 },
+  pitchFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12 },
   pitchFooterText: { fontSize: 10, color: MUTED },
   pitchFooterSpots: { fontSize: 10, fontWeight: "600", color: colors.orange },
 

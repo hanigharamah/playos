@@ -49,13 +49,13 @@ const POSITIONS: Record<number, Pos[]> = {
  * The turf was #F6EADE — within a few percent of the page's own #FFF8F0, so
  * the pitch barely separated from the card behind it and the white line work
  * had almost nothing to sit against. It is now a warm clay, dark enough for
- * the lines to read and for the team dots to sit ON something, and it keeps
+ * the lines to read and for the spots to sit ON something, and it keeps
  * the cream family rather than jumping to a green that belongs to a different
  * app. Vertical gradient so it has depth instead of reading as a flat swatch.
  */
 const LINE = "rgba(255,255,255,0.92)";
-const TURF_TOP = "#C8A784";
-const TURF_BOTTOM = "#AD8A66";
+const TURF_TOP = "#D9BC9A";
+const TURF_BOTTOM = "#C09B78";
 /** Open slots: light on the dark turf now, where they used to be dark on light. */
 const EMPTY = "rgba(255,255,255,0.6)";
 /** Design pitch is 326×122 (wide + short); slot POSITIONS were tuned on a
