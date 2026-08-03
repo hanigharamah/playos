@@ -16,6 +16,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { colors } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -282,23 +283,28 @@ export default function ChatThread() {
       )}
 
       <View style={styles.inputWrap}>
-        <View style={styles.inputPill}>
-          <TextInput
-            style={styles.input}
-            placeholder="message the group…"
-            placeholderTextColor="#ADADB2"
-            value={body}
-            onChangeText={setBody}
-            multiline
-          />
-          <Pressable
-            onPress={() => void trySend(body.trim())}
-            disabled={!body.trim() || sendMessage.isPending}
-            style={[styles.sendBtn, !body.trim() && styles.sendBtnOff]}
-          >
-            <Text style={styles.sendGlyph}>↑</Text>
-          </Pressable>
-        </View>
+        {/* Composer chrome, so the blurred "solid" variant: the thread scrolls
+            underneath it and the whole point of the material is that what is
+            behind it bends as it moves. */}
+        <GlassCard round={26} padding={0}>
+          <View style={styles.inputPill}>
+            <TextInput
+              style={styles.input}
+              placeholder="message the group…"
+              placeholderTextColor="#ADADB2"
+              value={body}
+              onChangeText={setBody}
+              multiline
+            />
+            <Pressable
+              onPress={() => void trySend(body.trim())}
+              disabled={!body.trim() || sendMessage.isPending}
+              style={[styles.sendBtn, !body.trim() && styles.sendBtnOff]}
+            >
+              <Text style={styles.sendGlyph}>↑</Text>
+            </Pressable>
+          </View>
+        </GlassCard>
         <Text style={styles.retention}>chat closes {CHAT_CLOSES_MINUTES_AFTER} minutes after full time</Text>
       </View>
     </KeyboardAvoidingView>
@@ -344,10 +350,9 @@ const styles = StyleSheet.create({
   disc: { fontSize: 13, fontWeight: "700", color: "#3A3A3E" },
 
   inputWrap: { paddingHorizontal: 20, paddingBottom: 20 },
+  // Layout only — fill, stroke and shadows come from <GlassCard>.
   inputPill: {
-    flexDirection: "row", alignItems: "center", minHeight: 52, borderRadius: 26, paddingLeft: 17, paddingRight: 7,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    flexDirection: "row", alignItems: "center", minHeight: 52, paddingLeft: 17, paddingRight: 7,
   },
   input: { flex: 1, fontSize: 14, color: INK, maxHeight: 100, paddingVertical: 14 },
   sendBtn: { width: 36, height: 36, borderRadius: 18, backgroundColor: colors.orange, alignItems: "center", justifyContent: "center" },
