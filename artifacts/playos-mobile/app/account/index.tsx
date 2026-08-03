@@ -8,7 +8,8 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
-import { useGetMe, useGetMyCredits, useSignedAvatarUrls, useUploadMyAvatar } from "@/lib/api";
+import { useGetMe, useGetMyCredits, useSignedAvatarUrls, useUploadMyAvatar, useSetAvatarPreset } from "@/lib/api";
+import { allAvatarPresets } from "@/lib/avatarPresets";
 import { registerForPush } from "@/lib/notifications";
 import { resetAnalytics, track, screen } from "@/lib/analytics";
 import { colors, spacing } from "@/lib/theme";
@@ -47,6 +48,7 @@ export default function Settings() {
   // fetch — it has to be signed before it can be shown.
   const { data: avatarUrls } = useSignedAvatarUrls([me?.avatarUrl]);
   const uploadAvatar = useUploadMyAvatar();
+  const setPreset = useSetAvatarPreset();
   const myAvatarUri = me?.avatarUrl ? avatarUrls?.[me.avatarUrl] : undefined;
 
   useEffect(() => {
@@ -171,7 +173,7 @@ export default function Settings() {
           signed URL that could not be minted — so this disc is never empty. */}
       <Pressable style={styles.avatarBlock} onPress={pickAvatar} disabled={uploadAvatar.isPending}>
         <View>
-          <Avatar name={me?.name ?? "?"} uri={myAvatarUri} size={84} />
+          <Avatar name={me?.name ?? "?"} uri={myAvatarUri} preset={me?.avatarPreset} size={84} />
           {uploadAvatar.isPending ? (
             // Indeterminate on purpose. supabase-js uploads over fetch, which
             // reports no progress events, and a cropped avatar is a sub-second
@@ -189,6 +191,40 @@ export default function Settings() {
           {uploadAvatar.isPending ? "uploading…" : me?.avatarUrl ? "change photo" : "add a photo"}
         </Text>
       </Pressable>
+
+      {/* The cartoon row. Listed BELOW the photo because a photo outranks it,
+          but it is the option that actually gets used on day one: a photo
+          needs an upload nobody has done yet, and initials give ~35 players
+          about nine distinguishable discs. One tap, one column write, no
+          permission prompt. Hidden once a photo exists, since the photo wins
+          and offering a choice that changes nothing is a dead control. */}
+      {!me?.avatarUrl && (
+        <View style={styles.presetBlock}>
+          <Text style={styles.presetLabel}>or pick a character</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.presetRow}
+          >
+            {allAvatarPresets(52).map(({ id }) => {
+              const chosen = me?.avatarPreset === id;
+              return (
+                <Pressable
+                  key={id}
+                  onPress={() => setPreset.mutate({ preset: chosen ? null : id })}
+                  disabled={setPreset.isPending}
+                  style={[styles.presetPick, chosen && styles.presetPickOn]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: chosen }}
+                  accessibilityLabel={`Character ${id}${chosen ? ", selected" : ""}`}
+                >
+                  <Avatar name="?" preset={id} size={52} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      )}
 
       <Text style={styles.section}>ACCOUNT</Text>
       <Row icon={<UserIcon size={22} color={INK} strokeWidth={1.8} />} label="personal info" value={me?.name ?? "—"} />
@@ -287,6 +323,12 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(28,28,30,0.45)",
   },
+  presetBlock: { marginTop: 18 },
+  presetLabel: { fontSize: 12, fontWeight: "600", color: MUTED, marginLeft: 20, marginBottom: 10 },
+  presetRow: { gap: 10, paddingHorizontal: 20, paddingVertical: 4 },
+  // Tapping the chosen one clears it, so the ring has to be unmistakable.
+  presetPick: { borderRadius: 28, padding: 2, borderWidth: 2, borderColor: "transparent" },
+  presetPickOn: { borderColor: colors.orange },
   avatarHint: { fontSize: 13, fontWeight: "600", color: "#C96A00" },
 
   row: { ...rowSurface, flexDirection: "row", alignItems: "center", height: 54, borderRadius: 16, paddingHorizontal: 11, marginBottom: 8 },

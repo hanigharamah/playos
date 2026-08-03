@@ -17,6 +17,8 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.24.0",
+    "@dicebear/collection": "^9.4.2",
+    "@dicebear/core": "^9.4.3",
     "@expo-google-fonts/caveat": "^0.2.3",
     "@expo-google-fonts/pacifico": "^0.4.1",
     "@expo/metro-runtime": "~6.1.2",

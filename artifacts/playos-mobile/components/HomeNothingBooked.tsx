@@ -114,6 +114,7 @@ export function HomeNothingBooked({
                     <Avatar
                       name={p.firstName}
                       uri={p.avatarPath ? avatarUrls?.[p.avatarPath] : undefined}
+                      preset={p.avatarPreset}
                       size={26}
                     />
                   </View>

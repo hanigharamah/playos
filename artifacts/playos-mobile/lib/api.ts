@@ -20,6 +20,8 @@ export interface AuthUser {
   name: string;
   role: "player" | "operator" | "host" | "admin";
   createdAt: string;
+  /** 1-10, or null when no cartoon avatar has been picked. */
+  avatarPreset: number | null;
   /**
    * Storage object path in the private `avatars` bucket, NOT a displayable
    * URL — sign it with `useSignedAvatarUrls` before handing it to <Avatar>.
@@ -179,6 +181,7 @@ export function useGetMe() {
       return {
         id: data.id, email: data.email, phone: data.phone,
         name: data.name, role: data.role, createdAt: data.created_at,
+        avatarPreset: data.avatar_preset ?? null,
         avatarUrl: data.avatar_url ?? null,
       };
     },
@@ -222,6 +225,7 @@ export function useLogin() {
       const user: AuthUser = {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
+        avatarPreset: profile.avatar_preset ?? null,
         avatarUrl: profile.avatar_url ?? null,
       };
       queryClient.setQueryData(qk.me, user);
@@ -252,6 +256,7 @@ export function useSignUp() {
       const user: AuthUser = {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
+        avatarPreset: profile.avatar_preset ?? null,
         avatarUrl: profile.avatar_url ?? null,
       };
       queryClient.setQueryData(qk.me, user);
@@ -560,6 +565,8 @@ export function useCancelBooking() {
 export interface LineupPlayer {
   firstName: string;
   avatarPath: string | null;
+  /** 1-10 cartoon preset, or null. Photo wins over preset wins over initial. */
+  avatarPreset: number | null;
 }
 
 export function useGameLineup(gameId: string | null, limit = 3) {
@@ -573,13 +580,22 @@ export function useGameLineup(gameId: string | null, limit = 3) {
         p_limit: limit,
       });
       if (error) return null;
-      const rows = (data ?? []) as { first_name: string | null; avatar_url?: string | null; total: number }[];
+      const rows = (data ?? []) as {
+        first_name: string | null;
+        avatar_url?: string | null;
+        avatar_preset?: number | null;
+        total: number;
+      }[];
       if (rows.length === 0) return null;
       // Drop the nameless in one pass rather than two, so a disc and the
       // sentence can never disagree about who is in the lineup.
       const players: LineupPlayer[] = rows
         .filter((r): r is typeof r & { first_name: string } => !!r.first_name)
-        .map((r) => ({ firstName: r.first_name, avatarPath: r.avatar_url ?? null }));
+        .map((r) => ({
+          firstName: r.first_name,
+          avatarPath: r.avatar_url ?? null,
+          avatarPreset: r.avatar_preset ?? null,
+        }));
       return {
         players,
         names: players.map((p) => p.firstName),
@@ -757,6 +773,41 @@ export function gameFillLabel(g: GameSummary): { text: string; atRisk: boolean }
   const short = MIN_PLAYERS_TO_START - g.bookedCount;
   if (short > 0) return { text: `needs ${short} more`, atRisk: true };
   return { text: `${spots} ${spots === 1 ? "spot" : "spots"} left`, atRisk: false };
+}
+
+/**
+ * Pick one of the ten cartoon avatars. A single column write, which is why
+ * this is the option every player can use on day one: no bucket, no upload,
+ * no permission prompt, no moderation. The column grant in
+ * 2026-08-avatar-presets.sql is what makes it self-writable, and a check
+ * constraint rejects an id the app could not render.
+ */
+export function useSetAvatarPreset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { preset: number | null }) => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (!uid) throw { data: { error: "Not signed in" } };
+      const { error } = await supabase
+        .from("users").update({ avatar_preset: vars.preset }).eq("id", uid);
+      if (error) {
+        throw {
+          data: {
+            error:
+              (error as any).code === "42501"
+                ? "Couldn't save that — please reload the app and try again."
+                : error.message,
+          },
+        };
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.me });
+      // Every promo card carries this player's disc.
+      queryClient.invalidateQueries({ queryKey: ["game-lineup"] });
+    },
+  });
 }
 
 /** Wallet token balance shown on the Profile screen. */
