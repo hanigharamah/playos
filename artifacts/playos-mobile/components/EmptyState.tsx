@@ -1,6 +1,6 @@
 import { View, Text, StyleSheet } from "react-native";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { Btn3D } from "@/components/Btn3D";
+import { BtnOutline } from "@/components/BtnOutline";
 import { spacing } from "@/lib/theme";
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   title: string;
   /** One-line explanation under the headline. */
   body: string;
-  /** Optional primary action, rendered as the app's Btn3D CTA. */
+  /** Optional primary action, rendered as the app's glass CTA. */
   actionLabel?: string;
   onAction?: () => void;
 }
@@ -19,7 +19,7 @@ interface Props {
  * Shared empty-state layout — exact port of the Figma empty screens
  * (Bookings-Empty 353:400, Chats-Empty 353:471, Activity-Empty 353:546):
  * peach halo badge, script headline, muted body — with the mock's lavender
- * gradient CTA deliberately replaced by Btn3D, see the note at the call site.
+ * gradient CTA deliberately replaced by glass, see the note at the call site.
  */
 export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) {
   return (
@@ -28,15 +28,15 @@ export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) 
       <HandwrittenHeader style={styles.title}>{title}</HandwrittenHeader>
       <Text style={styles.body}>{body}</Text>
       {/*
-       * Btn3D, not the mock's pink-to-lavender gradient. That CTA was the only
+       * Glass, not the mock's pink-to-lavender gradient. That CTA was the only
        * thing in the app in that colour family — 20pt purple text on pink over
        * cream, under a magenta glow — and it appears on the empty Bookings,
        * Activity and Chats screens, so it read as a different app's button.
-       * Btn3D is the ratified primary CTA (FIGMA-MAP: fixed four-stop orange,
-       * never a flat colour, one per screen), which is what this is.
+       * BtnOutline in the accent tone puts it in the same liquid glass as
+       * every other surface, with warm amber text carrying the action.
        */}
       {actionLabel && onAction && (
-        <Btn3D label={actionLabel} onPress={onAction} style={styles.cta} />
+        <BtnOutline label={actionLabel} tone="accent" onPress={onAction} style={styles.cta} />
       )}
     </View>
   );
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, marginTop: 26, textAlign: "center" },
   body: { fontSize: 14, color: "#6C6C70", textAlign: "center", marginTop: 12, paddingHorizontal: spacing.lg },
-  // Geometry and shadow now come from Btn3D; only the spacing above it is ours.
+  // Geometry and shadow come from BtnOutline; only the spacing above is ours.
   cta: { marginTop: 34, alignSelf: "stretch" },
 
   card: {

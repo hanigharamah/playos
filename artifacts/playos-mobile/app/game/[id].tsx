@@ -31,6 +31,16 @@ const BODY = "#4D475C";
 const TITLE_ORANGE = "#FF9E0A";
 
 /**
+ * One gutter for the whole screen. It was six — 12, 15, 16, 21, 22 and 25 —
+ * so every section started at a different left edge, and the pitch card was
+ * outright asymmetric (15 left, 25 right) and visibly off-centre. 20 is what
+ * browse, bookings and profile already use; Apple's floor is 16.
+ * Vertical rhythm is on the 8pt grid too: 32 between major blocks, 24 between
+ * sections, 12 between a heading and its content.
+ */
+const GUTTER = 20;
+
+/**
  * Game detail — 1:1 port of the standalone Figma "Game Detail" page
  * (node 552:483, its own page in the file — supersedes the older 1:4).
  * Booking mechanics unchanged: tap a slot → Join match → checkout.
@@ -373,7 +383,7 @@ const styles = StyleSheet.create({
   // fixed 57, which is LESS than a Dynamic Island inset (59), so the back
   // and share buttons sat under the island and the title scrolled up
   // behind the clock.
-  nav: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 21 },
+  nav: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: GUTTER },
   navCircle: {
     width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", overflow: "hidden",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
@@ -384,9 +394,9 @@ const styles = StyleSheet.create({
     shadowColor: "#D9B08C", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 9, elevation: 3,
   },
 
-  title: { fontSize: 31, fontWeight: "700", color: TITLE_ORANGE, marginTop: 24, marginLeft: 22, marginRight: 22 },
+  title: { fontSize: 31, fontWeight: "700", color: TITLE_ORANGE, marginTop: 24, marginHorizontal: GUTTER },
 
-  metaRow: { flexDirection: "row", gap: 8, marginTop: 22, paddingHorizontal: 21 },
+  metaRow: { flexDirection: "row", gap: 8, marginTop: 16, paddingHorizontal: GUTTER },
   metaPill: {
     flexDirection: "row", alignItems: "center", gap: 5,
     height: 19, paddingHorizontal: 9, borderRadius: 9.5,
@@ -403,7 +413,7 @@ const styles = StyleSheet.create({
 
   spotsCard: {
     flexDirection: "row", alignItems: "center",
-    marginHorizontal: 16, marginTop: 26, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 11,
+    marginHorizontal: GUTTER, marginTop: 24, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 11,
   },
   spotsLine: { flexDirection: "row", alignItems: "baseline", gap: 6 },
   spotsNumber: { fontSize: 24, fontWeight: "700", color: colors.orange },
@@ -421,19 +431,19 @@ const styles = StyleSheet.create({
   getReady: {
     flexDirection: "row", justifyContent: "space-between", alignItems: "center",
     backgroundColor: colors.orange + "1A", borderRadius: 14,
-    marginHorizontal: 16, marginTop: 14, paddingVertical: 12, paddingHorizontal: 16,
+    marginHorizontal: GUTTER, marginTop: 12, paddingVertical: 12, paddingHorizontal: 16,
   },
   getReadyText: { fontSize: 13, fontWeight: "700", color: colors.orange },
 
-  aboutRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 22, paddingHorizontal: 22, gap: 12 },
+  aboutRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 24, paddingHorizontal: GUTTER, gap: 12 },
   aboutLabel: { fontSize: 10, fontWeight: "600", color: INK },
   aboutBody: { fontSize: 8, color: BODY, marginTop: 6 },
   rulePills: { gap: 8, alignItems: "flex-end" },
   rulePill: { flexDirection: "row", alignItems: "center", gap: 5, height: 25, paddingHorizontal: 8, borderRadius: 16 },
   rulePillText: { fontSize: 8.5, fontWeight: "600", color: INK },
 
-  venueLabel: { fontSize: 12, fontWeight: "600", color: INK, marginTop: 26, marginLeft: 22 },
-  venueRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 14, paddingHorizontal: 22, gap: 12 },
+  venueLabel: { fontSize: 12, fontWeight: "600", color: INK, marginTop: 24, marginLeft: GUTTER },
+  venueRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 12, paddingHorizontal: GUTTER, gap: 12 },
   venueNameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   venueName: { fontSize: 13, fontWeight: "600", color: INK },
   venueAddr: { fontSize: 11, color: MUTED, marginTop: 8, marginLeft: 25 },
@@ -444,7 +454,7 @@ const styles = StyleSheet.create({
   mapLine: { position: "absolute", left: -40, width: 230, height: 2, backgroundColor: "rgba(255,255,255,0.95)" },
   mapLineV: { position: "absolute", top: -40, width: 2, height: 180, backgroundColor: "rgba(255,255,255,0.95)" },
 
-  infoGrid: { flexDirection: "row", marginHorizontal: 12, marginTop: 22, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 4 },
+  infoGrid: { flexDirection: "row", marginHorizontal: GUTTER, marginTop: 24, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 4 },
   infoCol: { flex: 1, paddingHorizontal: 9 },
   infoHead: { flexDirection: "row", alignItems: "center", gap: 5 },
   infoLabel: { fontSize: 8.5, color: MUTED },
@@ -453,19 +463,19 @@ const styles = StyleSheet.create({
   infoSub: { fontSize: 8.5, color: "#8A7D73", marginTop: 4 },
   infoDivider: { width: 1, backgroundColor: "rgba(33,28,51,0.08)", marginVertical: 4 },
 
-  pitchCard: { marginLeft: 15, marginRight: 25, marginTop: 33, borderRadius: 18, padding: 11 },
+  pitchCard: { marginHorizontal: GUTTER, marginTop: 32, borderRadius: 18, padding: 11 },
   pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
   pitchLabel: { fontSize: 12.5, fontWeight: "600", color: INK },
   pitchWrap: { borderRadius: 12, overflow: "hidden", aspectRatio: 326 / 122, marginTop: 12 },
   pitchFooter: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12, paddingHorizontal: 4 },
   pitchFooterText: { fontSize: 10, color: MUTED },
-  pitchFooterSpots: { fontSize: 10, fontWeight: "600", color: colors.orange, marginTop: 4, marginLeft: 22 },
+  pitchFooterSpots: { fontSize: 10, fontWeight: "600", color: colors.orange },
 
   error: { color: colors.danger, textAlign: "center", marginTop: 12 },
 
   ctaCard: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginHorizontal: 12, marginTop: 33, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 7,
+    marginHorizontal: GUTTER, marginTop: 32, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 7,
   },
   ctaPrice: { fontSize: 17.5, fontWeight: "700", color: INK },
   ctaPer: { fontSize: 10, color: MUTED, marginTop: 4 },
