@@ -104,15 +104,22 @@ export default function BookingConfirmed() {
 
       {/* Success badge with halo rings + sparks */}
       <View style={styles.badgeArea}>
-        {SPARKS.map((s, i) => (
-          <View
-            key={i}
-            style={[
-              styles.spark,
-              { left: s.x, top: s.y, width: s.s, height: s.s, borderRadius: s.s / 2, opacity: s.o },
-            ]}
-          />
-        ))}
+        {/* The spark coordinates are absolute pixels tuned to the 390pt frame,
+            so measured from the screen edge they drifted left of the centred
+            badge on a wider phone. Holding them in a fixed 350-wide centred
+            field keeps the drawn scatter exactly as designed and centres it on
+            any width — scaling the coordinates would stretch the spread. */}
+        <View style={styles.sparkField} pointerEvents="none">
+          {SPARKS.map((s, i) => (
+            <View
+              key={i}
+              style={[
+                styles.spark,
+                { left: s.x, top: s.y, width: s.s, height: s.s, borderRadius: s.s / 2, opacity: s.o },
+              ]}
+            />
+          ))}
+        </View>
         <View style={styles.haloOuter}>
           <View style={styles.haloInner}>
             <View style={styles.badge}>
@@ -187,6 +194,9 @@ const styles = StyleSheet.create({
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 },
 
   badgeArea: { height: 210, alignItems: "center", justifyContent: "center", marginTop: 4 },
+  // 350 is the frame width the SPARKS coordinates were drawn against
+  // (390pt device less the screen's 20pt gutters).
+  sparkField: { position: "absolute", top: 0, bottom: 0, width: 350, alignSelf: "center" },
   spark: { position: "absolute", backgroundColor: ACCENT },
   haloOuter: {
     width: 180, height: 180, borderRadius: 90, alignItems: "center", justifyContent: "center",
