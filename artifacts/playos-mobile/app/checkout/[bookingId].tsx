@@ -8,6 +8,7 @@ import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { screen, track } from "@/lib/analytics";
 
@@ -103,27 +104,29 @@ export default function Checkout() {
             before now, so they confirmed a charge with nothing to check it
             against. */}
         {game && (
-          <View style={styles.matchCard}>
-            <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
-            <View style={styles.matchText}>
-              <Text style={styles.matchTitle} numberOfLines={1}>
-                {Math.floor(game.capacity / 2)}v{Math.floor(game.capacity / 2)} · {game.pitchName}
-              </Text>
-              <Text style={styles.matchSub}>
-                {kickoff && isSameDay(kickoff, new Date()) ? "Today" : kickoff ? format(kickoff, "EEE") : ""}
-                {kickoff ? ` · ${format(kickoff, "h:mm a")}` : ""}
-              </Text>
-              {/* The mock also shows "· 2.3 km away". No location data exists. */}
-              {spotsLeft !== null && spotsLeft > 0 && (
-                <Text style={styles.matchSpots}>{spotsLeft} {spotsLeft === 1 ? "spot" : "spots"}</Text>
-              )}
+          <GlassCard variant="soft" round={18} padding={0}>
+            <View style={styles.matchInner}>
+              <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+              <View style={styles.matchText}>
+                <Text style={styles.matchTitle} numberOfLines={1}>
+                  {Math.floor(game.capacity / 2)}v{Math.floor(game.capacity / 2)} · {game.pitchName}
+                </Text>
+                <Text style={styles.matchSub}>
+                  {kickoff && isSameDay(kickoff, new Date()) ? "Today" : kickoff ? format(kickoff, "EEE") : ""}
+                  {kickoff ? ` · ${format(kickoff, "h:mm a")}` : ""}
+                </Text>
+                {/* The mock also shows "· 2.3 km away". No location data exists. */}
+                {spotsLeft !== null && spotsLeft > 0 && (
+                  <Text style={styles.matchSpots}>{spotsLeft} {spotsLeft === 1 ? "spot" : "spots"}</Text>
+                )}
+              </View>
             </View>
-          </View>
+          </GlassCard>
         )}
 
         <Text style={styles.payWith}>pay with</Text>
 
-        <View style={styles.methodsCard}>
+        <GlassCard variant="soft" round={18} padding={0}>
           {METHODS.map((m, i) => {
             const selected = method === m.key;
             return (
@@ -151,7 +154,7 @@ export default function Checkout() {
               </View>
             );
           })}
-        </View>
+        </GlassCard>
 
         {/* Computed from kickoff per the dev note, not a fixed string. */}
         {freeUntil && (
@@ -174,17 +177,6 @@ export default function Checkout() {
   );
 }
 
-const card = {
-  backgroundColor: "rgba(255,255,255,0.55)",
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.85)",
-  shadowColor: "#8C5926",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.12,
-  shadowRadius: 16,
-  elevation: 3,
-};
-
 const styles = StyleSheet.create({
   // paddingTop comes from the safe-area inset at the call site; the fixed
   // value was smaller than the Dynamic Island's inset.
@@ -201,7 +193,9 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 140 },
 
-  matchCard: { ...card, flexDirection: "row", minHeight: 92, borderRadius: 18, padding: 11 },
+  // Layout only — fill, stroke and shadows come from <GlassCard>, and the row
+  // has to sit on the inner view the children lay out in.
+  matchInner: { flexDirection: "row", minHeight: 92, padding: 11 },
   thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
   matchText: { flex: 1, marginLeft: 12, paddingTop: 4 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
@@ -212,7 +206,6 @@ const styles = StyleSheet.create({
 
   payWith: { fontSize: 13, color: MUTED, marginTop: 28, marginBottom: 10 },
 
-  methodsCard: { ...card, borderRadius: 18, overflow: "hidden" },
   divider: { height: 1, backgroundColor: "#EADFD4", marginHorizontal: 15 },
   methodRow: { flexDirection: "row", alignItems: "center", minHeight: 52, paddingHorizontal: 19, paddingVertical: 14 },
   methodText: { flex: 1 },
