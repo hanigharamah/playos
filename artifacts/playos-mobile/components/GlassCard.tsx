@@ -9,9 +9,16 @@ interface Props extends ViewProps {
   /** Corner radius — defaults to radius.xl (24) per the Figma glass spec. */
   round?: number;
   /**
-   * "solid" (default): white 78% + backdrop blur — nav chrome, CTA bars.
-   * "soft": white 42%, no blur — content cards sitting on the warm canvas
-   * (the Figma booking page uses this for spots/venue/info/pitch cards).
+   * "solid" (default): heavier fill and blur — nav chrome, CTA bars.
+   * "soft": thinner fill and a LIGHTER blur — content cards sitting on the
+   * warm canvas. Lighter than solid, never zero: soft used to have no blur at
+   * all, which made every card converted to it keep the gradient and the rim
+   * but none of the actual glass, so the conversions were invisible.
+   *
+   * KNOWN GAP: soft carries no Android elevation, because Android draws the
+   * elevation shadow THROUGH a translucent background and a 26% fill would
+   * bloom grey inside the card. Soft cards therefore have no drop shadow on
+   * Android — needs testing on a real device to decide which is worse.
    */
   variant?: "solid" | "soft";
 }
@@ -50,9 +57,12 @@ export function GlassCard({ style, children, padding = 16, round = radius.xl, va
       {/* Tight contact shadow — where the object meets the surface. */}
       <View style={[styles.contact, { borderRadius: round }]}>
         <BlurView
-          // No blur on `soft` by design, and none on Android where BlurView is
-          // a no-op — the gradient below carries the treatment on both.
-          intensity={!soft && Platform.OS === "ios" ? 40 : 0}
+          // BOTH variants blur on iOS. `soft` used to be blur-free, which meant
+          // every card converted to it kept the gradient and the rim but none
+          // of the actual glass — the backdrop never bent, so the conversions
+          // were invisible. Soft blurs lighter than solid, not zero.
+          // Android is a no-op either way; the gradient carries it there.
+          intensity={Platform.OS !== "ios" ? 0 : soft ? 22 : 40}
           tint="light"
           style={[
             styles.card,
@@ -109,7 +119,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   solidFill: { backgroundColor: "rgba(255,255,255,0.52)" },
-  softFill: { backgroundColor: "rgba(255,255,255,0.34)" },
+  softFill: { backgroundColor: "rgba(255,255,255,0.26)" },
   /** Android's shadow, on the layer that actually has a fill to cast it. */
   cardElevated: { elevation: 4 },
   rim: {
