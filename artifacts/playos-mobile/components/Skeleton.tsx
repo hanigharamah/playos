@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000",
+    shadowColor: "#8C5926",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 8,
@@ -268,7 +268,7 @@ const styles = StyleSheet.create({
   gdBack: {
     position: "absolute", left: 20, top: 52, width: 42, height: 42, borderRadius: 21,
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
   },
   gdCol: { width: "100%", maxWidth: 350, marginTop: 268 },
   gdCard: { borderRadius: 22 },

@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
   },
   backGlyph: { fontSize: 20, fontWeight: "700", color: INK, lineHeight: 22 },
   title: { fontSize: 24, color: ORANGE, marginLeft: 26 },
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
   payWith: { fontSize: 13, color: MUTED, marginTop: 28, marginBottom: 10 },
 
   methodsCard: { ...card, borderRadius: 18, overflow: "hidden" },
-  divider: { height: 1, backgroundColor: "#E6E6E6", marginHorizontal: 15 },
+  divider: { height: 1, backgroundColor: "#EADFD4", marginHorizontal: 15 },
   methodRow: { flexDirection: "row", alignItems: "center", minHeight: 52, paddingHorizontal: 19, paddingVertical: 14 },
   methodText: { flex: 1 },
   methodLabel: { fontSize: 15, fontWeight: "600", color: INK },

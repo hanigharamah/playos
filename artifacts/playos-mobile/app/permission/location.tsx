@@ -138,7 +138,7 @@ const styles = StyleSheet.create({
   backBtn: {
     width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
   },
   backGlyph: { fontSize: 20, fontWeight: "700", color: INK, lineHeight: 22 },
   title: { fontSize: 26, color: "#FA810B", marginLeft: 14, flex: 1 },
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   statusCard: {
     borderRadius: 22, paddingVertical: 19, alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   halo: {
     width: 64, height: 64, borderRadius: 32, alignItems: "center", justifyContent: "center",
@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     width: "48.5%", height: 48, borderRadius: 16, alignItems: "center", justifyContent: "center",
     paddingHorizontal: 10, marginBottom: 10,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   chipActive: { backgroundColor: "rgba(255,138,0,0.12)", borderWidth: 2, borderColor: "#FF9F0A" },
   chipText: { fontSize: 14.5, color: INK },

@@ -9,6 +9,7 @@ import { useMyConversations } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { WarmCanvas } from "@/components/WarmCanvas";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -30,6 +31,11 @@ function stamp(iso?: string | null) {
  * opened chat for; "Messages" (1:1 DMs) has no entry point yet, so it shows
  * an honest empty state rather than fake rows.
  */
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 export default function Chat() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -49,6 +55,7 @@ export default function Chat() {
       {/* Dot vortex corner art, mirrored from Profile (Figma 1:6 header art) */}
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <FlatList
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
         data={list}
@@ -126,14 +133,14 @@ const styles = StyleSheet.create({
 
   segment: {
     flexDirection: "row", height: 44, borderRadius: 22, padding: 3, marginBottom: spacing.lg,
-    backgroundColor: "rgba(255,255,255,0.4)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   segmentHalf: { flex: 1, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   segmentActive: {
-    backgroundColor: "rgba(255,255,255,0.4)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   segmentText: { fontSize: 14, color: MUTED },
@@ -143,7 +150,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", paddingVertical: 12, minHeight: 84,
     // Mock 69:191 rules a 1px #EDEDED line under every row, inset to the
     // text column so it starts past the avatar.
-    borderBottomWidth: 1, borderBottomColor: "#EDEDED",
+    borderBottomWidth: 1, borderBottomColor: "#EFE6DC",
   },
   avatar: { width: 48, height: 48, borderRadius: 24 },
   rowText: { flex: 1, marginLeft: 12 },

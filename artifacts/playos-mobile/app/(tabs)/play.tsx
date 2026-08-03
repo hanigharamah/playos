@@ -203,8 +203,8 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 2,
     height: 44, borderRadius: 14, paddingHorizontal: 11,
-    backgroundColor: "rgba(255,255,255,0.4)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   searchInput: { flex: 1, fontSize: 14, color: INK, padding: 0 },
@@ -250,7 +250,7 @@ const styles = StyleSheet.create({
     width: 72, height: 36, borderRadius: 18,
     backgroundColor: "#F0731F", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
     alignItems: "center", justifyContent: "center",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.25, shadowRadius: 12, elevation: 4,
   },
   joinBtnText: { fontSize: 14, fontWeight: "700", color: "#FFFFFF" },
 

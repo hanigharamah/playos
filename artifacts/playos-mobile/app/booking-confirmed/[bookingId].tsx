@@ -152,7 +152,7 @@ const styles = StyleSheet.create({
 
   back: { height: 42, width: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 },
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2 },
 
   badgeArea: { height: 210, alignItems: "center", justifyContent: "center", marginTop: 4 },
   spark: { position: "absolute", backgroundColor: ACCENT },

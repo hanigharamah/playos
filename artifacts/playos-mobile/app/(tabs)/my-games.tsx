@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { BookingsSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { serverNow } from "@/lib/serverTime";
+import { WarmCanvas } from "@/components/WarmCanvas";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -25,6 +26,11 @@ const STATS_WINDOW_MS = 24 * 60 * 60_000;
 // Exact palette from the Figma Bookings screen (node 1:5)
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
+
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
 
 export default function MyGames() {
   const router = useRouter();
@@ -78,7 +84,9 @@ export default function MyGames() {
   };
 
   return (
-    <FlatList
+    <View style={{ flex: 1 }}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <FlatList
       style={styles.wrap}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
       data={list}
@@ -170,6 +178,7 @@ export default function MyGames() {
         ) : null
       }
     />
+    </View>
   );
 }
 
@@ -184,14 +193,14 @@ const styles = StyleSheet.create({
 
   segment: {
     flexDirection: "row", height: 44, borderRadius: 22, padding: 3,
-    backgroundColor: "rgba(255,255,255,0.4)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   segmentHalf: { flex: 1, borderRadius: 18, alignItems: "center", justifyContent: "center" },
   segmentActive: {
-    backgroundColor: "rgba(255,255,255,0.4)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   segmentText: { fontSize: 14, color: MUTED },

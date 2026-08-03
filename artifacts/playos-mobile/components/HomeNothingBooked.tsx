@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
   hero: {
     borderRadius: 24, marginTop: 12, padding: 19,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   heroPhoto: { height: 110, borderRadius: 16, backgroundColor: "#CFD8C4" },
   spotsBadge: {
@@ -148,7 +148,7 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row", alignItems: "center", height: 68, borderRadius: 18, padding: 9, marginBottom: 12,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   rowThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
   rowText: { flex: 1, marginLeft: 12 },

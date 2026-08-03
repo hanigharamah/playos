@@ -128,7 +128,7 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
   },
   heroDisc: { width: 72, height: 72, borderRadius: 36, alignItems: "center", justifyContent: "center" },
   heroLine: { fontSize: 16, fontWeight: "600", color: "#1C1C1E", marginTop: 12 },

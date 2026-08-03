@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     minHeight: 104, borderRadius: 20, paddingHorizontal: 13, marginTop: 9,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   nextThumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: "#CFD8C4" },
   nextText: { flex: 1, marginLeft: 14 },

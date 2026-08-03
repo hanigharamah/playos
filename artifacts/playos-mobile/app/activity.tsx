@@ -10,6 +10,7 @@ import { useGetMyActivity } from "@/lib/api";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { WarmCanvas } from "@/components/WarmCanvas";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -27,6 +28,11 @@ const SUBTLE = "#8C8780";
  * (supabase/2026-07-activity-and-stats.sql), derived live from check-in
  * history. Layout is a 1:1 port of Figma node 1:9.
  */
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 export default function Activity() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -54,6 +60,7 @@ export default function Activity() {
 
   return (
     <View style={styles.wrap}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.topRow}>

@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", height: 68, borderRadius: 18, padding: 9, marginBottom: 12,
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
   },
   altTitle: { fontSize: 15, fontWeight: "700", color: "#1C1C1E" },
   altSub: { fontSize: 13, color: "#6C6C70", marginTop: 5 },

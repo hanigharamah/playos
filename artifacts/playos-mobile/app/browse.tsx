@@ -8,6 +8,7 @@ import { useListGames } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { VenuesEmpty, MatchesEmpty } from "@/components/BrowseEmpty";
+import { WarmCanvas } from "@/components/WarmCanvas";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -25,6 +26,11 @@ type Tab = "venues" | "matches";
  * wiring, so those are omitted rather than faked. Rows show what's real —
  * venue photo, name, and how many games are open there.
  */
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
+
 export default function Browse() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -68,7 +74,9 @@ export default function Browse() {
   }, [matches]);
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1 }}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
       <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
         <ArrowLeft size={20} color={INK} strokeWidth={2} />
       </Pressable>
@@ -148,6 +156,7 @@ export default function Browse() {
         <MatchesEmpty query={query} allGames={games ?? []} onClearSearch={() => setQuery("")} />
       )}
     </ScrollView>
+    </View>
   );
 }
 
@@ -160,8 +169,8 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 2,
     height: 44, borderRadius: 14, paddingHorizontal: 11,
-    backgroundColor: "rgba(255,255,255,0.4)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.75)",
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
   },
   searchInput: { flex: 1, fontSize: 14, color: INK, padding: 0 },

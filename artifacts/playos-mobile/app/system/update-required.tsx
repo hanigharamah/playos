@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
     height: 110, borderRadius: 20, marginTop: 28, paddingHorizontal: 23,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   versionLabel: { fontSize: 10.5, fontWeight: "600", color: MUTED, letterSpacing: 0.3 },
   versionOld: { fontSize: 24, fontWeight: "700", color: "#ADADB2", marginTop: 6 },

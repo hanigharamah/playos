@@ -10,11 +10,17 @@ import { useGetMe, useGetMyStats, useGetMyCredits } from "@/lib/api";
 import { resetAnalytics, track, screen } from "@/lib/analytics";
 import { registerForPush } from "@/lib/notifications";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { WarmCanvas } from "@/components/WarmCanvas";
 import { colors, spacing } from "@/lib/theme";
 
 // Exact palette from the Figma Profile screen (node 1:7)
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
+
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
 
 export default function Profile() {
   const { signOut } = useAuth();
@@ -75,7 +81,9 @@ export default function Profile() {
   ];
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1 }}>
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
       {/* Dot vortex corner art (Figma 253:398) */}
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 
@@ -134,6 +142,7 @@ export default function Profile() {
         <Text style={styles.signOutText}>sign out</Text>
       </Pressable>
     </ScrollView>
+    </View>
   );
 }
 
@@ -167,7 +176,7 @@ const styles = StyleSheet.create({
   statBlock: { flex: 1, paddingLeft: 27 },
   statNumber: { fontSize: 22, fontWeight: "700", color: INK },
   statLabel: { fontSize: 11, color: MUTED, marginTop: 0 },
-  statDivider: { width: 1, height: 40, backgroundColor: "#E6E6E6" },
+  statDivider: { width: 1, height: 40, backgroundColor: "#EADFD4" },
 
   menuRow: {
     flexDirection: "row", alignItems: "center", height: 54, borderRadius: 16, paddingHorizontal: 11,

@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
     borderRadius: 22, alignItems: "center",
     backgroundColor: "rgba(255,255,255,0.55)",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   disc: {
     width: 64, height: 64, borderRadius: 32, marginTop: 19, alignItems: "center", justifyContent: "center",

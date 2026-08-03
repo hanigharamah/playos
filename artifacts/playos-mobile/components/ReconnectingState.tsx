@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
   banner: {
     flexDirection: "row", alignItems: "center", height: 44, borderRadius: 22, paddingHorizontal: 17,
     backgroundColor: "rgba(255,241,220,0.92)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#C96A00" },
   bannerText: { fontSize: 14, fontWeight: "600", color: "#C96A00", marginLeft: 12 },
@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 20, marginTop: 20, paddingHorizontal: 19, paddingVertical: 17,
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#000000", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   stale: { opacity: STALE_OPACITY },
 

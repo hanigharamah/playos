@@ -43,7 +43,7 @@ export const colors = {
   teamPurple: "#7B4DFF",       // Team B
   glassFill: "rgba(255,255,255,0.78)",
   glassStroke: "rgba(255,255,255,0.9)",
-  warmShadow: "#8A5A3A",       // every card shadow tints warm, never black
+  warmShadow: "#8C5926",       // every card shadow tints warm, never black
 } as const;
 
 export const gradients = {
