@@ -4,7 +4,8 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star, Trophy, Users2 } from "lucide-react-native";
 import { useGetGame, useSubmitMatchStats, useMyMatchStats } from "@/lib/api";
-import { PillButton } from "@/components/PillButton";
+import { Btn3D } from "@/components/Btn3D";
+import { BtnOutline } from "@/components/BtnOutline";
 import { GlassCard } from "@/components/GlassCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
@@ -103,7 +104,10 @@ export default function PostMatch() {
         </GlassCard>
 
         <View style={styles.actions}>
-          <PillButton label="view your activity" onPress={() => router.push("/activity")} fullWidth />
+          {/* The ratified primary CTA is Btn3D's four-stop gradient, never a
+              flat colour, one per screen. This branch's sole action was the one
+              button in the app that didn't look like a primary action. */}
+          <Btn3D label="view your activity" onPress={() => router.push("/activity")} />
           <Pressable onPress={() => router.replace("/(tabs)")}><Text style={styles.backLink}>back to home</Text></Pressable>
         </View>
       </View>
@@ -157,12 +161,20 @@ export default function PostMatch() {
           <ActivityIndicator color={colors.orange} style={{ marginTop: spacing.lg }} />
         ) : (
           <View style={{ marginTop: spacing.lg }}>
-            <PillButton label="Submit" onPress={submit} fullWidth />
+            <Btn3D label="Submit" onPress={submit} />
           </View>
         )}
       </GlassCard>
 
-      <PillButton label="book your next match" onPress={() => router.replace("/browse")} fullWidth />
+      {/* Secondary, deliberately. In this branch Submit is the primary action —
+          promoting this one too would put two gradient CTAs on screen and rank
+          leaving the form above finishing it. */}
+      <BtnOutline
+        label="book your next match"
+        tone="neutral"
+        onPress={() => router.replace("/browse")}
+        style={{ marginTop: spacing.lg }}
+      />
 
       <Pressable onPress={() => router.replace("/(tabs)")}><Text style={styles.skipLink}>skip for now</Text></Pressable>
     </View>

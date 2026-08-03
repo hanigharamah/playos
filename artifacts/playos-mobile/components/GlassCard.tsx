@@ -24,6 +24,10 @@ export function GlassCard({ style, children, padding = 16, round = radius.xl, va
   if (variant === "soft") {
     return (
       <View style={[styles.shadowWrap, { borderRadius: round }, style]} {...rest}>
+        {/* No elevation on `soft`: its fill is 42%, and Android draws the
+            elevation shadow THROUGH a translucent background, which would
+            bloom grey inside the card. Deliberately iOS-only until the fill
+            is opaque enough to carry it. */}
         <View style={[styles.card, styles.soft, { borderRadius: round, padding }]}>{children}</View>
       </View>
     );
@@ -33,7 +37,7 @@ export function GlassCard({ style, children, padding = 16, round = radius.xl, va
       <BlurView
         intensity={Platform.OS === "ios" ? 28 : 0}
         tint="light"
-        style={[styles.card, { borderRadius: round, padding }]}
+        style={[styles.card, styles.cardElevated, { borderRadius: round, padding }]}
       >
         {children}
       </BlurView>
@@ -48,7 +52,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.12,
     shadowRadius: 16,
-    elevation: 4,
+    // NO elevation here. Android derives its shadow from the view's background
+    // outline, and this wrap is deliberately transparent — so `elevation` on it
+    // drew nothing, and every glass card in the app was a flat white rectangle
+    // on Android while floating correctly on iOS. The iOS shadow props stay:
+    // they work fine on a transparent view.
     backgroundColor: "transparent",
   },
   card: {
@@ -57,6 +65,8 @@ const styles = StyleSheet.create({
     borderColor: colors.glassStroke,
     overflow: "hidden",
   },
+  /** Android's shadow, on the layer that actually has a fill to cast it. */
+  cardElevated: { elevation: 4 },
   soft: {
     backgroundColor: "rgba(255,255,255,0.42)",
   },

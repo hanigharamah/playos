@@ -82,11 +82,19 @@ const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 16, right: 16, alignItems: "center" },
   shadow: {
     borderRadius: 30, width: "100%", maxWidth: 358,
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.18, shadowRadius: 14, elevation: 8,
+    // No elevation here — this view has no background, and Android derives its
+    // shadow from the background outline. It lives on `bar` below, which does.
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.18, shadowRadius: 14,
   },
   bar: {
     flexDirection: "row", height: 68, borderRadius: 30, overflow: "hidden",
-    backgroundColor: "rgba(255,255,255,0.62)", borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
+    // Android gets no blur (intensity 0), so 62% white left scrolled list text
+    // legible straight through the bar and running under the tab labels — the
+    // one piece of persistent chrome reading as a smudge rather than glass.
+    // With no blur doing the work, the fill has to.
+    backgroundColor: Platform.OS === "ios" ? "rgba(255,255,255,0.62)" : "rgba(255,255,255,0.88)",
+    elevation: 8,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
     alignItems: "center", paddingHorizontal: 4,
   },
   tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingTop: 4 },

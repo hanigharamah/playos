@@ -10,7 +10,13 @@ export function Avatar({ name, uri, size = 44 }: { name: string; uri?: string; s
   }
   return (
     <LinearGradient
-      colors={[gradients.vivid[1], gradients.vivid[3]]}
+      // `vivid` is the WEB app's price/occupancy palette. Its coral end put a
+      // white initial at ~2.7:1 — under even the large-text floor — and made
+      // avatars the loudest thing on a soft cream-and-lavender screen. `cta` is
+      // the redesign's own peach→lavender, and deep ink on it lands near 10:1.
+      // Matters most in the ops at-risk list, where the operator is scanning
+      // names by eye at T-10.
+      colors={gradients.cta}
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={[styles.wrap, { width: size, height: size, borderRadius: size / 2 }]}
@@ -22,5 +28,5 @@ export function Avatar({ name, uri, size = 44 }: { name: string; uri?: string; s
 
 const styles = StyleSheet.create({
   wrap: { alignItems: "center", justifyContent: "center" },
-  txt: { color: "#FFFFFF", fontWeight: "700" },
+  txt: { color: colors.inkDeep, fontWeight: "700" },
 });
