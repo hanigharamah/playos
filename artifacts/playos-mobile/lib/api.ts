@@ -174,6 +174,26 @@ export function useGetMe() {
   });
 }
 
+/**
+ * Sends the password-reset email. Deliberately resolves the same way whether
+ * or not the address has an account — telling a stranger which emails are
+ * registered is an account-enumeration leak, and Supabase returns success
+ * either way for that reason.
+ *
+ * NOTE: where the emailed link lands is the Site URL configured in Supabase,
+ * not something this app controls. Completing the reset inside the app would
+ * need a `playos://` redirect on the allowlist and a PASSWORD_RECOVERY branch
+ * in lib/auth.tsx; neither exists yet.
+ */
+export function useRequestPasswordReset() {
+  return useMutation({
+    mutationFn: async (vars: { email: string }) => {
+      const { error } = await supabase.auth.resetPasswordForEmail(vars.email);
+      if (error) throw { data: { error: error.message } };
+    },
+  });
+}
+
 export function useLogin() {
   const queryClient = useQueryClient();
   return useMutation({
