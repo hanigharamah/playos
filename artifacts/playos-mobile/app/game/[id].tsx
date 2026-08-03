@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { format } from "date-fns";
-import { ArrowLeft, ArrowRight, Share2, Users, Clock, Navigation, MapPin, Calendar, Grid3x3, BarChart3, Lock, ShieldCheck } from "lucide-react-native";
+import { ArrowLeft, ArrowRight, Share2, Users, Clock, Navigation, MapPin, Calendar, Lock, ShieldCheck } from "lucide-react-native";
 import { MIN_PLAYERS_TO_START } from "@/lib/api";
 import { useGetMyBookings, useGetGame, useBookSpot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -142,7 +142,7 @@ export default function GameDetail() {
     <View style={styles.wrap}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Full-bleed hero photo (Figma 602:8 — 455×251, bleeds both edges) */}
-        <View style={[styles.hero, { height: 251 + insets.top }]} pointerEvents="none">
+        <View style={[styles.hero, { height: 214 + insets.top }]} pointerEvents="none">
           <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.heroImg} />
           <LinearGradient
             colors={["transparent", "rgba(255,248,240,0.65)", "#FFF8F0"]}
@@ -212,19 +212,6 @@ export default function GameDetail() {
           </Pressable>
         )}
 
-        {/* About + rule pills */}
-        <View style={styles.aboutRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.aboutLabel}>about the match</Text>
-            {/* `games` has no description column; the mock's blurb was
-                hardcoded and identical on every match. Show the real title. */}
-            <Text style={styles.aboutBody}>{game.title}</Text>
-          </View>
-          {/* The mock's rule pills ("Fair play", "No slide tackles") have no
-              rules column behind them and rendered identically on every match,
-              so they're omitted until per-game rules exist. */}
-        </View>
-
         {/* Venue (flat, sits directly on the canvas per the design) */}
         <Text style={styles.venueLabel}>venue</Text>
         <View style={styles.venueRow}>
@@ -263,23 +250,6 @@ export default function GameDetail() {
               <Text style={styles.infoLabel}>Kickoff</Text>
             </View>
             <Text style={styles.infoValue}>{format(kickoff, "h:mm a")}</Text>
-          </View>
-          <View style={styles.infoDivider} />
-          <View style={styles.infoCol}>
-            <View style={styles.infoHead}>
-              <Grid3x3 size={13} color={colors.purpleSoft} strokeWidth={2} />
-              <Text style={styles.infoLabel}>Format</Text>
-            </View>
-            <Text style={styles.infoValue}>{teamSize}v{teamSize}</Text>
-          </View>
-          <View style={styles.infoDivider} />
-          <View style={styles.infoCol}>
-            <View style={styles.infoHead}>
-              <BarChart3 size={13} color="#ED5C87" strokeWidth={2} />
-              <Text style={styles.infoLabel}>Level</Text>
-            </View>
-            {/* TODO: bind to game.skillLevel once the backend field exists */}
-            <Text style={styles.infoValueSm}>—</Text>
           </View>
         </View>
 
@@ -394,7 +364,7 @@ const styles = StyleSheet.create({
     shadowColor: "#D9B08C", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 9, elevation: 3,
   },
 
-  title: { fontSize: 31, fontWeight: "700", color: TITLE_ORANGE, marginTop: 24, marginHorizontal: GUTTER },
+  title: { fontSize: 31, fontWeight: "700", color: TITLE_ORANGE, marginTop: 16, marginHorizontal: GUTTER },
 
   metaRow: { flexDirection: "row", gap: 8, marginTop: 16, paddingHorizontal: GUTTER },
   metaPill: {
@@ -413,7 +383,7 @@ const styles = StyleSheet.create({
 
   spotsCard: {
     flexDirection: "row", alignItems: "center",
-    marginHorizontal: GUTTER, marginTop: 24, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 11,
+    marginHorizontal: GUTTER, marginTop: 16, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 11,
   },
   spotsLine: { flexDirection: "row", alignItems: "baseline", gap: 6 },
   spotsNumber: { fontSize: 24, fontWeight: "700", color: colors.orange },
@@ -435,15 +405,9 @@ const styles = StyleSheet.create({
   },
   getReadyText: { fontSize: 13, fontWeight: "700", color: colors.orange },
 
-  aboutRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 24, paddingHorizontal: GUTTER, gap: 12 },
-  aboutLabel: { fontSize: 10, fontWeight: "600", color: INK },
-  aboutBody: { fontSize: 8, color: BODY, marginTop: 6 },
-  rulePills: { gap: 8, alignItems: "flex-end" },
-  rulePill: { flexDirection: "row", alignItems: "center", gap: 5, height: 25, paddingHorizontal: 8, borderRadius: 16 },
-  rulePillText: { fontSize: 8.5, fontWeight: "600", color: INK },
 
-  venueLabel: { fontSize: 12, fontWeight: "600", color: INK, marginTop: 24, marginLeft: GUTTER },
-  venueRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 12, paddingHorizontal: GUTTER, gap: 12 },
+  venueLabel: { fontSize: 12, fontWeight: "600", color: INK, marginTop: 16, marginLeft: GUTTER },
+  venueRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 10, paddingHorizontal: GUTTER, gap: 12 },
   venueNameRow: { flexDirection: "row", alignItems: "center", gap: 7 },
   venueName: { fontSize: 13, fontWeight: "600", color: INK },
   venueAddr: { fontSize: 11, color: MUTED, marginTop: 8, marginLeft: 25 },
@@ -454,7 +418,7 @@ const styles = StyleSheet.create({
   mapLine: { position: "absolute", left: -40, width: 230, height: 2, backgroundColor: "rgba(255,255,255,0.95)" },
   mapLineV: { position: "absolute", top: -40, width: 2, height: 180, backgroundColor: "rgba(255,255,255,0.95)" },
 
-  infoGrid: { flexDirection: "row", marginHorizontal: GUTTER, marginTop: 24, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 4 },
+  infoGrid: { flexDirection: "row", marginHorizontal: GUTTER, marginTop: 16, borderRadius: 16, paddingVertical: 8, paddingHorizontal: 4 },
   infoCol: { flex: 1, paddingHorizontal: 9 },
   infoHead: { flexDirection: "row", alignItems: "center", gap: 5 },
   infoLabel: { fontSize: 8.5, color: MUTED },
@@ -463,7 +427,7 @@ const styles = StyleSheet.create({
   infoSub: { fontSize: 8.5, color: "#8A7D73", marginTop: 4 },
   infoDivider: { width: 1, backgroundColor: "rgba(33,28,51,0.08)", marginVertical: 4 },
 
-  pitchCard: { marginHorizontal: GUTTER, marginTop: 32, borderRadius: 18, padding: 11 },
+  pitchCard: { marginHorizontal: GUTTER, marginTop: 20, borderRadius: 18, padding: 11 },
   pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
   pitchLabel: { fontSize: 12.5, fontWeight: "600", color: INK },
   pitchWrap: { borderRadius: 12, overflow: "hidden", aspectRatio: 326 / 122, marginTop: 12 },
@@ -475,7 +439,7 @@ const styles = StyleSheet.create({
 
   ctaCard: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    marginHorizontal: GUTTER, marginTop: 32, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 7,
+    marginHorizontal: GUTTER, marginTop: 20, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 7,
   },
   ctaPrice: { fontSize: 17.5, fontWeight: "700", color: INK },
   ctaPer: { fontSize: 10, color: MUTED, marginTop: 4 },
@@ -488,6 +452,6 @@ const styles = StyleSheet.create({
   ctaBtnText: { fontSize: 13.5, fontWeight: "600", color: "#FFFFFF" },
   ctaOrb: { width: 30, height: 30, borderRadius: 15, backgroundColor: "#FFFFFF", alignItems: "center", justifyContent: "center" },
 
-  secureRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 33 },
+  secureRow: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, marginTop: 16 },
   secureText: { fontSize: 13, color: "#807873" },
 });
