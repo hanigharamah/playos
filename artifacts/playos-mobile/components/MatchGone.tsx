@@ -4,6 +4,7 @@ import { format, isSameDay } from "date-fns";
 import { useListGames } from "@/lib/api";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors } from "@/lib/theme";
@@ -45,16 +46,20 @@ export function MatchGone() {
             const teamSize = g.capacity / 2;
             const spots = g.capacity - g.bookedCount;
             return (
-              <Pressable key={g.id} style={styles.altRow} onPress={() => router.replace(`/game/${g.id}`)}>
-                <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.altThumb} />
-                <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={styles.altTitle}>{teamSize}v{teamSize}  ·  {g.pitchName}</Text>
-                  <Text style={styles.altSub}>
-                    {isSameDay(kickoff, new Date()) ? format(kickoff, "h:mm a") : format(kickoff, "EEE · h:mm a")}
-                    {"  ·  "}{spots} {spots === 1 ? "spot" : "spots"}
-                  </Text>
-                </View>
-                <Text style={styles.altPrice}>SAR {g.price}</Text>
+              <Pressable key={g.id} onPress={() => router.replace(`/game/${g.id}`)}>
+                <GlassCard variant="soft" round={18} padding={0} style={styles.altCard}>
+                  <View style={styles.altRow}>
+                    <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.altThumb} />
+                    <View style={{ flex: 1, marginLeft: 12 }}>
+                      <Text style={styles.altTitle}>{teamSize}v{teamSize}  ·  {g.pitchName}</Text>
+                      <Text style={styles.altSub}>
+                        {isSameDay(kickoff, new Date()) ? format(kickoff, "h:mm a") : format(kickoff, "EEE · h:mm a")}
+                        {"  ·  "}{spots} {spots === 1 ? "spot" : "spots"}
+                      </Text>
+                    </View>
+                    <Text style={styles.altPrice}>SAR {g.price}</Text>
+                  </View>
+                </GlassCard>
               </Pressable>
             );
           })}
@@ -71,12 +76,9 @@ const styles = StyleSheet.create({
   altBlock: { marginTop: 24 },
   altLabel: { fontSize: 22, color: "#FF9F0A", marginBottom: 10, marginLeft: 4 },
   altThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
-  altRow: {
-    flexDirection: "row", alignItems: "center", height: 68, borderRadius: 18, padding: 9, marginBottom: 12,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
-  },
+  altCard: { marginBottom: 12 },
+  // minHeight, not the fixed 68 it was: the row holds two lines of text.
+  altRow: { flexDirection: "row", alignItems: "center", minHeight: 68, padding: 9 },
   altTitle: { fontSize: 15, fontWeight: "700", color: "#1C1C1E" },
   altSub: { fontSize: 13, color: "#6C6C70", marginTop: 5 },
   altPrice: { fontSize: 14, fontWeight: "600", color: "#1C1C1E" },
