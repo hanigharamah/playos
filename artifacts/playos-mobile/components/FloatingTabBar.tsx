@@ -23,16 +23,16 @@ import { scrollTabToTop } from "@/lib/scrollToTop";
 
 const LABEL = "#6C6C70";
 const ICON = "#4A4A4E";
-const CHIP = "rgba(255,138,0,0.12)";
+const ACTIVE = "#1C1C1E";
 
-function FootballIcon({ size = 26, color = ICON }: { size?: number; color?: string }) {
+function FootballIcon({ size = 26, color = ICON, strokeWidth = 1.8 }: { size?: number; color?: string; strokeWidth?: number }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 24 24">
-      <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={1.8} fill="none" />
-      <Path d="M12 7.2l3.2 2.4-1.2 3.9h-4l-1.2-3.9z" stroke={color} strokeWidth={1.8} fill="none" strokeLinejoin="round" />
+      <Circle cx={12} cy={12} r={9} stroke={color} strokeWidth={strokeWidth} fill="none" />
+      <Path d="M12 7.2l3.2 2.4-1.2 3.9h-4l-1.2-3.9z" stroke={color} strokeWidth={strokeWidth} fill="none" strokeLinejoin="round" />
       <Path
         d="M12 7.2V3.2M15.2 9.6l3.6-1.4M14 13.5l2.4 3.1M10 13.5l-2.4 3.1M8.8 9.6 5.2 8.2"
-        stroke={color} strokeWidth={1.8} strokeLinecap="round" fill="none"
+        stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" fill="none"
       />
     </Svg>
   );
@@ -44,11 +44,11 @@ function FootballIcon({ size = 26, color = ICON }: { size?: number; color?: stri
  * the target. Play was a duplicate of Browse — same query, same aggregation —
  * and Chat was a tab that rendered its empty state for every user, every time.
  */
-const TABS: Record<string, { label: string; icon: (color: string) => React.ReactNode }> = {
-  index: { label: "home", icon: (c) => <Home size={24} color={c} strokeWidth={1.8} /> },
-  browse: { label: "browse", icon: (c) => <FootballIcon size={24} color={c} /> },
-  "my-games": { label: "bookings", icon: (c) => <Calendar size={24} color={c} strokeWidth={1.8} /> },
-  settings: { label: "profile", icon: (c) => <User size={24} color={c} strokeWidth={1.8} /> },
+const TABS: Record<string, { label: string; icon: (color: string, weight: number) => React.ReactNode }> = {
+  index: { label: "home", icon: (c, w) => <Home size={22} color={c} strokeWidth={w} /> },
+  browse: { label: "browse", icon: (c, w) => <FootballIcon size={22} color={c} strokeWidth={w} /> },
+  "my-games": { label: "bookings", icon: (c, w) => <Calendar size={22} color={c} strokeWidth={w} /> },
+  settings: { label: "profile", icon: (c, w) => <User size={22} color={c} strokeWidth={w} /> },
 };
 
 export function FloatingTabBar({ state, navigation }: TabBarProps) {
@@ -85,9 +85,11 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
             };
             return (
               <Pressable key={route.key} style={styles.tab} onPress={onPress} hitSlop={6}>
-                <View style={[styles.chip, active && { backgroundColor: CHIP }]}>
-                  {meta.icon(active ? "#3A3A3C" : ICON)}
-                </View>
+                {/* No chip behind the active icon. It was 48x34 and was what
+                    made the bar read chunky; the active state is carried by
+                    ink and weight instead, which is how iOS system tab bars
+                    and every compact floating bar do it. */}
+                {meta.icon(active ? ACTIVE : ICON, active ? 2.3 : 1.7)}
                 <Text style={[styles.label, active && styles.labelActive]}>{meta.label}</Text>
               </Pressable>
             );
@@ -100,27 +102,29 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { position: "absolute", left: 16, right: 16, alignItems: "center" },
+  wrap: { position: "absolute", left: 0, right: 0, alignItems: "center" },
   // Wide ambient shadow. No elevation here — this view has no background, and
   // Android derives its shadow from the background outline. It lives on `bar`.
   shadow: {
-    borderRadius: 30, width: "100%", maxWidth: 358,
+    // Narrow like Uber's: the pill sits well inside the screen edges
+    // instead of spanning it. 300 is about 76% of a 393pt phone.
+    borderRadius: 26, width: "100%", maxWidth: 300,
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.16, shadowRadius: 30,
   },
   /** Tight contact shadow, so the bar sits on the screen rather than hovering. */
   contact: {
-    borderRadius: 30,
+    borderRadius: 26,
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 6,
   },
   rim: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 30, borderWidth: 1, borderColor: "transparent",
+    borderRadius: 26, borderWidth: 1, borderColor: "transparent",
     borderTopColor: "rgba(255,255,255,0.95)",
     borderLeftColor: "rgba(255,255,255,0.5)",
     borderRightColor: "rgba(255,255,255,0.5)",
   },
   bar: {
-    flexDirection: "row", height: 68, borderRadius: 30, overflow: "hidden",
+    flexDirection: "row", height: 58, borderRadius: 26, overflow: "hidden",
     // Android gets no blur (intensity 0), so 62% white left scrolled list text
     // legible straight through the bar and running under the tab labels — the
     // one piece of persistent chrome reading as a smudge rather than glass.
@@ -130,8 +134,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
     alignItems: "center", paddingHorizontal: 4,
   },
-  tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 2, paddingTop: 4 },
-  chip: { width: 48, height: 34, borderRadius: 15, alignItems: "center", justifyContent: "center" },
-  label: { fontSize: 10, color: LABEL, fontWeight: "400" },
-  labelActive: { fontWeight: "600" },
+  tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3 },
+  label: { fontSize: 10.5, color: LABEL, fontWeight: "500" },
+  labelActive: { color: ACTIVE, fontWeight: "700" },
 });
