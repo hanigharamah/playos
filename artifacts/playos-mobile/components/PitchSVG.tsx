@@ -46,16 +46,20 @@ const POSITIONS: Record<number, Pos[]> = {
 };
 
 /**
- * The turf was #F6EADE — within a few percent of the page's own #FFF8F0, so
- * the pitch barely separated from the card behind it and the white line work
- * had almost nothing to sit against. It is now a warm clay, dark enough for
- * the lines to read and for the spots to sit ON something, and it keeps
- * the cream family rather than jumping to a green that belongs to a different
- * app. Vertical gradient so it has depth instead of reading as a flat swatch.
+ * Light warm sand with a vertical gradient for depth.
+ *
+ * The history is worth keeping, because this value has a floor and a ceiling.
+ * It started at #F6EADE — within a few percent of the page's own #FFF8F0 — so
+ * the pitch did not separate from its card at all. It was then taken to a deep
+ * clay, which separated well but read as heavy and muddy against everything
+ * else on the screen. This is the lighter end: it still clears the page, but
+ * the white line work now sits at roughly 1.8:1 rather than 2.6:1, so the
+ * lines are drawn slightly thicker and at fuller opacity to hold up.
+ * Going lighter than this starts to lose the markings.
  */
-const LINE = "rgba(255,255,255,0.92)";
-const TURF_TOP = "#D9BC9A";
-const TURF_BOTTOM = "#C09B78";
+const LINE = "rgba(255,255,255,0.98)";
+const TURF_TOP = "#EADBC7";
+const TURF_BOTTOM = "#D8BFA4";
 /** Open slots: light on the dark turf now, where they used to be dark on light. */
 const EMPTY = "rgba(255,255,255,0.6)";
 /** Design pitch is 326×122 (wide + short); slot POSITIONS were tuned on a
@@ -168,21 +172,21 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
       <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="url(#turf)" />
 
       {/* Line work — white on clay */}
-      <Rect x={5} y={4} width={390} height={142} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Line x1={200} y1={4} x2={200} y2={146} stroke={LINE} strokeWidth={1.2} />
-      <Circle cx={200} cy={75} r={21} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={5} y={4} width={390} height={142} fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Line x1={200} y1={4} x2={200} y2={146} stroke={LINE} strokeWidth={1.5} />
+      <Circle cx={200} cy={75} r={21} fill="none" stroke={LINE} strokeWidth={1.5} />
       <Circle cx={200} cy={75} r={2} fill={LINE} />
 
-      <Rect x={5} y={31} width={52} height={88} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Rect x={5} y={48} width={20} height={54} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Rect x={343} y={31} width={52} height={88} fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Rect x={375} y={48} width={20} height={54} fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Rect x={5} y={31} width={52} height={88} fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Rect x={5} y={48} width={20} height={54} fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Rect x={343} y={31} width={52} height={88} fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Rect x={375} y={48} width={20} height={54} fill="none" stroke={LINE} strokeWidth={1.5} />
 
       {/* Corner arcs */}
-      <Path d="M 5 16 A 12 12 0 0 0 17 4" fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Path d="M 383 4 A 12 12 0 0 0 395 16" fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Path d="M 395 134 A 12 12 0 0 0 383 146" fill="none" stroke={LINE} strokeWidth={1.2} />
-      <Path d="M 17 146 A 12 12 0 0 0 5 134" fill="none" stroke={LINE} strokeWidth={1.2} />
+      <Path d="M 5 16 A 12 12 0 0 0 17 4" fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Path d="M 383 4 A 12 12 0 0 0 395 16" fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Path d="M 395 134 A 12 12 0 0 0 383 146" fill="none" stroke={LINE} strokeWidth={1.5} />
+      <Path d="M 17 146 A 12 12 0 0 0 5 134" fill="none" stroke={LINE} strokeWidth={1.5} />
 
       {positions.map((pos, i) => renderSlot(1, i, pos))}
       {positions.map((pos, i) => renderSlot(2, i, mirrorX(pos)))}
