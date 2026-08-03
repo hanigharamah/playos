@@ -433,9 +433,16 @@ const styles = StyleSheet.create({
   // pinned to one edge of a card whose pitch runs the full width.
   pitchHeader: { flexDirection: "row", justifyContent: "center", alignItems: "center" },
   pitchLabel: { fontSize: 12.5, fontWeight: "600", color: INK },
-  // aspectRatio matches PitchSVG's viewBox (400 x 150) exactly, so the SVG
-  // fills it with no leftover width to strand on one side.
-  pitchWrap: { borderRadius: 12, overflow: "hidden", aspectRatio: 400 / 150, marginTop: 12 },
+  // width is explicit, NOT left to aspectRatio alone. With only aspectRatio set
+  // Yoga is free to resolve the pair in either direction — deriving width from
+  // height instead of height from width — which produced a box narrower than
+  // the card and stranded the shortfall on the right. Pinning width to 100%
+  // forces height to follow from it, and the ratio matches PitchSVG's 400x150
+  // viewBox so the pitch fills the box exactly.
+  pitchWrap: {
+    width: "100%", alignSelf: "stretch",
+    borderRadius: 12, overflow: "hidden", aspectRatio: 400 / 150, marginTop: 12,
+  },
   pitchFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12 },
   pitchFooterText: { fontSize: 10, color: MUTED },
   pitchFooterSpots: { fontSize: 10, fontWeight: "600", color: colors.orange },
