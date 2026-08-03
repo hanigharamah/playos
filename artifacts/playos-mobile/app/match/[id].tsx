@@ -10,7 +10,7 @@ import * as Haptics from "expo-haptics";
 import { Check, MessageCircle, X } from "lucide-react-native";
 import {
   useGameRoster, useGetGame, useGetMyBookings, useCheckIn, useClaimSide, useStartMatch,
-  useGetOrCreateGameChat, MIN_PLAYERS_TO_START, type RosterEntry,
+  useGetOrCreateGameChat, useConversationMessages, MIN_PLAYERS_TO_START, type RosterEntry,
 } from "@/lib/api";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { GlassCard } from "@/components/GlassCard";
@@ -19,6 +19,7 @@ import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Avatar } from "@/components/Avatar";
 import { ReconnectingState, useIsOffline } from "@/components/ReconnectingState";
+import { useAuth } from "@/lib/auth";
 import { useServerCountdown } from "@/lib/serverTime";
 import { colors } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
@@ -98,15 +99,26 @@ export default function MatchDay() {
   const claimSide = useClaimSide();
   const startMatch = useStartMatch();
   const gameChat = useGetOrCreateGameChat();
+  const { user } = useAuth();
 
   const [pendingTeam, setPendingTeam] = useState<1 | 2 | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Resolved once per visit; null until the RPC answers. */
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  /** The RPC is missing from the database — hide the panel rather than nag. */
+  const [chatOff, setChatOff] = useState(false);
+  const chatAsked = useRef(false);
+
+  const { data: messages } = useConversationMessages(conversationId);
+  const recent = (messages ?? []).slice(-3);
 
   // The RPC creates the conversation on first open and returns the existing one
   // after that, so the chat starts existing the moment someone asks for it.
   // Declared after `notice` because it writes to it.
   const openChat = () => {
     if (!id) return;
+    // Already resolved by the panel's fetch in the common case.
+    if (conversationId) { router.push(`/chat/${conversationId}`); return; }
     gameChat.mutate(
       { gameId: id },
       {
@@ -179,6 +191,27 @@ export default function MatchDay() {
     countdown,
     checkedInCount,
   });
+
+  // The chat's window is the room's window: it opens with check-in at T-20 and
+  // soft-closes at T+20 (FIGMA-MAP.md:86). Inside it the conversation is
+  // fetched without being asked for, so messages are already on screen.
+  const inChatWindow = ["check_in", "pick_side", "waiting", "hold", "teams"].includes(phase);
+
+  useEffect(() => {
+    if (!inChatWindow || !id || chatAsked.current) return;
+    chatAsked.current = true;
+    gameChat.mutate(
+      { gameId: id },
+      {
+        onSuccess: setConversationId,
+        // A player with no booking is rejected by the RPC, and the RPC itself
+        // may not be applied yet — either way the panel just stays away.
+        onError: () => setChatOff(true),
+      },
+    );
+    // gameChat is a stable mutation observer; the ref guards against re-entry.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inChatWindow, id]);
 
   const doCheckIn = () => {
     if (!id) return;
@@ -282,7 +315,7 @@ export default function MatchDay() {
             window this room is, so it is reached from here rather than from a
             permanent tab. The RPC rejects anyone without a booking, and the
             phases below are the ones inside that window. */}
-        {["check_in", "pick_side", "waiting", "hold", "teams"].includes(phase) && (
+        {inChatWindow && !chatOff && (
           <Pressable
             onPress={openChat}
             disabled={gameChat.isPending}
@@ -471,6 +504,41 @@ export default function MatchDay() {
               </Text>
             )}
           </GlassCard>
+        )}
+
+        {/* Group chat, inline. It opens with the check-in window and closes
+            20 minutes after kickoff, so inside that window it shows itself
+            rather than waiting to be found — the messages are the point, not
+            the entry point. Tapping opens the full thread. */}
+        {inChatWindow && !chatOff && (
+          <Pressable
+            onPress={() => conversationId && router.push(`/chat/${conversationId}`)}
+            disabled={!conversationId}
+          >
+            <GlassCard style={styles.chatCard} round={28} padding={19}>
+              <View style={styles.chatHead}>
+                <MessageCircle size={15} color={colors.orange} strokeWidth={2.2} />
+                <Text style={styles.chatTitle}>squad chat</Text>
+                <Text style={styles.chatOpen}>open until 20 min after kickoff</Text>
+              </View>
+
+              {recent.length === 0 ? (
+                <Text style={styles.chatEmpty}>
+                  {conversationId ? "No messages yet — say something." : "Opening…"}
+                </Text>
+              ) : (
+                recent.map((m) => (
+                  // messages carry sender_id but no name, and RosterEntry has
+                  // no user id to join on — so a sender is "you" or nothing.
+                  // The full thread does the same, with avatars.
+                  <Text key={m.id} style={styles.chatLine} numberOfLines={2}>
+                    {m.senderId === user?.id && <Text style={styles.chatWho}>you  </Text>}
+                    {m.body}
+                  </Text>
+                ))
+              )}
+            </GlassCard>
+          </Pressable>
         )}
       </ScrollView>
     </View>
@@ -765,6 +833,15 @@ const styles = StyleSheet.create({
   scroll: { paddingHorizontal: 30, paddingTop: 60, flexGrow: 1, justifyContent: "center" },
   // minHeight, never height — copy length is free and must not overflow.
   card: { minHeight: 300 },
+
+  // minHeight, not height: the preview grows with two-line messages.
+  chatCard: { minHeight: 96, marginTop: 14 },
+  chatHead: { flexDirection: "row", alignItems: "center", gap: 6 },
+  chatTitle: { fontSize: 13, fontWeight: "700", color: colors.ink },
+  chatOpen: { flex: 1, fontSize: 10.5, color: FAINT, textAlign: "right" },
+  chatEmpty: { fontSize: 13, color: MUTED, marginTop: 12 },
+  chatLine: { fontSize: 13, color: colors.ink, marginTop: 10, lineHeight: 18 },
+  chatWho: { fontWeight: "700", color: MUTED },
 
   eyebrow: { fontSize: 10, fontWeight: "600", color: FAINT, letterSpacing: 0.4 },
   cardTitle: { fontSize: 24, fontWeight: "700", color: colors.inkNavy, marginTop: 8 },

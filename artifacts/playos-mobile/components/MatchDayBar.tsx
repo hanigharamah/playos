@@ -5,7 +5,8 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format } from "date-fns";
-import { useGetMyBookings, useGameRoster, useReconfirmBooking, type MyBooking } from "@/lib/api";
+import { MessageCircle } from "lucide-react-native";
+import { useGetMyBookings, useGameRoster, useReconfirmBooking, useGetOrCreateGameChat, type MyBooking } from "@/lib/api";
 import { serverNow, syncServerTime } from "@/lib/serverTime";
 
 /**
@@ -121,6 +122,7 @@ export function MatchDayBar() {
   const insets = useSafeAreaInsets();
   const active = useMatchDayBar();
   const reconfirm = useReconfirmBooking();
+  const gameChat = useGetOrCreateGameChat();
   const roster = useGameRoster(active?.state === "checkedIn" ? active.booking.gameId : null);
 
   if (!active) return null;
@@ -130,6 +132,17 @@ export function MatchDayBar() {
   const kickoff = new Date(booking.game.kickoffTime);
   const msToKickoff = kickoff.getTime() - serverNow();
   const open = () => router.push(`/match/${booking.gameId}`);
+
+  // If the chat can't be opened — no booking, or the RPC not applied yet — fall
+  // back to the match room rather than stranding the tap.
+  const openChat = () =>
+    gameChat.mutate(
+      { gameId: booking.gameId },
+      {
+        onSuccess: (conversationId) => router.push(`/chat/${conversationId}`),
+        onError: open,
+      },
+    );
 
   const copy = {
     reconfirm: {
@@ -189,9 +202,25 @@ export function MatchDayBar() {
                 <Text style={styles.chipText}>yes, i am</Text>
               </LinearGradient>
             </Pressable>
+          ) : state === "checkedIn" ? (
+            // Once you are in, the countdown has done its job and the squad
+            // chat is the live thing — so the bar's right-hand affordance
+            // becomes chat, one tap from any screen. Fetched on tap only: this
+            // component renders on every tab, and a standing query here is what
+            // the timer fix just removed.
+            <Pressable
+              onPress={openChat}
+              disabled={gameChat.isPending}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 8 }}
+              style={styles.chatBtn}
+              accessibilityRole="button"
+              accessibilityLabel="Open squad chat"
+            >
+              <MessageCircle size={17} color={tone.accent} strokeWidth={2.2} />
+            </Pressable>
           ) : (
             <Text style={[styles.value, { color: tone.accent }]} numberOfLines={1}>
-              {state === "checkedIn" ? "›" : mmss(msToKickoff)}
+              {mmss(msToKickoff)}
             </Text>
           )}
         </View>
@@ -229,6 +258,7 @@ const styles = StyleSheet.create({
     shadowColor: "#EB6923", shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.35, shadowRadius: 20, elevation: 6,
   },
+  chatBtn: { width: 40, height: 40, alignItems: "flex-end", justifyContent: "center" },
   chip: { width: 90, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center" },
   chipText: { fontSize: 12, fontWeight: "700", color: "#FFFFFF" },
 });
