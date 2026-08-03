@@ -457,15 +457,31 @@ export function useCancelBooking() {
       // money, so it must not be written as a refund. 'forfeited' is the
       // terminal state added by 2026-07-booking-integrity.sql.
       const terminal = eligible ? "refunded" : "forfeited";
-      const { error } = await supabase.from("bookings").update({ payment_status: terminal }).eq("id", vars.bookingId);
-      if (error) throw error;
+
+      // Prefer the RPC. 2026-08-lock-down-self-writes.sql revokes the client's
+      // UPDATE on payment_status — a player could previously PATCH their own
+      // booking to 'paid' — so the direct write below stops working the moment
+      // that migration is applied. Until then the RPC does not exist, so fall
+      // back rather than breaking cancellation on the current database.
+      const { error: rpcErr } = await supabase.rpc("cancel_my_booking", { p_booking_id: vars.bookingId });
+      const rpcMissing =
+        !!rpcErr && ((rpcErr as any).code === "PGRST202" || /schema cache|does not exist/i.test(rpcErr.message ?? ""));
+      if (rpcErr && !rpcMissing) throw rpcErr;
+
+      if (rpcMissing) {
+        const { error } = await supabase.from("bookings").update({ payment_status: terminal }).eq("id", vars.bookingId);
+        if (error) throw error;
+      }
 
       const message = eligible
         ? "Booking cancelled. You'll receive a full refund."
         : `Booking cancelled. No refund applies ${FREE_CANCEL_HOURS} hours or less before kickoff.`;
 
       if (booking?.game_id) {
-        await supabase.from("games").update({ status: "open" }).eq("id", booking.game_id).eq("status", "full");
+        // cancel_my_booking already reopens the game; only the fallback needs to.
+        if (rpcMissing) {
+          await supabase.from("games").update({ status: "open" }).eq("id", booking.game_id).eq("status", "full");
+        }
         queryClient.invalidateQueries({ queryKey: qk.game(booking.game_id) });
       }
       queryClient.invalidateQueries({ queryKey: qk.myBookings });

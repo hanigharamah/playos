@@ -77,6 +77,9 @@ export function useMatchDayBar(): { booking: MyBooking; state: BarState } | null
   // player it exists for, at the exact minute their fee goes. The window runs
   // to T+20m, which is as long as the operator is still working the phone.
   const booking = [...(data?.upcoming ?? []), ...(data?.past ?? [])].find((b) => {
+    // A cancelled match has no check-in and no kickoff. Counting down to one
+    // would be the bar's worst possible state: urgent, prominent, and wrong.
+    if (b.game.status === "cancelled") return false;
     const ms = new Date(b.game.kickoffTime).getTime() - serverNow();
     return ms <= T12H_MS && ms > -T20M_MS;
   });

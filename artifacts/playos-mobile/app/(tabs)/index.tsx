@@ -13,6 +13,7 @@ import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { HomeSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { HomeNothingBooked } from "@/components/HomeNothingBooked";
 import { WarmCanvas } from "@/components/WarmCanvas";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { serverNow } from "@/lib/serverTime";
 import { colors, gradients, spacing } from "@/lib/theme";
@@ -70,13 +71,18 @@ export default function Home() {
   // "your next match" means a match you actually booked. Before this, the hero
   // showed games[0] — any open game — under a headline claiming it was yours.
   const nextBooking = upcoming[0];
-  const featured = nextBooking
+  // useListGames filters cancelled games out, so when a booked match is
+  // cancelled `featured` resolves to undefined and the hero SILENTLY
+  // DISAPPEARS — while the booking stays in the list as if the match were
+  // still on. The booking itself carries game.status, so ask it, not the feed.
+  const nextCancelled = nextBooking?.game.status === "cancelled";
+  const featured = nextBooking && !nextCancelled
     ? games?.find((g) => g.id === nextBooking.gameId)
     : undefined;
   // Gate on the BOOKINGS query, not the games one. These are independent
   // parallel queries, so a warm games cache made "nothing booked yet" render
   // to players who did have bookings, until the second response landed.
-  const nothingBooked = !bookingsLoading && !!bookings && upcoming.length === 0;
+  const nothingBooked = !bookingsLoading && !!bookings && upcoming.length === 0 && !nextCancelled;
   const isTonight = featured && isSameDay(new Date(featured.kickoffTime), new Date());
 
   // This card is always a match the player has booked, so the CTA must reflect
@@ -122,6 +128,24 @@ export default function Home() {
 
         {/* Cold start with no cached payload (Figma 698:518) */}
         {showSkeleton && <HomeSkeleton />}
+
+        {/* A booked match that was cancelled. Routes to the refund choice,
+            which was fully built and completely unreachable. */}
+        {nextCancelled && nextBooking && (
+          <Pressable onPress={() => router.push(`/match-cancelled/${nextBooking.gameId}`)}>
+            <GlassCard variant="soft" round={24} padding={0} style={styles.cancelledCard}>
+              <View style={styles.cancelledInner}>
+                <Text style={styles.cancelledLabel}>MATCH CANCELLED</Text>
+                <Text style={styles.cancelledTitle} numberOfLines={1}>
+                  {nextBooking.game.pitchName}
+                </Text>
+                <Text style={styles.cancelledBody}>
+                  you're getting your money back — tap to choose cash or a game token.
+                </Text>
+              </View>
+            </GlassCard>
+          </Pressable>
+        )}
 
         {/* Hero Match Card (Figma 71:277 — 350×238 glass) */}
         {featured && (
@@ -262,6 +286,11 @@ const styles = StyleSheet.create({
   logo: { fontSize: 17, fontWeight: "700", color: INK },
   bellDot: { position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.orange },
   headline: { fontSize: 42, lineHeight: 50, marginTop: spacing.xl },
+  cancelledCard: { marginTop: spacing.xxl + 12 },
+  cancelledInner: { padding: 23 },
+  cancelledLabel: { fontSize: 13, fontWeight: "600", color: "#BF2626", letterSpacing: 1.04 },
+  cancelledTitle: { fontSize: 26, fontWeight: "700", color: CARD_TITLE, marginTop: 6 },
+  cancelledBody: { fontSize: 14, color: CARD_META, marginTop: 10, lineHeight: 20 },
   heroShadow: {
     marginTop: spacing.xxl + 12, borderRadius: 28,
     // No elevation here: this wrapper has no background, and Android derives

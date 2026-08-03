@@ -68,6 +68,11 @@ export default function MyGames() {
    * server clock, since the check-in window is not the device's to decide.
    */
   const destinationFor = (b: MyBooking) => {
+    // A cancelled match outranks every other state. cancel_match writes the
+    // refund rows, but nothing routed here — so the app kept showing the
+    // booking as a normal upcoming match while holding the player's money.
+    if (b.game.status === "cancelled") return `/match-cancelled/${b.gameId}` as const;
+
     const kickoff = new Date(b.game.kickoffTime).getTime();
     const now = serverNow();
     const sinceKickoff = now - kickoff;
@@ -142,6 +147,7 @@ export default function MyGames() {
         const kickoff = new Date(item.game.kickoffTime);
         const teamSize = item.game.capacity / 2;
         const tonight = isSameDay(kickoff, new Date());
+        const cancelled = item.game.status === "cancelled";
         return (
           <Pressable
             onPress={() => router.push(destinationFor(item))}
@@ -154,8 +160,10 @@ export default function MyGames() {
                   style={styles.thumb}
                 />
                 <View style={styles.rowText}>
-                  <Text style={styles.rowMeta}>
-                    {tonight ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()} • {format(kickoff, "h:mm a")}
+                  <Text style={[styles.rowMeta, cancelled && styles.rowMetaCancelled]}>
+                    {cancelled
+                      ? "CANCELLED · TAP FOR YOUR REFUND"
+                      : `${tonight ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()} • ${format(kickoff, "h:mm a")}`}
                   </Text>
                   <Text style={styles.rowTitle} numberOfLines={1}>{item.game.title}</Text>
                   <Text style={styles.rowSub}>{teamSize}v{teamSize}</Text>
@@ -225,6 +233,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: "row", alignItems: "center", minHeight: 104, padding: 13 },
   thumb: { width: 76, height: 76, borderRadius: 16 },
   rowText: { flex: 1, marginLeft: 16 },
+  rowMetaCancelled: { color: "#BF2626" },
   rowMeta: { fontSize: 11, fontWeight: "600", color: colors.orange },
   rowTitle: { fontSize: 18, fontWeight: "700", color: INK, marginTop: 5 },
   rowSub: { fontSize: 13, color: MUTED, marginTop: 6 },
