@@ -9,6 +9,7 @@ import { useGetGame } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { Btn3D } from "@/components/Btn3D";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
@@ -134,34 +135,38 @@ export default function BookingConfirmed() {
 
       {/* Match summary (Figma 369:589) */}
       {game && kickoff && (
-        <View style={styles.matchCard}>
-          <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
-          <View style={styles.matchText}>
-            <Text style={styles.matchTitle} numberOfLines={1}>{teamSize}v{teamSize} · {game.pitchName}</Text>
-            <Text style={styles.matchSub}>
-              {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE, d MMM")} · {format(kickoff, "h:mm a")}
-            </Text>
-            <Text style={styles.matchSpots}>
-              {spotsLeft > 0 ? `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left` : "match full"}
-            </Text>
+        <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
+          <View style={styles.matchInner}>
+            <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+            <View style={styles.matchText}>
+              <Text style={styles.matchTitle} numberOfLines={1}>{teamSize}v{teamSize} · {game.pitchName}</Text>
+              <Text style={styles.matchSub}>
+                {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE, d MMM")} · {format(kickoff, "h:mm a")}
+              </Text>
+              <Text style={styles.matchSpots}>
+                {spotsLeft > 0 ? `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left` : "match full"}
+              </Text>
+            </View>
           </View>
-        </View>
+        </GlassCard>
       )}
 
       {/* Add to calendar (Figma 369:595). Gated on `game` like the card above:
           addToCalendar returns early without it, so before the query resolved
           this row was fully drawn, fully tappable, and did nothing. */}
       {game && (
-        <Pressable
-          style={({ pressed }) => [
-            styles.calendarRow,
-            pressed && { backgroundColor: "rgba(255,255,255,0.75)" },
-          ]}
-          onPress={addToCalendar}
-        >
-          <Calendar size={20} color={ACCENT} strokeWidth={2} />
-          <Text style={styles.calendarLabel}>add to calendar</Text>
-          <Text style={styles.chevron}>›</Text>
+        <Pressable onPress={addToCalendar}>
+          {({ pressed }) => (
+            <GlassCard variant="soft" round={16} padding={0} style={styles.calendarCard}>
+              {/* The press highlight lives on the inner row, above the sheen —
+                  the glass fill itself is on the clipped layer below. */}
+              <View style={[styles.calendarRow, pressed && { backgroundColor: "rgba(255,255,255,0.75)" }]}>
+                <Calendar size={20} color={ACCENT} strokeWidth={2} />
+                <Text style={styles.calendarLabel}>add to calendar</Text>
+                <Text style={styles.chevron}>›</Text>
+              </View>
+            </GlassCard>
+          )}
         </Pressable>
       )}
 
@@ -215,12 +220,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 28, textAlign: "center", color: ACCENT, marginTop: 14 },
   subtitle: { fontSize: 14, color: MUTED, textAlign: "center", marginTop: 14, paddingHorizontal: spacing.xl },
 
-  matchCard: {
-    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11, marginTop: 34,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
-  },
+  // Geometry only — the fill, stroke and shadows come from <GlassCard>. The
+  // row layout sits on the inner view because GlassCard's padding wrapper is
+  // the parent its children actually lay out in.
+  matchCard: { marginTop: 34 },
+  matchInner: { flexDirection: "row", alignItems: "center", minHeight: 92, padding: 11 },
   thumb: { width: 68, height: 68, borderRadius: 14 },
   matchText: { flex: 1, marginLeft: 12 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
@@ -233,12 +237,11 @@ const styles = StyleSheet.create({
   // that is the ratified script accent, and it is large.
   matchSpots: { fontSize: 14, fontWeight: "700", color: "#C96A00", marginTop: 6 },
 
+  calendarCard: { marginTop: 14 },
+  // minHeight, not the height it was: the label wraps at larger Dynamic Type.
   calendarRow: {
     flexDirection: "row", alignItems: "center", gap: 14,
-    height: 56, borderRadius: 16, paddingHorizontal: 19, marginTop: 14,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 16, elevation: 3,
+    minHeight: 56, paddingHorizontal: 19,
   },
   calendarLabel: { flex: 1, fontSize: 15, fontWeight: "600", color: INK },
   chevron: { fontSize: 22, fontWeight: "700", color: MUTED },
