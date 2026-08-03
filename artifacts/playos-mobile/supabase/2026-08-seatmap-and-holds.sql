@@ -108,7 +108,7 @@ create or replace function public.claim_spot(
   p_team       int,
   p_slot_index int
 )
-returns table (status text, booking_id uuid, hold_expires_at timestamptz)
+returns table (status text, booking_id text, hold_expires_at timestamptz)
 language plpgsql
 security definer
 set search_path = public
@@ -116,11 +116,11 @@ as $$
 declare
   g            record;
   v_active     int;
-  v_booking    uuid;
+  v_booking    text;
   v_expires    timestamptz;
 begin
   if auth.uid() is null then
-    return query select 'not_authenticated'::text, null::uuid, null::timestamptz;
+    return query select 'not_authenticated'::text, null::text, null::timestamptz;
     return;
   end if;
 
@@ -128,15 +128,15 @@ begin
 
   select * into g from public.games where id = p_game_id;
   if not found then
-    return query select 'no_such_game'::text, null::uuid, null::timestamptz;
+    return query select 'no_such_game'::text, null::text, null::timestamptz;
     return;
   end if;
   if g.status = 'cancelled' then
-    return query select 'cancelled'::text, null::uuid, null::timestamptz;
+    return query select 'cancelled'::text, null::text, null::timestamptz;
     return;
   end if;
   if g.kickoff_time is null or g.kickoff_time <= now() then
-    return query select 'kicked_off'::text, null::uuid, null::timestamptz;
+    return query select 'kicked_off'::text, null::text, null::timestamptz;
     return;
   end if;
 
@@ -147,7 +147,7 @@ begin
        and user_id = auth.uid()
        and payment_status not in ('refunded', 'forfeited')
   ) then
-    return query select 'already_booked'::text, null::uuid, null::timestamptz;
+    return query select 'already_booked'::text, null::text, null::timestamptz;
     return;
   end if;
 
@@ -156,7 +156,7 @@ begin
    where game_id = p_game_id
      and payment_status not in ('refunded', 'forfeited');
   if v_active >= g.capacity then
-    return query select 'full'::text, null::uuid, null::timestamptz;
+    return query select 'full'::text, null::text, null::timestamptz;
     return;
   end if;
 
@@ -169,7 +169,7 @@ begin
        and slot_index = p_slot_index
        and payment_status not in ('refunded', 'forfeited')
   ) then
-    return query select 'taken'::text, null::uuid, null::timestamptz;
+    return query select 'taken'::text, null::text, null::timestamptz;
     return;
   end if;
 
@@ -184,7 +184,7 @@ exception
   -- Two players claiming the same seat in the same instant: the unique index
   -- is still the final authority, and this turns its 23505 into a clean answer.
   when unique_violation then
-    return query select 'taken'::text, null::uuid, null::timestamptz;
+    return query select 'taken'::text, null::text, null::timestamptz;
 end;
 $$;
 
@@ -193,7 +193,7 @@ grant execute on function public.claim_spot(text, int, int) to authenticated;
 -- ── 5. Confirming payment clears the hold ───────────────────────────────────
 -- Without this a paid booking would still carry an expiry and be swept.
 create or replace function public.confirm_spot_payment(
-  p_booking_id uuid,
+  p_booking_id text,
   p_method     text
 )
 returns text
@@ -216,7 +216,7 @@ begin
 end;
 $$;
 
-grant execute on function public.confirm_spot_payment(uuid, text) to authenticated;
+grant execute on function public.confirm_spot_payment(text, text) to authenticated;
 
 -- NOTE: this deliberately does NOT set payment_status = 'paid'. Who marks cash
 -- as received is an open product decision (the operator on the ops roster, the

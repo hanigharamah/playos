@@ -463,17 +463,52 @@ export function useCancelBooking() {
       // booking to 'paid' — so the direct write below stops working the moment
       // that migration is applied. Until then the RPC does not exist, so fall
       // back rather than breaking cancellation on the current database.
-      const { error: rpcErr } = await supabase.rpc("cancel_my_booking", { p_booking_id: vars.bookingId });
+      const { data: rpcRows, error: rpcErr } = await supabase.rpc("cancel_my_booking", {
+        p_booking_id: vars.bookingId,
+      });
       const rpcMissing =
         !!rpcErr && ((rpcErr as any).code === "PGRST202" || /schema cache|does not exist/i.test(rpcErr.message ?? ""));
       if (rpcErr && !rpcMissing) throw rpcErr;
 
-      if (rpcMissing) {
-        const { error } = await supabase.from("bookings").update({ payment_status: terminal }).eq("id", vars.bookingId);
-        if (error) throw error;
+      // The RPC reports refusals as DATA, not as an error — so ignoring the
+      // rows meant a 'not_found' or 'already_cancelled' was reported to the
+      // player as "Booking cancelled" while nothing had changed.
+      let serverRefunded: boolean | null = null;
+      if (!rpcMissing) {
+        const row = (rpcRows as { status: string; refunded: boolean }[] | null)?.[0];
+        if (!row || row.status !== "ok") {
+          throw {
+            data: {
+              error:
+                row?.status === "already_cancelled"
+                  ? "This booking was already cancelled."
+                  : "We couldn't find that booking — pull to refresh and try again.",
+            },
+          };
+        }
+        serverRefunded = row.refunded;
       }
 
-      const message = eligible
+      if (rpcMissing) {
+        const { error } = await supabase.from("bookings").update({ payment_status: terminal }).eq("id", vars.bookingId);
+        // With the column-level grants applied this write is forbidden (42501).
+        // If the RPC is also unreachable there is no path left, so say so
+        // rather than reporting a cancellation that did not happen.
+        if (error) {
+          throw {
+            data: {
+              error:
+                (error as any).code === "42501"
+                  ? "Cancelling isn't available right now — please reload the app and try again."
+                  : error.message,
+            },
+          };
+        }
+      }
+
+      // Server's answer wins when we have one: it decided on its own clock.
+      const refunded = serverRefunded ?? eligible;
+      const message = refunded
         ? "Booking cancelled. You'll receive a full refund."
         : `Booking cancelled. No refund applies ${FREE_CANCEL_HOURS} hours or less before kickoff.`;
 

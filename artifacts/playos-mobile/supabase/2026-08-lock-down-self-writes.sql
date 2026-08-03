@@ -43,7 +43,7 @@ grant  update (payment_method, reconfirmed_at) on public.bookings to authenticat
 -- would break it. Same rules as the client enforced, but decided server-side
 -- where the clock cannot be moved: more than FREE_CANCEL_HOURS out refunds,
 -- inside it forfeits and releases the seat.
-create or replace function public.cancel_my_booking(p_booking_id uuid)
+create or replace function public.cancel_my_booking(p_booking_id text)
 returns table (status text, refunded boolean)
 language plpgsql
 security definer
@@ -87,7 +87,7 @@ begin
 end;
 $$;
 
-grant execute on function public.cancel_my_booking(uuid) to authenticated;
+grant execute on function public.cancel_my_booking(text) to authenticated;
 
 -- ── 4. Verifying ────────────────────────────────────────────────────────────
 -- As a signed-in player, all three of these should now fail with 42501:
