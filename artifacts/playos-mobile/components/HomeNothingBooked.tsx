@@ -5,6 +5,7 @@ import { format, isSameDay } from "date-fns";
 import { CalendarDays } from "lucide-react-native";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import type { GameSummary } from "@/lib/api";
 
@@ -53,35 +54,37 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
       <Text style={styles.eyebrow}>NEXT ONE NEAR YOU</Text>
 
       {/* Hero — the one game we're actively recommending */}
-      <Pressable style={styles.hero} onPress={() => router.push(`/game/${next.id}`)}>
-        <View>
-          <Image source={{ uri: getVenuePhoto(next.pitchName, next.pitchPhotoUrl) }} style={styles.heroPhoto} />
-          {spots > 0 && (
-            <View style={styles.spotsBadge}>
-              <Text style={styles.spotsText}>{spots} {spots === 1 ? "spot" : "spots"} left</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.heroRow}>
-          <View style={styles.heroTextCol}>
-            <Text style={styles.heroTitle} numberOfLines={1}>{teamSize}v{teamSize}  ·  {next.pitchName}</Text>
-            <Text style={styles.heroSub}>
-              {isSameDay(kickoff, new Date()) ? "Tonight" : format(kickoff, "EEE")}  ·  {format(kickoff, "h:mm a")}
-            </Text>
+      <Pressable onPress={() => router.push(`/game/${next.id}`)}>
+        <GlassCard variant="soft" round={24} padding={19} style={styles.hero}>
+          <View>
+            <Image source={{ uri: getVenuePhoto(next.pitchName, next.pitchPhotoUrl) }} style={styles.heroPhoto} />
+            {spots > 0 && (
+              <View style={styles.spotsBadge}>
+                <Text style={styles.spotsText}>{spots} {spots === 1 ? "spot" : "spots"} left</Text>
+              </View>
+            )}
           </View>
-          <Text style={styles.heroPrice}>SAR {next.price}</Text>
-        </View>
 
-        <LinearGradient
-          colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
-          locations={[0, 0.35, 0.65, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.heroCta}
-        >
-          <Text style={styles.heroCtaText}>join this one</Text>
-        </LinearGradient>
+          <View style={styles.heroRow}>
+            <View style={styles.heroTextCol}>
+              <Text style={styles.heroTitle} numberOfLines={1}>{teamSize}v{teamSize}  ·  {next.pitchName}</Text>
+              <Text style={styles.heroSub}>
+                {isSameDay(kickoff, new Date()) ? "Tonight" : format(kickoff, "EEE")}  ·  {format(kickoff, "h:mm a")}
+              </Text>
+            </View>
+            <Text style={styles.heroPrice}>SAR {next.price}</Text>
+          </View>
+
+          <LinearGradient
+            colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
+            locations={[0, 0.35, 0.65, 1]}
+            start={{ x: 0.5, y: 0 }}
+            end={{ x: 0.5, y: 1 }}
+            style={styles.heroCta}
+          >
+            <Text style={styles.heroCtaText}>join this one</Text>
+          </LinearGradient>
+        </GlassCard>
       </Pressable>
 
       {alsoTonight.length > 0 && (
@@ -92,15 +95,19 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
             const s = g.capacity - g.bookedCount;
             const ts = g.capacity / 2;
             return (
-              <Pressable key={g.id} style={styles.row} onPress={() => router.push(`/game/${g.id}`)}>
-                <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.rowThumb} />
-                <View style={styles.rowText}>
-                  <Text style={styles.rowTitle} numberOfLines={1}>{ts}v{ts}  ·  {g.pitchName}</Text>
-                  <Text style={styles.rowSub}>
-                    {format(k, "h:mm a")}  ·  {s} {s === 1 ? "spot" : "spots"}
-                  </Text>
-                </View>
-                <Text style={styles.rowPrice}>SAR {g.price}</Text>
+              <Pressable key={g.id} onPress={() => router.push(`/game/${g.id}`)}>
+                <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
+                  <View style={styles.row}>
+                    <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.rowThumb} />
+                    <View style={styles.rowText}>
+                      <Text style={styles.rowTitle} numberOfLines={1}>{ts}v{ts}  ·  {g.pitchName}</Text>
+                      <Text style={styles.rowSub}>
+                        {format(k, "h:mm a")}  ·  {s} {s === 1 ? "spot" : "spots"}
+                      </Text>
+                    </View>
+                    <Text style={styles.rowPrice}>SAR {g.price}</Text>
+                  </View>
+                </GlassCard>
               </Pressable>
             );
           })}
@@ -118,11 +125,8 @@ const styles = StyleSheet.create({
   nothing: { fontSize: 15, fontWeight: "600", color: INK, marginTop: 8 },
   eyebrow: { fontSize: 11, fontWeight: "600", color: MUTED, marginTop: 26, letterSpacing: 0.3 },
 
-  hero: {
-    borderRadius: 24, marginTop: 12, padding: 19,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>.
+  hero: { marginTop: 12 },
   heroPhoto: { height: 110, borderRadius: 16, backgroundColor: "#CFD8C4" },
   spotsBadge: {
     position: "absolute", left: 12, top: 12, height: 26, borderRadius: 13,
@@ -145,11 +149,9 @@ const styles = StyleSheet.create({
 
   alsoLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 28, marginBottom: 12 },
 
-  row: {
-    flexDirection: "row", alignItems: "center", height: 68, borderRadius: 18, padding: 9, marginBottom: 12,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  rowCard: { marginBottom: 12 },
+  // minHeight, not the fixed 68 it was: the row holds two lines of text.
+  row: { flexDirection: "row", alignItems: "center", minHeight: 68, padding: 9 },
   rowThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
   rowText: { flex: 1, marginLeft: 12 },
   rowTitle: { fontSize: 15, fontWeight: "600", color: INK },
