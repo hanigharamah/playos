@@ -4,6 +4,7 @@ import { format, isSameDay, isTomorrow } from "date-fns";
 import { CircleDot, Info } from "lucide-react-native";
 import { EmptyCard, EmptyEyebrow } from "@/components/EmptyState";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { BtnOutline } from "@/components/BtnOutline";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
@@ -58,22 +59,26 @@ export function PlayNothingLive() {
       {next && (
         <>
           <View style={styles.eyebrowWrap}><EmptyEyebrow>YOUR NEXT MATCH</EmptyEyebrow></View>
-          <Pressable style={styles.nextCard} onPress={() => router.push(`/game/${next.gameId}`)}>
-            <Image
-              source={{ uri: getVenuePhoto(next.game.pitchName, next.game.pitchPhotoUrl) }}
-              style={styles.nextThumb}
-            />
-            <View style={styles.nextText}>
-              <Text style={styles.nextTitle} numberOfLines={1}>
-                {next.game.capacity / 2}v{next.game.capacity / 2}  ·  {next.game.pitchName}
-              </Text>
-              <Text style={styles.nextSub}>
-                {whenLabel(next.game.kickoffTime)}  ·  {format(new Date(next.game.kickoffTime), "h:mm a")}
-              </Text>
-              {/* Static at render — a live ticker here would re-render the whole
-                  tab every second for a value measured in hours. */}
-              <Text style={styles.nextOpens}>{opensIn(next.game.kickoffTime) ?? "opening now"}</Text>
-            </View>
+          <Pressable style={styles.nextPress} onPress={() => router.push(`/game/${next.gameId}`)}>
+            <GlassCard variant="soft" round={20} padding={0}>
+              <View style={styles.nextRow}>
+                <Image
+                  source={{ uri: getVenuePhoto(next.game.pitchName, next.game.pitchPhotoUrl) }}
+                  style={styles.nextThumb}
+                />
+                <View style={styles.nextText}>
+                  <Text style={styles.nextTitle} numberOfLines={1}>
+                    {next.game.capacity / 2}v{next.game.capacity / 2}  ·  {next.game.pitchName}
+                  </Text>
+                  <Text style={styles.nextSub}>
+                    {whenLabel(next.game.kickoffTime)}  ·  {format(new Date(next.game.kickoffTime), "h:mm a")}
+                  </Text>
+                  {/* Static at render — a live ticker here would re-render the whole
+                      tab every second for a value measured in hours. */}
+                  <Text style={styles.nextOpens}>{opensIn(next.game.kickoffTime) ?? "opening now"}</Text>
+                </View>
+              </View>
+            </GlassCard>
           </Pressable>
         </>
       )}
@@ -113,13 +118,10 @@ const styles = StyleSheet.create({
 
   eyebrowWrap: { alignSelf: "flex-start", marginTop: 26 },
 
-  nextCard: {
-    flexDirection: "row", alignItems: "center", alignSelf: "stretch", maxWidth: 350,
-    minHeight: 104, borderRadius: 20, paddingHorizontal: 13, marginTop: 9,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // The card's own width constraints now live on the Pressable wrapping it,
+  // so the glass fills exactly the box the hand-rolled card used to.
+  nextPress: { alignSelf: "stretch", maxWidth: 350, marginTop: 9 },
+  nextRow: { flexDirection: "row", alignItems: "center", minHeight: 104, paddingHorizontal: 13 },
   nextThumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: "#CFD8C4" },
   nextText: { flex: 1, marginLeft: 14 },
   nextTitle: { fontSize: 16, fontWeight: "600", color: INK },
