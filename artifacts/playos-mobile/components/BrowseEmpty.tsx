@@ -3,6 +3,7 @@ import { useRouter } from "expo-router";
 import { Search, Info } from "lucide-react-native";
 import { EmptyCard, EmptyEyebrow } from "@/components/EmptyState";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Btn3D } from "@/components/Btn3D";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
@@ -97,14 +98,18 @@ export function VenuesEmpty({ query, allGames, onClearSearch, onPickVenue }: Pro
               these are the busiest venues instead and the label says so. */}
           <View style={styles.eyebrowWrap}><EmptyEyebrow>WHERE GAMES ARE OPEN</EmptyEyebrow></View>
           {others.map((v) => (
-            <Pressable key={v.name} style={styles.venueRow} onPress={() => onPickVenue?.(v.name)}>
-              <Image source={{ uri: getVenuePhoto(v.name, v.photo) }} style={styles.venueThumb} />
-              <View style={styles.venueText}>
-                <Text style={styles.venueName} numberOfLines={1}>{v.name}</Text>
-                <Text style={styles.venueSub}>
-                  {v.count} {v.count === 1 ? "game" : "games"} open  ·  from SAR {v.from}
-                </Text>
-              </View>
+            <Pressable key={v.name} style={styles.venuePress} onPress={() => onPickVenue?.(v.name)}>
+              <GlassCard variant="soft" round={16} padding={0}>
+                <View style={styles.venueRow}>
+                  <Image source={{ uri: getVenuePhoto(v.name, v.photo) }} style={styles.venueThumb} />
+                  <View style={styles.venueText}>
+                    <Text style={styles.venueName} numberOfLines={1}>{v.name}</Text>
+                    <Text style={styles.venueSub}>
+                      {v.count} {v.count === 1 ? "game" : "games"} open  ·  from SAR {v.from}
+                    </Text>
+                  </View>
+                </View>
+              </GlassCard>
             </Pressable>
           ))}
         </>
@@ -161,13 +166,11 @@ const styles = StyleSheet.create({
   callout: { alignSelf: "stretch", maxWidth: 350, marginTop: 22 },
   eyebrowWrap: { alignSelf: "flex-start", marginTop: 26 },
 
-  venueRow: {
-    flexDirection: "row", alignItems: "center", alignSelf: "stretch", maxWidth: 350,
-    height: 64, borderRadius: 16, paddingHorizontal: 11, marginTop: 12,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Width constraints ride on the Pressable so the glass fills the same box;
+  // fill, stroke and shadows come from <GlassCard>. minHeight, not the fixed
+  // 64 it was — the row holds two lines of text.
+  venuePress: { alignSelf: "stretch", maxWidth: 350, marginTop: 12 },
+  venueRow: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingHorizontal: 11 },
   venueThumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: "#CFD8C4" },
   venueText: { flex: 1, marginLeft: 12 },
   venueName: { fontSize: 15, fontWeight: "600", color: INK },
