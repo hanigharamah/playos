@@ -1,5 +1,6 @@
 import { View, Text, Pressable, StyleSheet, Platform } from "react-native";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Home, Calendar, User } from "lucide-react-native";
 
@@ -54,7 +55,20 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
   return (
     <View style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
       <View style={styles.shadow}>
-        <BlurView intensity={Platform.OS === "ios" ? 24 : 0} tint="light" style={styles.bar}>
+        <View style={styles.contact}>
+        <BlurView intensity={Platform.OS === "ios" ? 40 : 0} tint="light" style={styles.bar}>
+          {/* Top-lit sheen and specular rim — the same treatment as GlassCard,
+              so the one piece of persistent chrome reads as the same material
+              as everything it floats over. */}
+          <LinearGradient
+            colors={["rgba(255,255,255,0.6)", "rgba(255,255,255,0.12)", "rgba(255,246,236,0.2)"]}
+            locations={[0, 0.55, 1]}
+            start={{ x: 0.15, y: 0 }}
+            end={{ x: 0.85, y: 1 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <View style={styles.rim} pointerEvents="none" />
           {state.routes.map((route, i) => {
             const meta = TABS[route.name];
             if (!meta) return null;
@@ -73,6 +87,7 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
             );
           })}
         </BlurView>
+        </View>
       </View>
     </View>
   );
@@ -80,11 +95,23 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
 
 const styles = StyleSheet.create({
   wrap: { position: "absolute", left: 16, right: 16, alignItems: "center" },
+  // Wide ambient shadow. No elevation here — this view has no background, and
+  // Android derives its shadow from the background outline. It lives on `bar`.
   shadow: {
     borderRadius: 30, width: "100%", maxWidth: 358,
-    // No elevation here — this view has no background, and Android derives its
-    // shadow from the background outline. It lives on `bar` below, which does.
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.18, shadowRadius: 14,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.16, shadowRadius: 30,
+  },
+  /** Tight contact shadow, so the bar sits on the screen rather than hovering. */
+  contact: {
+    borderRadius: 30,
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.12, shadowRadius: 6,
+  },
+  rim: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 30, borderWidth: 1, borderColor: "transparent",
+    borderTopColor: "rgba(255,255,255,0.95)",
+    borderLeftColor: "rgba(255,255,255,0.5)",
+    borderRightColor: "rgba(255,255,255,0.5)",
   },
   bar: {
     flexDirection: "row", height: 68, borderRadius: 30, overflow: "hidden",

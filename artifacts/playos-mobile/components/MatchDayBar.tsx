@@ -196,8 +196,21 @@ export function MatchDayBar() {
         }
       >
         <View style={styles.clip}>
-          <BlurView intensity={Platform.OS === "ios" ? 12 : 0} tint="light" style={StyleSheet.absoluteFill} />
+          <BlurView intensity={Platform.OS === "ios" ? 32 : 0} tint="light" style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: tone.fill }]} />
+          {/* Top-lit sheen over the state tint, then the specular rim — same
+              material as GlassCard and the tab bar. Kept low-alpha so it lifts
+              the surface without washing out the state colour, which is the
+              thing carrying the meaning. */}
+          <LinearGradient
+            colors={["rgba(255,255,255,0.45)", "rgba(255,255,255,0.04)", "rgba(255,246,236,0.14)"]}
+            locations={[0, 0.55, 1]}
+            start={{ x: 0.15, y: 0 }}
+            end={{ x: 0.85, y: 1 }}
+            style={StyleSheet.absoluteFill}
+            pointerEvents="none"
+          />
+          <View style={styles.rim} pointerEvents="none" />
 
           <View style={[styles.well, { backgroundColor: tone.well }]}>
             <Text style={[styles.glyph, { color: tone.accent }]}>{copy.glyph}</Text>
@@ -274,15 +287,27 @@ const styles = StyleSheet.create({
   // number is smaller than the Dynamic Island's inset and would put the one
   // component a player cannot afford to miss underneath it.
   wrap: { position: "absolute", left: 16, right: 16, zIndex: 50 },
+  // Wide ambient shadow; the tight contact one is on `clip`, which has a fill.
   shadow: {
     borderRadius: 28,
-    shadowColor: "#8A6A4A", shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.1, shadowRadius: 8, elevation: 4,
+    shadowColor: "#8A6A4A", shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.14, shadowRadius: 22,
+  },
+  rim: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28, borderWidth: 1, borderColor: "transparent",
+    borderTopColor: "rgba(255,255,255,0.95)",
+    borderLeftColor: "rgba(255,255,255,0.5)",
+    borderRightColor: "rgba(255,255,255,0.5)",
   },
   clip: {
     height: 64, borderRadius: 28, overflow: "hidden",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.92)",
     flexDirection: "row", alignItems: "center", paddingHorizontal: 13,
+    // Contact shadow lives here because this is the layer with a fill —
+    // and elevation, which Android needs a background outline to draw.
+    shadowColor: "#8A6A4A", shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.1, shadowRadius: 5, elevation: 4,
   },
 
   well: { width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center" },
