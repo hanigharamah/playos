@@ -11,6 +11,7 @@ import { resetAnalytics, track, screen } from "@/lib/analytics";
 import { registerForPush } from "@/lib/notifications";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
+import { GlassCard } from "@/components/GlassCard";
 import { colors, spacing } from "@/lib/theme";
 
 // Exact palette from the Figma Profile screen (node 1:7)
@@ -99,43 +100,53 @@ export default function Profile() {
       </View>
 
       {/* Stats (Figma 7:18) */}
-      <View style={styles.statCard}>
-        <View style={styles.statBlock}>
-          <Text style={styles.statNumber}>{stats?.gamesPlayed ?? 0}</Text>
-          <Text style={styles.statLabel}>matches</Text>
+      <GlassCard variant="soft" round={20} padding={0} style={styles.statCard}>
+        <View style={styles.statRow}>
+          <View style={styles.statBlock}>
+            <Text style={styles.statNumber}>{stats?.gamesPlayed ?? 0}</Text>
+            <Text style={styles.statLabel}>matches</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBlock}>
+            <Text style={styles.statNumber}>{stats?.gamesWon ?? 0}</Text>
+            <Text style={styles.statLabel}>won</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBlock}>
+            <Text style={styles.statNumber}>{Math.round(stats?.winRate ?? 0)}%</Text>
+            <Text style={styles.statLabel}>win rate</Text>
+          </View>
         </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statBlock}>
-          <Text style={styles.statNumber}>{stats?.gamesWon ?? 0}</Text>
-          <Text style={styles.statLabel}>won</Text>
-        </View>
-        <View style={styles.statDivider} />
-        <View style={styles.statBlock}>
-          <Text style={styles.statNumber}>{Math.round(stats?.winRate ?? 0)}%</Text>
-          <Text style={styles.statLabel}>win rate</Text>
-        </View>
-      </View>
+      </GlassCard>
 
       {/* Menu rows (Figma 70:243) */}
       {menu.map((m) => (
-        <Pressable key={m.label} style={styles.menuRow} onPress={m.onPress}>
-          <View style={styles.menuIcon}>{m.icon}</View>
-          <Text style={styles.menuLabel}>{m.label}</Text>
-          <Text style={styles.chevron}>›</Text>
+        <Pressable key={m.label} onPress={m.onPress}>
+          <GlassCard variant="soft" round={16} padding={0} style={styles.menuCard}>
+            <View style={styles.menuRow}>
+              <View style={styles.menuIcon}>{m.icon}</View>
+              <Text style={styles.menuLabel}>{m.label}</Text>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          </GlassCard>
         </Pressable>
       ))}
 
       {/* Wallet (Figma 355:475) */}
-      <Pressable style={styles.walletCard} onPress={() => router.push("/account")}>
-        <View style={styles.walletIcon}>
-          <Wallet size={22} color="#B45309" strokeWidth={1.8} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={styles.walletLabel}>wallet</Text>
-          <Text style={styles.walletValue}>{credits} {credits === 1 ? "token" : "tokens"}</Text>
-          <Text style={styles.walletHint}>redeemable on any match spot</Text>
-        </View>
-        <Text style={styles.walletChevron}>›</Text>
+      <Pressable onPress={() => router.push("/account")}>
+        <GlassCard variant="soft" round={18} padding={0} style={styles.walletCard}>
+          <View style={styles.walletRow}>
+            <View style={styles.walletIcon}>
+              <Wallet size={22} color="#B45309" strokeWidth={1.8} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.walletLabel}>wallet</Text>
+              <Text style={styles.walletValue}>{credits} {credits === 1 ? "token" : "tokens"}</Text>
+              <Text style={styles.walletHint}>redeemable on any match spot</Text>
+            </View>
+            <Text style={styles.walletChevron}>›</Text>
+          </View>
+        </GlassCard>
       </Pressable>
 
       <Pressable style={styles.signOut} onPress={handleSignOut}>
@@ -169,35 +180,24 @@ const styles = StyleSheet.create({
   name: { fontSize: 18, fontWeight: "700", color: INK, marginTop: 12 },
   viewProfile: { fontSize: 13, color: MUTED, marginTop: 4 },
 
-  statCard: {
-    flexDirection: "row", alignItems: "center", height: 70, borderRadius: 20, marginTop: spacing.xl,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>. The row
+  // layout sits on the inner view the children lay out in, and the fixed
+  // heights became minHeights so the labels can grow with Dynamic Type.
+  statCard: { marginTop: spacing.xl },
+  statRow: { flexDirection: "row", alignItems: "center", minHeight: 70 },
   statBlock: { flex: 1, paddingLeft: 27 },
   statNumber: { fontSize: 22, fontWeight: "700", color: INK },
   statLabel: { fontSize: 11, color: MUTED, marginTop: 0 },
   statDivider: { width: 1, height: 40, backgroundColor: "#EADFD4" },
 
-  menuRow: {
-    flexDirection: "row", alignItems: "center", height: 54, borderRadius: 16, paddingHorizontal: 11,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    marginTop: 10,
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 18, elevation: 3,
-  },
+  menuCard: { marginTop: 10 },
+  menuRow: { flexDirection: "row", alignItems: "center", minHeight: 54, paddingHorizontal: 11 },
   menuIcon: { width: 22, alignItems: "center" },
   menuLabel: { flex: 1, fontSize: 15, color: INK, marginLeft: 12 },
   chevron: { fontSize: 16, color: MUTED },
 
-  walletCard: {
-    flexDirection: "row", alignItems: "center", height: 100, borderRadius: 18, paddingHorizontal: 15,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    marginTop: 14,
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 18, elevation: 3,
-  },
+  walletCard: { marginTop: 14 },
+  walletRow: { flexDirection: "row", alignItems: "center", minHeight: 100, paddingHorizontal: 15 },
   walletIcon: {
     width: 48, height: 48, borderRadius: 24, backgroundColor: "#FFE9CC",
     alignItems: "center", justifyContent: "center", marginRight: 14,
