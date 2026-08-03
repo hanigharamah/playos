@@ -12,6 +12,7 @@ import { VenuesEmpty, MatchesEmpty } from "@/components/BrowseEmpty";
 import { PlayNothingLive } from "@/components/PlayNothingLive";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
+import { GlassCard } from "@/components/GlassCard";
 import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -115,16 +116,18 @@ export default function Browse() {
       )}
 
       {/* Search (Figma 9:3) */}
-      <View style={styles.searchBar}>
-        <Search size={20} color={MUTED} strokeWidth={1.8} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="search venues or matches"
-          placeholderTextColor={MUTED}
-          value={query}
-          onChangeText={setQuery}
-        />
-      </View>
+      <GlassCard variant="soft" round={14} padding={0}>
+        <View style={styles.searchBar}>
+          <Search size={20} color={MUTED} strokeWidth={1.8} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="search venues or matches"
+            placeholderTextColor={MUTED}
+            value={query}
+            onChangeText={setQuery}
+          />
+        </View>
+      </GlassCard>
 
       {/* Areas near you (Figma 3:12) */}
       {areas.length > 0 && (
@@ -172,13 +175,17 @@ export default function Browse() {
 
       {!showSkeleton && (tab === "venues"
         ? venues.map(([name, { count, photo }]) => (
-            <Pressable key={name} style={styles.row} onPress={() => { setQuery(name); setTab("matches"); }}>
-              <Image source={{ uri: getVenuePhoto(name, photo) }} style={styles.thumb} />
-              <View style={styles.rowText}>
-                <Text style={styles.rowTitle} numberOfLines={1}>{name}</Text>
-                <Text style={styles.rowSub}>{count} {count === 1 ? "game" : "games"} open</Text>
-              </View>
-              <Text style={styles.chevron}>›</Text>
+            <Pressable key={name} onPress={() => { setQuery(name); setTab("matches"); }}>
+              <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
+                <View style={styles.row}>
+                  <Image source={{ uri: getVenuePhoto(name, photo) }} style={styles.thumb} />
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowTitle} numberOfLines={1}>{name}</Text>
+                    <Text style={styles.rowSub}>{count} {count === 1 ? "game" : "games"} open</Text>
+                  </View>
+                  <Text style={styles.chevron}>›</Text>
+                </View>
+              </GlassCard>
             </Pressable>
           ))
         : matches.map((g) => {
@@ -186,21 +193,25 @@ export default function Browse() {
             const teamSize = g.capacity / 2;
             const spotsLeft = g.capacity - g.bookedCount;
             return (
-              <Pressable key={g.id} style={styles.row} onPress={() => router.push(`/game/${g.id}`)}>
-                <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.thumb} />
-                <View style={styles.rowText}>
-                  {/* Figma Match Row (323:315): format · venue, then when, then spots */}
-                  <Text style={styles.rowTitle} numberOfLines={1}>
-                    {teamSize}v{teamSize} · {g.pitchName}
-                  </Text>
-                  <Text style={styles.rowSub}>
-                    {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE")} · {format(kickoff, "h:mm a")}
-                  </Text>
-                  <Text style={styles.rowSpots}>
-                    {spotsLeft > 0 ? `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left` : "full"}
-                  </Text>
-                </View>
-                <Text style={styles.chevron}>›</Text>
+              <Pressable key={g.id} onPress={() => router.push(`/game/${g.id}`)}>
+                <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
+                  <View style={styles.row}>
+                    <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.thumb} />
+                    <View style={styles.rowText}>
+                      {/* Figma Match Row (323:315): format · venue, then when, then spots */}
+                      <Text style={styles.rowTitle} numberOfLines={1}>
+                        {teamSize}v{teamSize} · {g.pitchName}
+                      </Text>
+                      <Text style={styles.rowSub}>
+                        {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE")} · {format(kickoff, "h:mm a")}
+                      </Text>
+                      <Text style={styles.rowSpots}>
+                        {spotsLeft > 0 ? `${spotsLeft} ${spotsLeft === 1 ? "spot" : "spots"} left` : "full"}
+                      </Text>
+                    </View>
+                    <Text style={styles.chevron}>›</Text>
+                  </View>
+                </GlassCard>
               </Pressable>
             );
           }))}
@@ -254,12 +265,11 @@ const styles = StyleSheet.create({
   areaName: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
   areaMeta: { fontSize: 10, color: "#FFFFFF", marginTop: 4 },
 
+  // Layout only — fill, stroke and shadows come from <GlassCard>. minHeight
+  // rather than the height it was: the field holds text.
   searchBar: {
     flexDirection: "row", alignItems: "center", gap: 2,
-    height: 44, borderRadius: 14, paddingHorizontal: 11,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.08, shadowRadius: 16, elevation: 2,
+    minHeight: 44, paddingHorizontal: 11,
   },
   searchInput: { flex: 1, fontSize: 14, color: INK, padding: 0 },
 
@@ -268,16 +278,13 @@ const styles = StyleSheet.create({
   tabActive: { fontWeight: "700", color: INK },
   underline: { width: 54, height: 2, backgroundColor: colors.orange, marginTop: 6, marginBottom: 18 },
 
+  rowCard: { marginBottom: 12 },
   row: {
     // minHeight, not height: the matches rows stack three lines of text plus
     // their margins inside 70pt of inner box, which overflows at larger text
     // sizes. With a fixed height and centred content the spill lands on the
     // neighbouring row instead of growing the card.
-    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    marginBottom: 12,
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 18, elevation: 3,
+    flexDirection: "row", alignItems: "center", minHeight: 92, padding: 11,
   },
   thumb: { width: 68, height: 68, borderRadius: 14, borderWidth: 1, borderColor: "rgba(255,255,255,0.6)" },
   rowText: { flex: 1, marginLeft: 12 },
