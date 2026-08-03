@@ -13,6 +13,7 @@ import { BookingsSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { serverNow } from "@/lib/serverTime";
 import { WarmCanvas } from "@/components/WarmCanvas";
+import { GlassCard } from "@/components/GlassCard";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -138,21 +139,24 @@ export default function MyGames() {
         const tonight = isSameDay(kickoff, new Date());
         return (
           <Pressable
-            style={styles.row}
             onPress={() => router.push(destinationFor(item))}
             onLongPress={() => handleCancel(item)}
           >
-            <Image
-              source={{ uri: getVenuePhoto(item.game.pitchName, item.game.pitchPhotoUrl) }}
-              style={styles.thumb}
-            />
-            <View style={styles.rowText}>
-              <Text style={styles.rowMeta}>
-                {tonight ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()} • {format(kickoff, "h:mm a")}
-              </Text>
-              <Text style={styles.rowTitle} numberOfLines={1}>{item.game.title}</Text>
-              <Text style={styles.rowSub}>{teamSize}v{teamSize}</Text>
-            </View>
+            <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
+              <View style={styles.row}>
+                <Image
+                  source={{ uri: getVenuePhoto(item.game.pitchName, item.game.pitchPhotoUrl) }}
+                  style={styles.thumb}
+                />
+                <View style={styles.rowText}>
+                  <Text style={styles.rowMeta}>
+                    {tonight ? "TONIGHT" : format(kickoff, "EEE, d MMM").toUpperCase()} • {format(kickoff, "h:mm a")}
+                  </Text>
+                  <Text style={styles.rowTitle} numberOfLines={1}>{item.game.title}</Text>
+                  <Text style={styles.rowSub}>{teamSize}v{teamSize}</Text>
+                </View>
+              </View>
+            </GlassCard>
           </Pressable>
         );
       }}
@@ -210,13 +214,10 @@ const styles = StyleSheet.create({
   underline: { width: 70, height: 2, backgroundColor: colors.orange, marginTop: 27, marginBottom: 34 },
   underlinePast: { marginLeft: 179 },
 
-  row: {
-    flexDirection: "row", alignItems: "center", minHeight: 104, borderRadius: 18, padding: 13,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    marginBottom: 16,
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.14, shadowRadius: 20, elevation: 4,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>; the row
+  // layout lives on the inner view the children lay out in.
+  rowCard: { marginBottom: 16 },
+  row: { flexDirection: "row", alignItems: "center", minHeight: 104, padding: 13 },
   thumb: { width: 76, height: 76, borderRadius: 16 },
   rowText: { flex: 1, marginLeft: 16 },
   rowMeta: { fontSize: 11, fontWeight: "600", color: colors.orange },
