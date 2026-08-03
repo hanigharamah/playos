@@ -15,6 +15,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { screen } from "@/lib/analytics";
 
@@ -85,24 +86,26 @@ export default function MatchAutoCancelled() {
         <HandwrittenHeader style={styles.title}>tonight is off</HandwrittenHeader>
         <Text style={styles.sub}>not enough players checked in</Text>
 
-        <View style={styles.matchCard}>
-          <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
-          <View style={styles.matchText}>
-            <Text style={styles.matchTitle} numberOfLines={1}>
-              {teamSize}v{teamSize} · {game.pitchName}
-            </Text>
-            <Text style={styles.matchSub}>
-              {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE, d MMM")} · {format(kickoff, "h:mm a")}
-            </Text>
-            {/*
-             * The mock's third line is "cancelled at 7:50 PM". games.cancelled_at
-             * is written by the cancel_match RPC but is not exposed on
-             * GameSummary/GameDetail, so the exact cancellation time cannot be
-             * shown without inventing one — the line is omitted rather than
-             * approximated from kickoff minus ten minutes.
-             */}
+        <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
+          <View style={styles.matchInner}>
+            <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+            <View style={styles.matchText}>
+              <Text style={styles.matchTitle} numberOfLines={1}>
+                {teamSize}v{teamSize} · {game.pitchName}
+              </Text>
+              <Text style={styles.matchSub}>
+                {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE, d MMM")} · {format(kickoff, "h:mm a")}
+              </Text>
+              {/*
+               * The mock's third line is "cancelled at 7:50 PM". games.cancelled_at
+               * is written by the cancel_match RPC but is not exposed on
+               * GameSummary/GameDetail, so the exact cancellation time cannot be
+               * shown without inventing one — the line is omitted rather than
+               * approximated from kickoff minus ten minutes.
+               */}
+            </View>
           </View>
-        </View>
+        </GlassCard>
 
         {/*
          * Checked-in count is real (get_game_roster). Hidden entirely when the
@@ -165,12 +168,9 @@ const styles = StyleSheet.create({
   title: { fontSize: 38, color: ORANGE, lineHeight: 48 },
   sub: { fontSize: 15.5, fontWeight: "600", color: INK, marginTop: 6 },
 
-  matchCard: {
-    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11, marginTop: 25,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>.
+  matchCard: { marginTop: 25 },
+  matchInner: { flexDirection: "row", alignItems: "center", minHeight: 92, padding: 11 },
   thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
   matchText: { flex: 1, marginLeft: 12 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
