@@ -153,7 +153,12 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
   }
 
   return (
-    <Svg viewBox={`0 0 400 ${VB_H}`} width="100%" height="100%">
+    // preserveAspectRatio="none" plus a wrap whose aspectRatio is exactly
+    // 400/VB_H: with the two ratios identical this cannot distort, and it
+    // guarantees the pitch fills its card edge to edge. With "meet" the
+    // SVG was scaling to fit and leaving the leftover width entirely on
+    // the right, so the pitch sat visibly off-centre in its card.
+    <Svg viewBox={`0 0 400 ${VB_H}`} width="100%" height="100%" preserveAspectRatio="none">
       <Defs>
         <LinearGradient id="turf" x1="0" y1="0" x2="0" y2="1">
           <Stop offset="0" stopColor={TURF_TOP} />
