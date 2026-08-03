@@ -8,7 +8,7 @@ import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
-import { useGameLineup, lineupSentence, gameFillLabel, type GameSummary } from "@/lib/api";
+import { useGameLineup, useSignedAvatarUrls, lineupSentence, gameFillLabel, type GameSummary } from "@/lib/api";
 
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
@@ -40,6 +40,10 @@ export function HomeNothingBooked({
 
   const [next, ...rest] = games;
   const { data: lineup } = useGameLineup(next?.id ?? null);
+  // The bucket is private, so a lineup row carries an object path and not
+  // something <Image> can fetch. Signed here, above the `if (!next)` guard
+  // below, so the hook count cannot change between renders.
+  const { data: avatarUrls } = useSignedAvatarUrls(lineup?.players.map((p) => p.avatarPath) ?? []);
   // The header says "also tonight", so only same-day games belong under it.
   // It previously took the next two by kickoff regardless of date and showed
   // time only, so a Saturday game read "8:00 PM" under a "tonight" heading.
@@ -95,23 +99,28 @@ export function HomeNothingBooked({
               people read a number and assume they will not be missed. Silent
               until 2026-08-game-lineup.sql is applied, so the card keeps its
               spots badge and simply says less. */}
-          {/* Initials, not photos. There is no avatar column and no storage
-              bucket, so real images do not exist yet — and at launch nobody
-              would have uploaded one, so photo discs would render 35 empty
-              grey circles. An initial from a real first name is recognisable
-              in a group this size and degrades to something meaningful. When
-              photos land, these same discs show them and nothing else moves. */}
-          {lineup && lineup.names.length > 0 && (
+          {/* Photos now, per 2026-08-avatars.sql — but the initial is still
+              load-bearing and must stay. At launch nobody has uploaded, so
+              avatarPath is null for everyone and every disc renders a gradient
+              initial; drop the fallback and the card becomes 35 empty grey
+              circles on the highest-attention element of the screen. The same
+              fallback also covers a photo whose signed URL could not be minted
+              and a build running against the pre-avatars database. */}
+          {lineup && lineup.players.length > 0 && (
             <View style={styles.lineupRow}>
               <View style={styles.avatarStack}>
-                {lineup.names.slice(0, 3).map((n, i) => (
-                  <View key={`${n}-${i}`} style={[styles.avatarRing, { marginLeft: i === 0 ? 0 : -9 }]}>
-                    <Avatar name={n} size={26} />
+                {lineup.players.slice(0, 3).map((p, i) => (
+                  <View key={`${p.firstName}-${i}`} style={[styles.avatarRing, { marginLeft: i === 0 ? 0 : -9 }]}>
+                    <Avatar
+                      name={p.firstName}
+                      uri={p.avatarPath ? avatarUrls?.[p.avatarPath] : undefined}
+                      size={26}
+                    />
                   </View>
                 ))}
-                {lineup.total > lineup.names.length && (
+                {lineup.total > lineup.players.length && (
                   <View style={[styles.avatarRing, styles.avatarMore, { marginLeft: -9 }]}>
-                    <Text style={styles.avatarMoreText}>+{lineup.total - lineup.names.length}</Text>
+                    <Text style={styles.avatarMoreText}>+{lineup.total - lineup.players.length}</Text>
                   </View>
                 )}
               </View>

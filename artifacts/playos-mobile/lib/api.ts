@@ -7,6 +7,7 @@
 import { useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { File } from "expo-file-system";
 import { supabase } from "./supabase";
 import { serverNow, syncServerTime } from "./serverTime";
 
@@ -19,6 +20,16 @@ export interface AuthUser {
   name: string;
   role: "player" | "operator" | "host" | "admin";
   createdAt: string;
+  /**
+   * Storage object path in the private `avatars` bucket, NOT a displayable
+   * URL — sign it with `useSignedAvatarUrls` before handing it to <Avatar>.
+   * Null for every player who has not uploaded one, which at launch is all of
+   * them, so every consumer has to keep the initial fallback.
+   *
+   * Reads null rather than undefined while 2026-08-avatars.sql is unapplied:
+   * `select *` simply won't return the column yet.
+   */
+  avatarUrl: string | null;
 }
 
 export interface GameSummary {
@@ -168,6 +179,7 @@ export function useGetMe() {
       return {
         id: data.id, email: data.email, phone: data.phone,
         name: data.name, role: data.role, createdAt: data.created_at,
+        avatarUrl: data.avatar_url ?? null,
       };
     },
     retry: false,
@@ -210,6 +222,7 @@ export function useLogin() {
       const user: AuthUser = {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
+        avatarUrl: profile.avatar_url ?? null,
       };
       queryClient.setQueryData(qk.me, user);
       return user;
@@ -239,6 +252,7 @@ export function useSignUp() {
       const user: AuthUser = {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
+        avatarUrl: profile.avatar_url ?? null,
       };
       queryClient.setQueryData(qk.me, user);
       return user;
@@ -535,24 +549,142 @@ export function useCancelBooking() {
  *
  * Degrades to null while 2026-08-game-lineup.sql is unapplied, so the card
  * simply shows its count instead of breaking.
+ *
+ * `players[i].avatarPath` arrives once 2026-08-avatars.sql is applied and is
+ * a PRIVATE-BUCKET OBJECT PATH, not a URL — pass the collected paths through
+ * `useSignedAvatarUrls` to get something <Avatar> can render. It is null for
+ * anyone who has not uploaded, so the initial fallback stays load-bearing.
+ * Reads null rather than undefined on the older function too, which simply
+ * does not return the column.
  */
+export interface LineupPlayer {
+  firstName: string;
+  avatarPath: string | null;
+}
+
 export function useGameLineup(gameId: string | null, limit = 3) {
   return useQuery({
     queryKey: ["game-lineup", gameId ?? "", limit] as const,
     enabled: !!gameId,
     staleTime: 60_000,
-    queryFn: async (): Promise<{ names: string[]; total: number } | null> => {
+    queryFn: async (): Promise<{ players: LineupPlayer[]; names: string[]; total: number } | null> => {
       const { data, error } = await supabase.rpc("get_game_lineup", {
         p_game_id: gameId!,
         p_limit: limit,
       });
       if (error) return null;
-      const rows = (data ?? []) as { first_name: string | null; total: number }[];
+      const rows = (data ?? []) as { first_name: string | null; avatar_url?: string | null; total: number }[];
       if (rows.length === 0) return null;
+      // Drop the nameless in one pass rather than two, so a disc and the
+      // sentence can never disagree about who is in the lineup.
+      const players: LineupPlayer[] = rows
+        .filter((r): r is typeof r & { first_name: string } => !!r.first_name)
+        .map((r) => ({ firstName: r.first_name, avatarPath: r.avatar_url ?? null }));
       return {
-        names: rows.map((r) => r.first_name).filter((n): n is string => !!n),
+        players,
+        names: players.map((p) => p.firstName),
         total: Number(rows[0]?.total ?? 0),
       };
+    },
+  });
+}
+
+// ─── Avatars ────────────────────────────────────────────────────────────
+
+/**
+ * The `avatars` bucket is private (see 2026-08-avatars.sql): a player's photo
+ * is visible to signed-in players and to nobody else, so there is no durable
+ * public URL and `getPublicUrl` would hand back a link that 400s. Reads go
+ * through short-lived signed URLs instead, which is what this mints.
+ *
+ * Batched deliberately — the promo card needs three at once, and
+ * `createSignedUrls` does them in one round trip rather than three.
+ *
+ * Returns a path -> URL map. A path missing from the map (the object was
+ * deleted out from under the row, the bucket is not created yet, the whole
+ * call failed) resolves to undefined at the call site and lands on the
+ * gradient initial, which is the same place a null path lands.
+ */
+const AVATAR_URL_TTL_SECONDS = 60 * 60;
+
+export function useSignedAvatarUrls(paths: (string | null | undefined)[]) {
+  // Sorted + deduped so that re-ordering the same three players doesn't miss
+  // the cache, and so the key is stable across renders of a new array.
+  const unique = Array.from(new Set(paths.filter((p): p is string => !!p))).sort();
+  return useQuery({
+    queryKey: ["avatar-signed-urls", unique] as const,
+    enabled: unique.length > 0,
+    // Comfortably inside the TTL above, so a cached URL is never served after
+    // it has expired.
+    staleTime: (AVATAR_URL_TTL_SECONDS / 2) * 1000,
+    queryFn: async (): Promise<Record<string, string>> => {
+      const { data, error } = await supabase.storage
+        .from("avatars")
+        .createSignedUrls(unique, AVATAR_URL_TTL_SECONDS);
+      if (error || !data) return {};
+      const map: Record<string, string> = {};
+      for (const row of data) {
+        // createSignedUrls reports per-object failure inline rather than
+        // throwing, so a single missing object must not lose the other two.
+        if (row.signedUrl && row.path) map[row.path] = row.signedUrl;
+      }
+      return map;
+    },
+  });
+}
+
+/**
+ * Replace my avatar: upload the bytes, then point users.avatar_url at them.
+ *
+ * Fixed key of `<user_id>/avatar.jpg` with upsert, because the storage policy
+ * derives ownership from the first path segment and a fixed name means
+ * changing your photo five times leaves one object, not five orphans.
+ *
+ * Order matters. The upload happens FIRST and the column is written only if
+ * it succeeded, so a failed upload leaves the row pointing at the old photo
+ * rather than at an object that does not exist. The reverse order would show
+ * every other player a broken disc.
+ */
+export function useUploadMyAvatar() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { uri: string; mimeType?: string | null }): Promise<string> => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
+      if (!userId) throw { data: { error: "You need to be signed in to set a photo." } };
+
+      // expo-file-system's File.bytes() rather than the picker's base64
+      // option: it avoids holding a ~33%-larger base64 copy of the image in
+      // JS memory, and supabase-js takes the Uint8Array directly.
+      // .buffer rather than the Uint8Array view: React Native's fetch is
+      // reliable with a plain ArrayBuffer body, and this is the same shape the
+      // usual base64 `decode()` recipe produces.
+      const bytes = await new File(vars.uri).bytes();
+
+      const path = `${userId}/avatar.jpg`;
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(path, bytes.buffer, {
+          contentType: vars.mimeType || "image/jpeg",
+          upsert: true,
+        });
+      if (uploadError) throw { data: { error: uploadError.message } };
+
+      const { error: rowError } = await supabase
+        .from("users")
+        .update({ avatar_url: path })
+        .eq("id", userId);
+      if (rowError) throw { data: { error: rowError.message } };
+
+      return path;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: qk.me });
+      // The path is unchanged on a re-upload, so nothing about the lineup's
+      // avatar_url differs — but the bytes behind it do. Drop the signed URLs
+      // as well or the card keeps showing the previous photo until the TTL.
+      queryClient.invalidateQueries({ queryKey: ["avatar-signed-urls"] });
+      queryClient.invalidateQueries({ queryKey: ["game-lineup"] });
     },
   });
 }

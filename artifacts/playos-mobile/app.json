@@ -52,6 +52,14 @@
         }
       ],
       [
+        "expo-image-picker",
+        {
+          "photosPermission": "PlayOS uses your photo library so you can pick a profile photo for your player card.",
+          "cameraPermission": false,
+          "microphonePermission": false
+        }
+      ],
+      [
         "expo-splash-screen",
         {
           "backgroundColor": "#FFF8F0",

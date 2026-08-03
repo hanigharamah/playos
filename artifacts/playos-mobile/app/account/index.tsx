@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Linking, Alert, Platform, AppState } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Linking, Alert, Platform, AppState, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur";
-import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock, Bell } from "lucide-react-native";
+import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock, Bell, Camera } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
+import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
-import { useGetMe, useGetMyCredits } from "@/lib/api";
+import { Avatar } from "@/components/Avatar";
+import { useGetMe, useGetMyCredits, useSignedAvatarUrls, useUploadMyAvatar } from "@/lib/api";
 import { registerForPush } from "@/lib/notifications";
 import { resetAnalytics, track, screen } from "@/lib/analytics";
 import { colors, spacing } from "@/lib/theme";
@@ -41,6 +43,11 @@ export default function Settings() {
   const { data: me } = useGetMe();
   const { data: credits = 0 } = useGetMyCredits();
   const [pushGranted, setPushGranted] = useState(false);
+  // me.avatarUrl is a private-bucket object path, not something <Image> can
+  // fetch — it has to be signed before it can be shown.
+  const { data: avatarUrls } = useSignedAvatarUrls([me?.avatarUrl]);
+  const uploadAvatar = useUploadMyAvatar();
+  const myAvatarUri = me?.avatarUrl ? avatarUrls?.[me.avatarUrl] : undefined;
 
   useEffect(() => {
     screen("Settings");
@@ -65,6 +72,61 @@ export default function Settings() {
       source: "settings",
       result: result.status,
     });
+  };
+
+  /**
+   * Pick a square photo and upload it.
+   *
+   * allowsEditing + aspect [1,1] hands the crop to the OS, which gives an
+   * actual square rather than a rectangle the avatar disc quietly centre-crops
+   * — the player sees what everyone else will see. quality 0.7 keeps a typical
+   * iPhone photo in the low hundreds of KB, well under the bucket's 5 MB cap,
+   * on a disc that renders at 26pt on the promo card.
+   */
+  const pickAvatar = async () => {
+    if (uploadAvatar.isPending) return;
+
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      // Once iOS has been told no, asking again is a no-op — the only route
+      // back is Settings, so say that instead of silently doing nothing.
+      Alert.alert(
+        "Photo access is off",
+        perm.canAskAgain
+          ? "PlayOS needs access to your photos to set a profile photo."
+          : "Turn on photo access for PlayOS in Settings to set a profile photo.",
+        perm.canAskAgain
+          ? [{ text: "OK" }]
+          : [{ text: "Cancel", style: "cancel" }, { text: "Open Settings", onPress: () => Linking.openSettings() }],
+      );
+      return;
+    }
+
+    const picked = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+    if (picked.canceled) return;
+    const asset = picked.assets?.[0];
+    if (!asset?.uri) return;
+
+    try {
+      await uploadAvatar.mutateAsync({ uri: asset.uri, mimeType: asset.mimeType });
+      track("avatar_updated", { source: "settings" });
+    } catch (err) {
+      // The upload runs before the column is written, so a failure here has
+      // left the old photo in place — nothing to roll back, and offering the
+      // retry is the whole recovery path.
+      const message = (err as { data?: { error?: string } })?.data?.error;
+      track("avatar_update_failed", { source: "settings", reason: message ?? "unknown" });
+      Alert.alert(
+        "Photo not saved",
+        message ? `${message}` : "Something went wrong uploading your photo. Check your connection and try again.",
+        [{ text: "Cancel", style: "cancel" }, { text: "Try again", onPress: pickAvatar }],
+      );
+    }
   };
 
   const handleSignOut = () => {
@@ -103,6 +165,30 @@ export default function Settings() {
         </Pressable>
         <Text style={styles.title}>settings</Text>
       </View>
+
+      {/* The photo, and the only place to set one. <Avatar> falls back to the
+          gradient initial whenever uri is undefined — no photo yet, or a
+          signed URL that could not be minted — so this disc is never empty. */}
+      <Pressable style={styles.avatarBlock} onPress={pickAvatar} disabled={uploadAvatar.isPending}>
+        <View>
+          <Avatar name={me?.name ?? "?"} uri={myAvatarUri} size={84} />
+          {uploadAvatar.isPending ? (
+            // Indeterminate on purpose. supabase-js uploads over fetch, which
+            // reports no progress events, and a cropped avatar is a sub-second
+            // transfer — a percentage here would be invented, not measured.
+            <View style={styles.avatarBusy}>
+              <ActivityIndicator color="#FFFFFF" />
+            </View>
+          ) : (
+            <View style={styles.avatarBadge}>
+              <Camera size={14} color="#FFFFFF" strokeWidth={2} />
+            </View>
+          )}
+        </View>
+        <Text style={styles.avatarHint}>
+          {uploadAvatar.isPending ? "uploading…" : me?.avatarUrl ? "change photo" : "add a photo"}
+        </Text>
+      </Pressable>
 
       <Text style={styles.section}>ACCOUNT</Text>
       <Row icon={<UserIcon size={22} color={INK} strokeWidth={1.8} />} label="personal info" value={me?.name ?? "—"} />
@@ -186,6 +272,22 @@ const styles = StyleSheet.create({
   title: { fontSize: 20, fontWeight: "600", color: INK },
 
   section: { fontSize: 12, fontWeight: "600", color: MUTED, marginTop: spacing.xl, marginBottom: 10, marginLeft: 4 },
+
+  avatarBlock: { alignItems: "center", marginTop: spacing.xl, gap: 10 },
+  // Sits on the disc's lower-right, the conventional "editable" affordance.
+  avatarBadge: {
+    position: "absolute", right: -2, bottom: -2, width: 28, height: 28, borderRadius: 14,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "#FF8A00", borderWidth: 2, borderColor: "#FFF8F0",
+  },
+  // Covers the whole disc rather than sitting beside it, so it reads as "this
+  // photo is being replaced" and doubles as the disabled state.
+  avatarBusy: {
+    ...StyleSheet.absoluteFillObject, borderRadius: 42,
+    alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(28,28,30,0.45)",
+  },
+  avatarHint: { fontSize: 13, fontWeight: "600", color: "#C96A00" },
 
   row: { ...rowSurface, flexDirection: "row", alignItems: "center", height: 54, borderRadius: 16, paddingHorizontal: 11, marginBottom: 8 },
   rowIcon: { width: 22, alignItems: "center" },
