@@ -490,6 +490,58 @@ export function useCancelBooking() {
   });
 }
 
+/**
+ * First names of players already booked into a game, for social proof on the
+ * promo hero. Names beat counts for turnout in a small community, and a bare
+ * count can backfire — people read a number and assume they won't be missed.
+ *
+ * Deliberately NOT get_game_roster: that is gated to participants and returns
+ * [] for a game you have not joined, which is exactly the case this serves.
+ *
+ * Degrades to null while 2026-08-game-lineup.sql is unapplied, so the card
+ * simply shows its count instead of breaking.
+ */
+export function useGameLineup(gameId: string | null, limit = 3) {
+  return useQuery({
+    queryKey: ["game-lineup", gameId ?? "", limit] as const,
+    enabled: !!gameId,
+    staleTime: 60_000,
+    queryFn: async (): Promise<{ names: string[]; total: number } | null> => {
+      const { data, error } = await supabase.rpc("get_game_lineup", {
+        p_game_id: gameId!,
+        p_limit: limit,
+      });
+      if (error) return null;
+      const rows = (data ?? []) as { first_name: string | null; total: number }[];
+      if (rows.length === 0) return null;
+      return {
+        names: rows.map((r) => r.first_name).filter((n): n is string => !!n),
+        total: Number(rows[0]?.total ?? 0),
+      };
+    },
+  });
+}
+
+/**
+ * "Ali and Ahmed are in" / "Ali, Ahmed and 4 others are in".
+ *
+ * NOT "also joining" — that reads as though the viewer is already in the game,
+ * and this card exists to promote one they have not booked.
+ */
+export function lineupSentence(names: string[], total: number): string | null {
+  if (names.length === 0) return null;
+  const others = Math.max(0, total - names.length);
+  if (names.length === 1) {
+    return others > 0
+      ? `${names[0]} and ${others} ${others === 1 ? "other" : "others"} are in`
+      : `${names[0]} is in`;
+  }
+  const head = names.slice(0, -1).join(", ");
+  const tail = names[names.length - 1];
+  if (others > 0) return `${head}, ${tail} and ${others} ${others === 1 ? "other" : "others"} are in`;
+  return `${head} and ${tail} are in`;
+}
+
 /** Wallet token balance shown on the Profile screen. */
 export function useGetMyCredits() {
   return useQuery({

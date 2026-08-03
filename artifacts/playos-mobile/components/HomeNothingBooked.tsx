@@ -7,7 +7,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
-import type { GameSummary } from "@/lib/api";
+import { useGameLineup, lineupSentence, type GameSummary } from "@/lib/api";
 
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
@@ -27,6 +27,7 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
   const router = useRouter();
 
   const [next, ...rest] = games;
+  const { data: lineup } = useGameLineup(next?.id ?? null);
   // The header says "also tonight", so only same-day games belong under it.
   // It previously took the next two by kickoff regardless of date and showed
   // time only, so a Saturday game read "8:00 PM" under a "tonight" heading.
@@ -74,6 +75,17 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
             </View>
             <Text style={styles.heroPrice}>SAR {next.price}</Text>
           </View>
+
+          {/* Who is already in. Names convert far better than a headcount in a
+              community this size, and a bare count can actively backfire —
+              people read a number and assume they will not be missed. Silent
+              until 2026-08-game-lineup.sql is applied, so the card keeps its
+              spots badge and simply says less. */}
+          {lineup && (
+            <Text style={styles.lineup} numberOfLines={1}>
+              {lineupSentence(lineup.names, lineup.total)}
+            </Text>
+          )}
 
           <LinearGradient
             colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
@@ -139,6 +151,7 @@ const styles = StyleSheet.create({
   heroTextCol: { flex: 1 },
   heroTitle: { fontSize: 17, fontWeight: "600", color: INK },
   heroSub: { fontSize: 13, color: MUTED, marginTop: 6 },
+  lineup: { fontSize: 13, fontWeight: "600", color: "#1F7A2C", marginTop: 10 },
   heroPrice: { fontSize: 18, fontWeight: "700", color: INK, marginLeft: 12 },
 
   heroCta: {
