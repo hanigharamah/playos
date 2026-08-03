@@ -577,6 +577,56 @@ export function lineupSentence(names: string[], total: number): string | null {
   return `${head} and ${tail} are in`;
 }
 
+/**
+ * Today's open games, ranked for CONVERSION rather than by kickoff time.
+ *
+ * Fill descending: a 9/12 game is one nudge from happening, a 3/12 six hours
+ * out is likely to be cancelled. The buyer's real risk is cancellation, and
+ * fill ratio is the visible proxy for it — the same near-goal effect that makes
+ * Kickstarter campaigns past halfway fund over 95% of the time. Sorting by
+ * soonest kickoff, the obvious default, buries the game that most needs three
+ * more players.
+ *
+ * Falls back to the rest of the week when today is empty: an empty Home is
+ * worse than a slightly stale one.
+ */
+export function rankOpenGames(games: GameSummary[], nowMs: number): {
+  games: GameSummary[];
+  isToday: boolean;
+} {
+  const open = games.filter(
+    (g) => g.status !== "cancelled" && g.capacity - g.bookedCount > 0 && new Date(g.kickoffTime).getTime() > nowMs,
+  );
+  const sameDay = (g: GameSummary) => {
+    const d = new Date(g.kickoffTime);
+    const n = new Date(nowMs);
+    return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth() && d.getDate() === n.getDate();
+  };
+  const byFill = (a: GameSummary, b: GameSummary) => {
+    const fa = a.capacity ? a.bookedCount / a.capacity : 0;
+    const fb = b.capacity ? b.bookedCount / b.capacity : 0;
+    if (fb !== fa) return fb - fa;
+    // Same fill: the sooner one is the more urgent sell.
+    return new Date(a.kickoffTime).getTime() - new Date(b.kickoffTime).getTime();
+  };
+
+  const today = open.filter(sameDay).sort(byFill);
+  if (today.length > 0) return { games: today, isToday: true };
+  return { games: open.sort(byFill), isToday: false };
+}
+
+/**
+ * How close a game is to being viable, for honest labelling. Below the
+ * threshold we say what it NEEDS rather than what is left — "needs 6 more"
+ * instead of "6 spots left" — so nobody books a match expecting it to happen.
+ */
+export function gameFillLabel(g: GameSummary): { text: string; atRisk: boolean } {
+  const spots = g.capacity - g.bookedCount;
+  const short = MIN_PLAYERS_TO_START - g.bookedCount;
+  if (short > 0) return { text: `needs ${short} more`, atRisk: true };
+  return { text: `${spots} ${spots === 1 ? "spot" : "spots"} left`, atRisk: false };
+}
+
 /** Wallet token balance shown on the Profile screen. */
 export function useGetMyCredits() {
   return useQuery({

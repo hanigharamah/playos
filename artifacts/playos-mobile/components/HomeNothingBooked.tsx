@@ -7,23 +7,34 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
-import { useGameLineup, lineupSentence, type GameSummary } from "@/lib/api";
+import { useGameLineup, lineupSentence, gameFillLabel, type GameSummary } from "@/lib/api";
 
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
 
 /**
- * Home with nothing booked (Figma 684:570).
+ * Home's storefront (Figma 684:570) — now the DEFAULT, not an empty state.
  *
- * Per the annotation this is a real screen, not an empty-state afterthought —
- * it's what most players see most of the time. So it must still surface the
- * next few open games; a home with only a button is a dead end.
+ * It used to render only when upcoming.length === 0, so the moment a player
+ * booked one match Home stopped showing them a single bookable game. That one
+ * condition was the revenue bug: every comparable marketplace — Playtomic,
+ * OpenTable, ClassPass — leads with what you can book, and demotes what you
+ * already booked. Match-day state lives on the mini-bar, which follows the
+ * player across every tab, so Home does not need to repeat it.
+ *
+ * Games arrive pre-ranked by rankOpenGames: fill descending, today first,
+ * falling back to the rest of the week when today is empty.
  *
  * The mock shows "2.4 km away" on the hero. There's no device-location wiring
- * and no venue coordinates, so distance is omitted rather than faked. Add it
- * back once locations exist — the slot is the meta line.
+ * and no venue coordinates, so distance is omitted rather than faked.
  */
-export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
+export function HomeNothingBooked({
+  games,
+  isToday = true,
+}: {
+  games: GameSummary[];
+  isToday?: boolean;
+}) {
   const router = useRouter();
 
   const [next, ...rest] = games;
@@ -31,14 +42,16 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
   // The header says "also tonight", so only same-day games belong under it.
   // It previously took the next two by kickoff regardless of date and showed
   // time only, so a Saturday game read "8:00 PM" under a "tonight" heading.
-  const alsoTonight = rest.filter((g) => isSameDay(new Date(g.kickoffTime), new Date())).slice(0, 2);
+  // Already ranked and already filtered to the right day by rankOpenGames —
+  // filtering again here would drop the week-fallback games entirely.
+  const alsoTonight = rest.slice(0, 2);
 
   if (!next) {
     return (
       <EmptyState
         icon={<CalendarDays size={38} color="#C2703A" strokeWidth={1.8} />}
-        title="nothing on tonight"
-        body="no games are open right now. check back later, or browse everything in riyadh."
+        title="nothing open right now"
+        body="every match is full or finished. check back later, or browse everything in riyadh."
         actionLabel="browse venues"
         onAction={() => router.push("/browse")}
       />
@@ -46,24 +59,24 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
   }
 
   const kickoff = new Date(next.kickoffTime);
-  const spots = next.capacity - next.bookedCount;
+  const fill = gameFillLabel(next);
   const teamSize = next.capacity / 2;
 
   return (
     <View>
-      <Text style={styles.nothing}>nothing booked yet</Text>
-      <Text style={styles.eyebrow}>NEXT ONE NEAR YOU</Text>
+      <Text style={styles.eyebrow}>{isToday ? "TONIGHT IN RIYADH" : "COMING UP THIS WEEK"}</Text>
 
       {/* Hero — the one game we're actively recommending */}
       <Pressable onPress={() => router.push(`/game/${next.id}`)}>
         <GlassCard variant="soft" round={24} padding={19} style={styles.hero}>
           <View>
             <Image source={{ uri: getVenuePhoto(next.pitchName, next.pitchPhotoUrl) }} style={styles.heroPhoto} />
-            {spots > 0 && (
-              <View style={styles.spotsBadge}>
-                <Text style={styles.spotsText}>{spots} {spots === 1 ? "spot" : "spots"} left</Text>
-              </View>
-            )}
+            {/* "needs 6 more" below the viable threshold, not "6 spots left".
+                A game that cannot start yet is a different offer, and saying
+                so is what stops someone booking a match that gets cancelled. */}
+            <View style={[styles.spotsBadge, fill.atRisk && styles.spotsBadgeAtRisk]}>
+              <Text style={styles.spotsText}>{fill.text}</Text>
+            </View>
           </View>
 
           <View style={styles.heroRow}>
@@ -101,7 +114,7 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
 
       {alsoTonight.length > 0 && (
         <>
-          <HandwrittenHeader style={styles.alsoLabel}>also tonight</HandwrittenHeader>
+          <HandwrittenHeader style={styles.alsoLabel}>{isToday ? "also tonight" : "also this week"}</HandwrittenHeader>
           {alsoTonight.map((g) => {
             const k = new Date(g.kickoffTime);
             const s = g.capacity - g.bookedCount;
@@ -134,7 +147,6 @@ export function HomeNothingBooked({ games }: { games: GameSummary[] }) {
 }
 
 const styles = StyleSheet.create({
-  nothing: { fontSize: 15, fontWeight: "600", color: INK, marginTop: 8 },
   eyebrow: { fontSize: 11, fontWeight: "600", color: MUTED, marginTop: 26, letterSpacing: 0.3 },
 
   // Geometry only — fill, stroke and shadows come from <GlassCard>.
@@ -145,6 +157,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(28,28,30,0.55)",
   },
+  spotsBadgeAtRisk: { backgroundColor: "rgba(191,38,38,0.72)" },
   spotsText: { fontSize: 11, fontWeight: "600", color: "#FFFFFF" },
 
   heroRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
