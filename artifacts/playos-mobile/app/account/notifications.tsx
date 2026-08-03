@@ -7,6 +7,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { useNotificationPrefs, useSetNotificationPrefs, DEFAULT_NOTIFICATION_PREFS, type NotificationPrefs } from "@/lib/api";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { colors } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -102,18 +103,20 @@ export default function NotificationSettings() {
           <View key={section.label}>
             <Text style={styles.sectionLabel}>{section.label}</Text>
             {section.rows.map((row) => (
-              <View key={row.key} style={styles.row}>
-                <View style={styles.rowText}>
-                  <Text style={styles.rowTitle}>{row.title}</Text>
-                  <Text style={styles.rowSub}>{row.sub}</Text>
+              <GlassCard key={row.key} variant="soft" round={16} padding={0} style={styles.rowCard}>
+                <View style={styles.row}>
+                  <View style={styles.rowText}>
+                    <Text style={styles.rowTitle}>{row.title}</Text>
+                    <Text style={styles.rowSub}>{row.sub}</Text>
+                  </View>
+                  <Switch
+                    value={prefs[row.key]}
+                    onValueChange={(v) => toggle(row.key, v)}
+                    trackColor={{ false: "#E4E4E7", true: colors.orange }}
+                    thumbColor="#FFFFFF"
+                  />
                 </View>
-                <Switch
-                  value={prefs[row.key]}
-                  onValueChange={(v) => toggle(row.key, v)}
-                  trackColor={{ false: "#E4E4E7", true: colors.orange }}
-                  thumbColor="#FFFFFF"
-                />
-              </View>
+              </GlassCard>
             ))}
           </View>
         ))}
@@ -154,11 +157,10 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingTop: 22, paddingBottom: 60 },
   sectionLabel: { fontSize: 11, fontWeight: "600", color: MUTED, letterSpacing: 0.3, marginTop: 22, marginLeft: 4 },
 
-  row: {
-    flexDirection: "row", alignItems: "center", height: 64, borderRadius: 16, marginTop: 10, paddingHorizontal: 17,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>. minHeight
+  // rather than the fixed 64 it was: each row carries a title and a sub-line.
+  rowCard: { marginTop: 10 },
+  row: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingHorizontal: 17 },
   rowText: { flex: 1, paddingRight: 12 },
   rowTitle: { fontSize: 14.5, fontWeight: "600", color: INK },
   rowSub: { fontSize: 11.5, color: MUTED, marginTop: 4 },
