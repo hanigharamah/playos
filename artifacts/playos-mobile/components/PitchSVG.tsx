@@ -1,11 +1,11 @@
-import Svg, { Rect, Line, Circle, Path, Text as SvgText, G } from "react-native-svg";
+import Svg, { Rect, Line, Circle, Path, Text as SvgText, G, Defs, LinearGradient, Stop } from "react-native-svg";
 import { colors } from "@/lib/theme";
 
 /**
  * Interactive pitch spot-picker, restyled to the Figma glass booking page
- * (node 1:4): cream turf #F6EADE, tan line work, Team A orange / Team B
- * purple dots with soft glows, dashed open slots. Slot POSITIONS are the
- * tuned geometry ported from the web — do not "improve" them.
+ * (node 1:4): warm clay turf, white line work, one colour for every taken
+ * spot, dashed open slots. Slot POSITIONS are the tuned geometry ported from
+ * the web — do not "improve" them.
  */
 type Pos = { x: number; y: number };
 
@@ -45,9 +45,19 @@ const POSITIONS: Record<number, Pos[]> = {
   ],
 };
 
-const LINE = "rgba(255,255,255,0.85)";
-const TURF = "#F6EADE";
-const EMPTY = "rgba(191,184,173,0.5)";
+/**
+ * The turf was #F6EADE — within a few percent of the page's own #FFF8F0, so
+ * the pitch barely separated from the card behind it and the white line work
+ * had almost nothing to sit against. It is now a warm clay, dark enough for
+ * the lines to read and for the team dots to sit ON something, and it keeps
+ * the cream family rather than jumping to a green that belongs to a different
+ * app. Vertical gradient so it has depth instead of reading as a flat swatch.
+ */
+const LINE = "rgba(255,255,255,0.92)";
+const TURF_TOP = "#C8A784";
+const TURF_BOTTOM = "#AD8A66";
+/** Open slots: light on the dark turf now, where they used to be dark on light. */
+const EMPTY = "rgba(255,255,255,0.6)";
 /** Design pitch is 326×122 (wide + short); slot POSITIONS were tuned on a
  *  400×260 board, so squash Y to fit without distorting the dots. */
 const VB_H = 150;
@@ -98,7 +108,12 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
     const booking = getBooking(team, slot);
     const isSelected = selectedSlot?.team === team && selectedSlot?.slot === slot;
     const isCurrentUser = !!booking && booking.userId === currentUserId;
-    const teamColor = team === 1 ? colors.teamOrange : colors.teamPurple;
+    // One colour for every spot. Booking is not picking a side — sides are
+    // claimed in the match-day room at T-20 — so colouring the two halves
+    // orange and purple here implied a commitment the player has not made.
+    // The DB still stores team 1/2 by which half the spot is on; that is a
+    // seat number, not a shirt.
+    const teamColor = colors.teamOrange;
     const canClick = gameOpen && !booking && !isPending;
 
     // react-native-svg shapes take onPress directly — they can't be wrapped
@@ -139,9 +154,15 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
 
   return (
     <Svg viewBox={`0 0 400 ${VB_H}`} width="100%" height="100%">
-      <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill={TURF} />
+      <Defs>
+        <LinearGradient id="turf" x1="0" y1="0" x2="0" y2="1">
+          <Stop offset="0" stopColor={TURF_TOP} />
+          <Stop offset="1" stopColor={TURF_BOTTOM} />
+        </LinearGradient>
+      </Defs>
+      <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="url(#turf)" />
 
-      {/* Line work — white on cream, per the Figma pitch */}
+      {/* Line work — white on clay */}
       <Rect x={5} y={4} width={390} height={142} fill="none" stroke={LINE} strokeWidth={1.2} />
       <Line x1={200} y1={4} x2={200} y2={146} stroke={LINE} strokeWidth={1.2} />
       <Circle cx={200} cy={75} r={21} fill="none" stroke={LINE} strokeWidth={1.2} />
@@ -161,7 +182,7 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
       {positions.map((pos, i) => renderSlot(1, i, pos))}
       {positions.map((pos, i) => renderSlot(2, i, mirrorX(pos)))}
 
-      {isPending && <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="rgba(246,234,222,0.55)" />}
+      {isPending && <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="rgba(255,248,240,0.45)" />}
     </Svg>
   );
 }

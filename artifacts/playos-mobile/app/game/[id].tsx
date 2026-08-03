@@ -275,14 +275,13 @@ export default function GameDetail() {
 
         {/* Choose your spot (Figma 552:592) */}
         <View style={[styles.card, styles.pitchCard]}>
+          {/* No Team A / Team B legend. Booking a spot is not picking a side —
+              sides are chosen in the match-day room at T-20 (claim_side), and
+              the coin flip decides kickoff. Labelling the two halves as teams
+              here told the player they were committing to one, five to twelve
+              hours before that decision is actually made. */}
           <View style={styles.pitchHeader}>
             <Text style={styles.pitchLabel}>choose your spot</Text>
-            <View style={styles.legend}>
-              <View style={[styles.legendDot, { backgroundColor: colors.teamOrange }]} />
-              <Text style={styles.legendText}>Team A</Text>
-              <View style={[styles.legendDot, { backgroundColor: colors.teamPurple, marginLeft: 10 }]} />
-              <Text style={styles.legendText}>Team B</Text>
-            </View>
           </View>
           <View style={styles.pitchWrap}>
             <PitchSVG
@@ -457,9 +456,6 @@ const styles = StyleSheet.create({
   pitchCard: { marginLeft: 15, marginRight: 25, marginTop: 33, borderRadius: 18, padding: 11 },
   pitchHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 4 },
   pitchLabel: { fontSize: 12.5, fontWeight: "600", color: INK },
-  legend: { flexDirection: "row", alignItems: "center", gap: 4 },
-  legendDot: { width: 8, height: 8, borderRadius: 4 },
-  legendText: { fontSize: 9.5, color: MUTED },
   pitchWrap: { borderRadius: 12, overflow: "hidden", aspectRatio: 326 / 122, marginTop: 12 },
   pitchFooter: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 12, paddingHorizontal: 4 },
   pitchFooterText: { fontSize: 10, color: MUTED },
