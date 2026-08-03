@@ -107,6 +107,11 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   contact: {
+    // flexGrow so a minHeight (or any height) passed in through `style` on the
+    // outer wrapper actually stretches the fill. Without it the nested layers
+    // are content-sized: the wrapper reserved the space and the visible glass
+    // stayed short, leaving a gap. app/match/[id].tsx passes minHeight 300.
+    flexGrow: 1,
     shadowColor: "#8C5926",
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.1,
@@ -114,6 +119,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
   },
   card: {
+    flexGrow: 1,
     borderWidth: 1,
     borderColor: colors.glassStroke,
     overflow: "hidden",
