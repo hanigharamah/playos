@@ -111,8 +111,18 @@ export default function MatchDay() {
       { gameId: id },
       {
         onSuccess: (conversationId) => router.push(`/chat/${conversationId}`),
-        onError: (err: any) =>
-          setNotice(err?.data?.error ?? "Couldn't open the group chat — try again."),
+        // The RPC is defined in supabase/2026-07-mobile-design-support.sql but
+        // is NOT applied to the database — probed 2026-08-03, PGRST202. Until
+        // it is, this button is reachable, so it must fail in the player's
+        // language rather than showing them a Postgres error string.
+        onError: (err: any) => {
+          const msg: string = err?.data?.error ?? "";
+          setNotice(
+            /Could not find the function|PGRST202|schema cache/i.test(msg)
+              ? "Group chat isn't switched on yet."
+              : msg || "Couldn't open the group chat — try again.",
+          );
+        },
       },
     );
   };
