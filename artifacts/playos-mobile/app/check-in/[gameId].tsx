@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Image, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
 import * as Notifications from "expo-notifications";
 import { useGetGame, useGetMyBookings } from "@/lib/api";
@@ -47,6 +48,7 @@ const CHECK_IN_OPENS_MINUTES_BEFORE = 20;
 export default function CheckInNotOpen() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data: game, isLoading } = useGetGame(gameId!);
   const { data: bookings } = useGetMyBookings();
@@ -104,7 +106,7 @@ export default function CheckInNotOpen() {
   const teamSize = game.capacity / 2;
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -163,7 +165,9 @@ export default function CheckInNotOpen() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20, paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20 },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFF8F0" },
 
   header: { flexDirection: "row", alignItems: "center" },

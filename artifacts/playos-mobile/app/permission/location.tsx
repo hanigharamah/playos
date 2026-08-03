@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Linking, ScrollView, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useListGames } from "@/lib/api";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
@@ -36,6 +37,7 @@ export const AREA_KEY = "playos.manualArea";
  */
 export default function LocationPermission() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data: games } = useListGames();
   const [selected, setSelected] = useState<string | null>(null);
@@ -62,7 +64,7 @@ export default function LocationPermission() {
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -128,7 +130,9 @@ export default function LocationPermission() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
 
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
   backBtn: {

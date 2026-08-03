@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, TextInput, Alert, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isToday } from "date-fns";
 import { useGetGame, useOpsRoster, useIsOperator, useCancelMatch, type CancelReason } from "@/lib/api";
@@ -48,6 +49,7 @@ const CONFIRM_WORD = "CANCEL";
 export default function OpsCancelMatch() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data: game } = useGetGame(gameId!);
   const { data: isOperator, isLoading: roleLoading } = useIsOperator();
@@ -62,7 +64,7 @@ export default function OpsCancelMatch() {
   const kickoff = game ? new Date(game.kickoffTime).getTime() : null;
   const { remainingMs } = useServerCountdown(kickoff);
 
-  if (roleLoading) return <View style={styles.wrap} />;
+  if (roleLoading) return <View style={[styles.wrap, { paddingTop: insets.top + 5 }]} />;
 
   if (!isOperator) {
     return (
@@ -224,7 +226,9 @@ const card = {
 };
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   centre: { alignItems: "center", justifyContent: "center" },
 
   denied: { fontSize: 15, color: INK },

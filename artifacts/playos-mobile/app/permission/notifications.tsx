@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Linking, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
@@ -43,6 +44,7 @@ const MISSES = [
  */
 export default function NotificationsPermission() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { user } = useAuth();
   const [busy, setBusy] = useState(false);
@@ -74,7 +76,7 @@ export default function NotificationsPermission() {
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -132,7 +134,9 @@ async function bumpPromptCount() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20, paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20 },
 
   header: { flexDirection: "row", alignItems: "center" },
   backBtn: {

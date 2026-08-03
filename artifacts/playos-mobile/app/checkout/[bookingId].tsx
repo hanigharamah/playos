@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, ScrollView, Image, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay, subHours } from "date-fns";
 import { useGetSettings, useConfirmPaymentMethod, useGetGame, FREE_CANCEL_HOURS } from "@/lib/api";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
@@ -42,6 +43,7 @@ const GLOWS = [
 export default function Checkout() {
   const { bookingId, gameId } = useLocalSearchParams<{ bookingId: string; gameId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data: settings } = useGetSettings();
   const { data: game } = useGetGame(gameId!);
@@ -77,7 +79,7 @@ export default function Checkout() {
   ];
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -176,7 +178,9 @@ const card = {
 };
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
 
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
   backBtn: {

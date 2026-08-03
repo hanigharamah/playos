@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, Alert, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
 import { useGetMyBookings, useGetGame } from "@/lib/api";
 import {
@@ -57,6 +58,7 @@ function sar(amount: number): string {
 export default function RefundScreen() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
   const { data: bookings, isLoading: bookingsLoading } = useGetMyBookings();
@@ -109,7 +111,7 @@ export default function RefundScreen() {
       <View style={styles.wrap}>
         <WarmCanvas base="#FFF8F0" glows={GLOWS} />
         <DotWaveBackground width={width} height={600} />
-        <View style={styles.content}>
+        <View style={[styles.content, { paddingTop: insets.top + 5 }]}>
           <Header title="match cancelled" onBack={() => router.back()} />
           <Callout
             tone="neutral"
@@ -183,6 +185,7 @@ function Choosing({
   amount: number;
   bookingId: string;
 }) {
+  const insets = useSafeAreaInsets();
   /*
    * Deliberately starts with NOTHING selected, where the mock ships with the
    * token pre-selected and the CTA reading "confirm · take the token". The
@@ -212,7 +215,7 @@ function Choosing({
     <View style={styles.wrap}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 5 }]} showsVerticalScrollIndicator={false}>
         <Header title="match cancelled" onBack={() => router.back()} />
         <Text style={styles.lede}>not your fault, so nothing here can cost you.</Text>
 
@@ -303,13 +306,14 @@ function Settled({
   settledAt: string | null;
   openedAtMs: number | null;
 }) {
+  const insets = useSafeAreaInsets();
   const auto = choice === null;
 
   return (
     <View style={styles.wrap}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 5 }]} showsVerticalScrollIndicator={false}>
         <Header title="refunded" onBack={() => router.back()} />
         <Text style={styles.lede}>
           {auto
@@ -448,7 +452,9 @@ function TimelineRow({
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: 48 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  content: { paddingHorizontal: 20, paddingBottom: 48 },
 
   header: { flexDirection: "row", alignItems: "center" },
   backBtn: {

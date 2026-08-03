@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { View, Text, StyleSheet, Linking, Platform, BackHandler, useWindowDimensions } from "react-native";
 import { useLocalSearchParams } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Application from "expo-application";
 import Constants from "expo-constants";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
@@ -30,6 +31,7 @@ const GLOWS = [
  * root layout once the API returns a minimum.
  */
 export default function UpdateRequired() {
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { required } = useLocalSearchParams<{ required?: string }>();
 
@@ -54,7 +56,7 @@ export default function UpdateRequired() {
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -98,7 +100,9 @@ export default function UpdateRequired() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20, paddingTop: 42 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20 },
 
   title: { fontSize: 38, color: "#FF9F0A" },
   sub: { fontSize: 15.5, fontWeight: "600", color: INK, marginTop: 10 },

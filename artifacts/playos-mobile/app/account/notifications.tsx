@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
@@ -66,6 +67,7 @@ const SECTIONS: { label: string; rows: { key: PrefKey; title: string; sub: strin
  */
 export default function NotificationSettings() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data } = useNotificationPrefs();
   const setPrefs = useSetNotificationPrefs();
@@ -84,7 +86,7 @@ export default function NotificationSettings() {
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -136,7 +138,9 @@ export default function NotificationSettings() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
 
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
   backBtn: {

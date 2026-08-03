@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
 import { useGetGame, useGetMyBookings, useGameRoster } from "@/lib/api";
 import {
@@ -47,6 +48,7 @@ function sar(amount: number): string {
 export default function MatchAutoCancelled() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
   const { data: game, isLoading } = useGetGame(gameId ?? "", { enabled: !!gameId });
@@ -79,7 +81,7 @@ export default function MatchAutoCancelled() {
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 5 }]} showsVerticalScrollIndicator={false}>
         <HandwrittenHeader style={styles.title}>tonight is off</HandwrittenHeader>
         <Text style={styles.sub}>not enough players checked in</Text>
 
@@ -156,7 +158,9 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFF8F0" },
   gone: { fontSize: 14, color: MUTED },
-  content: { paddingHorizontal: 24, paddingTop: 42, paddingBottom: 48 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  content: { paddingHorizontal: 24, paddingBottom: 48 },
 
   title: { fontSize: 38, color: ORANGE, lineHeight: 48 },
   sub: { fontSize: 15.5, fontWeight: "600", color: INK, marginTop: 6 },

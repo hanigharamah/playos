@@ -4,6 +4,7 @@ import {
   KeyboardAvoidingView, Platform, ActivityIndicator, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import NetInfo from "@react-native-community/netinfo";
 import { format } from "date-fns";
@@ -85,6 +86,7 @@ async function sweepStalePendingQueues() {
 export default function ChatThread() {
   const { conversationId } = useLocalSearchParams<{ conversationId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { user } = useAuth();
   const { data: messages, isLoading } = useConversationMessages(conversationId ?? null);
@@ -201,7 +203,7 @@ export default function ChatThread() {
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 5 }]}>
         <Pressable onPress={() => router.back()} hitSlop={10} style={styles.backBtn}>
           <Text style={styles.backGlyph}>‹</Text>
         </Pressable>
@@ -306,7 +308,9 @@ export default function ChatThread() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
 
-  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20, paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
   backBtn: {
     width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",

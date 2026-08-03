@@ -3,6 +3,7 @@ import {
   View, Text, StyleSheet, Pressable, ScrollView, Linking, Alert, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, formatDistanceToNowStrict, isToday } from "date-fns";
 import { useGetGame, useOpsRoster, useIsOperator, useReleaseSpot } from "@/lib/api";
 import { AUTO_CANCEL_MIN_CHECKED_IN } from "@/lib/refunds";
@@ -49,6 +50,7 @@ const AT_RISK_MINUTES_BEFORE = 10;
 export default function OpsAtRisk() {
   const { gameId } = useLocalSearchParams<{ gameId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const { data: game } = useGetGame(gameId!);
   const { data: isOperator, isLoading: roleLoading } = useIsOperator();
@@ -72,7 +74,7 @@ export default function OpsAtRisk() {
     );
   }, [isOperator, operatorInitial]);
 
-  if (roleLoading) return <View style={styles.wrap} />;
+  if (roleLoading) return <View style={[styles.wrap, { paddingTop: insets.top + 5 }]} />;
 
   // Players must never reach this screen, even by deep link.
   if (!isOperator) {
@@ -241,7 +243,9 @@ const card = {
 };
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   centre: { alignItems: "center", justifyContent: "center" },
 
   denied: { fontSize: 15, color: INK },

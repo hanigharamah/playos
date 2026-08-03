@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { View, Text, StyleSheet, Animated, Easing, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NetInfo from "@react-native-community/netinfo";
 import { format } from "date-fns";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
@@ -89,10 +90,11 @@ interface Props {
 export function ReconnectingState({ pitchName, kickoffTime, isCheckedIn, queuedMessages, onRetry }: Props) {
   const { width } = useWindowDimensions();
   const dotOpacity = useDotPulse();
+  const insets = useSafeAreaInsets();
   const kickoff = new Date(kickoffTime);
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
 
@@ -149,7 +151,9 @@ export function ReconnectingState({ pitchName, kickoffTime, isCheckedIn, queuedM
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20, paddingTop: 52 },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20 },
 
   banner: {
     flexDirection: "row", alignItems: "center", height: 44, borderRadius: 22, paddingHorizontal: 17,

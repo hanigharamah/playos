@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, ScrollView, Pressable, Platform, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BlurView } from "expo-blur";
 import { ArrowLeft } from "lucide-react-native";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
@@ -55,12 +56,13 @@ export function ErrorScreen({
   secondaryLabel, onSecondary, textLinkLabel, onTextLink,
   reference, onReferencePress, footnote, onBack,
 }: Props) {
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
 
   return (
     <View style={styles.wrap}>
       <DotWaveBackground width={width} height={600} />
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 5 }]} showsVerticalScrollIndicator={false}>
         <View style={styles.header}>
           {onBack && (
             // 42px visual, 44px minimum tap target via hitSlop.
@@ -110,7 +112,9 @@ export function ErrorScreen({
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: 52, paddingBottom: spacing.xxl },
+  // paddingTop comes from the safe-area inset at the call site; the fixed
+  // value was smaller than the Dynamic Island's inset.
+  content: { paddingHorizontal: 20, paddingBottom: spacing.xxl },
 
   header: { flexDirection: "row", alignItems: "center", gap: 14 },
   backBtn: {
