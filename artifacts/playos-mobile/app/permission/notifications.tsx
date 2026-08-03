@@ -10,6 +10,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { useAuth } from "@/lib/auth";
 import { registerForPush } from "@/lib/notifications";
 import { screen } from "@/lib/analytics";
@@ -87,18 +88,20 @@ export default function NotificationsPermission() {
         <HandwrittenHeader style={styles.title}>you will miss these</HandwrittenHeader>
       </View>
 
-      <View style={styles.listCard}>
-        <Text style={styles.eyebrow}>WITH NOTIFICATIONS OFF YOU DO NOT GET</Text>
-        {MISSES.map((m) => (
-          <View key={m.title} style={styles.missRow}>
-            <Text style={styles.cross}>✕</Text>
-            <View style={styles.missText}>
-              <Text style={styles.missTitle}>{m.title}</Text>
-              <Text style={styles.missSub}>{m.sub}</Text>
+      <GlassCard variant="soft" round={20} padding={0} style={styles.listCard}>
+        <View style={styles.listInner}>
+          <Text style={styles.eyebrow}>WITH NOTIFICATIONS OFF YOU DO NOT GET</Text>
+          {MISSES.map((m) => (
+            <View key={m.title} style={styles.missRow}>
+              <Text style={styles.cross}>✕</Text>
+              <View style={styles.missText}>
+                <Text style={styles.missTitle}>{m.title}</Text>
+                <Text style={styles.missSub}>{m.sub}</Text>
+              </View>
             </View>
-          </View>
-        ))}
-      </View>
+          ))}
+        </View>
+      </GlassCard>
 
       <Callout
         tone="blocker"
@@ -147,11 +150,10 @@ const styles = StyleSheet.create({
   backGlyph: { fontSize: 20, fontWeight: "700", color: INK, lineHeight: 22 },
   title: { fontSize: 26, color: "#FA810B", marginLeft: 14, flex: 1 },
 
-  listCard: {
-    borderRadius: 20, marginTop: 22, paddingHorizontal: 19, paddingTop: 17, paddingBottom: 8,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>; the
+  // asymmetric padding sits on the inner view.
+  listCard: { marginTop: 22 },
+  listInner: { paddingHorizontal: 19, paddingTop: 17, paddingBottom: 8 },
   eyebrow: { fontSize: 11, fontWeight: "600", color: MUTED, letterSpacing: 0.3 },
   missRow: { flexDirection: "row", marginTop: 14 },
   cross: { fontSize: 12, fontWeight: "700", color: RED, width: 24, marginTop: 2 },
