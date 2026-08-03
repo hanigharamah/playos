@@ -6,7 +6,7 @@ import { BlurView } from "expo-blur";
 import { format } from "date-fns";
 import { ArrowLeft, ArrowRight, Share2, Users, Clock, Navigation, MapPin, Calendar, Grid3x3, BarChart3, Lock, ShieldCheck } from "lucide-react-native";
 import { MIN_PLAYERS_TO_START } from "@/lib/api";
-import { useGetGame, useBookSpot } from "@/lib/api";
+import { useGetMyBookings, useGetGame, useBookSpot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
 import { Avatar } from "@/components/Avatar";
@@ -38,6 +38,11 @@ export default function GameDetail() {
   const { user } = useAuth();
   const { data: game, isLoading } = useGetGame(id!);
   const bookSpot = useBookSpot();
+  const { data: myBookings } = useGetMyBookings();
+
+  // A spot this player already holds in THIS game, if any.
+  const myBooking = [...(myBookings?.upcoming ?? []), ...(myBookings?.past ?? [])]
+    .find((b) => b.gameId === id);
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -288,21 +293,23 @@ export default function GameDetail() {
             <Text style={styles.ctaPer}>per player</Text>
           </View>
           <Pressable
-            onPress={confirmBooking}
-            disabled={!selectedSlot || !gameOpen || bookSpot.isPending}
+            onPress={myBooking ? () => router.push(`/check-in/${id}`) : confirmBooking}
+            disabled={myBooking ? false : !selectedSlot || !gameOpen || bookSpot.isPending}
             style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}
           >
             <LinearGradient
               colors={["#FFD6A6", "#FF994D", "#FF6B2E"]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
-              style={[styles.ctaBtn, (!selectedSlot || !gameOpen) && { opacity: 0.55 }]}
+              style={[styles.ctaBtn, !myBooking && (!selectedSlot || !gameOpen) && { opacity: 0.55 }]}
             >
               {bookSpot.isPending ? (
                 <ActivityIndicator color="#FFFFFF" size="small" />
               ) : (
                 <>
-                  <Text style={styles.ctaBtnText}>{selectedSlot ? "Join match" : "Pick a spot"}</Text>
+                  <Text style={styles.ctaBtnText}>
+                    {myBooking ? "You're in" : selectedSlot ? "Join match" : "Pick a spot"}
+                  </Text>
                   <View style={styles.ctaOrb}>
                     <ArrowRight size={15} color="#FF7A2E" strokeWidth={2.6} />
                   </View>

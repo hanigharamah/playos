@@ -13,6 +13,7 @@ import { HomeSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { HomeNothingBooked } from "@/components/HomeNothingBooked";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { serverNow } from "@/lib/serverTime";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -22,6 +23,19 @@ const CARD_TITLE = "#262D48";
 const CARD_META = "#5A564E";
 const CARD_LABEL = "#8A8178";
 const MUTED = "#6C6C70";
+
+/** Check-in opens 20 minutes before kickoff. */
+const CHECK_IN_OPENS_MS = 20 * 60_000;
+
+/** "2d 4h" / "4h 12m" / "12m" — coarse enough not to need a ticking timer. */
+function formatOpensIn(ms: number): string {
+  const mins = Math.floor(ms / 60_000);
+  const days = Math.floor(mins / 1440);
+  const hours = Math.floor((mins % 1440) / 60);
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${mins % 60}m`;
+  return `${mins}m`;
+}
 
 const HOME_GLOWS = [
   { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
@@ -57,6 +71,17 @@ export default function Home() {
   // to players who did have bookings, until the second response landed.
   const nothingBooked = !bookingsLoading && !!bookings && upcoming.length === 0;
   const isTonight = featured && isSameDay(new Date(featured.kickoffTime), new Date());
+
+  // This card is always a match the player has booked, so the CTA must reflect
+  // their state in it, not invite them to join something they are already in.
+  const heroCta = (() => {
+    if (!featured) return null;
+    const msToKickoff = new Date(featured.kickoffTime).getTime() - serverNow();
+    const msToCheckIn = msToKickoff - CHECK_IN_OPENS_MS;
+    if (msToKickoff <= 0) return { label: "match day", href: `/match/${featured.id}` as const };
+    if (msToCheckIn <= 0) return { label: "check in now", href: `/match/${featured.id}` as const };
+    return { label: `check-in opens in ${formatOpensIn(msToCheckIn)}`, href: `/check-in/${featured.id}` as const };
+  })();
   const featuredCount = featured?.bookedCount ?? 0;
   const shownAvatars = Math.min(featuredCount, 4);
   const overflow = featuredCount - shownAvatars;
@@ -92,7 +117,7 @@ export default function Home() {
 
         {/* Hero Match Card (Figma 71:277 — 350×238 glass) */}
         {featured && (
-          <Pressable onPress={() => router.push(`/game/${featured.id}`)} style={styles.heroShadow}>
+          <Pressable onPress={() => router.push(heroCta?.href ?? `/game/${featured.id}`)} style={styles.heroShadow}>
             <BlurView intensity={Platform.OS === "ios" ? 28 : 0} tint="light" style={styles.heroCard}>
               <Text style={styles.heroLabel}>
                 {isTonight ? "TONIGHT" : format(new Date(featured.kickoffTime), "EEE").toUpperCase()} • {format(new Date(featured.kickoffTime), "h:mm a")}
@@ -118,12 +143,14 @@ export default function Home() {
                   </View>
                 )}
               </View>
-              <View style={styles.heroJoinRow}>
-                <View style={styles.heroJoinCircle}>
-                  <ArrowRight size={24} color="#FFFFFF" strokeWidth={2.4} />
+              {heroCta && (
+                <View style={styles.heroJoinRow}>
+                  <View style={styles.heroJoinCircle}>
+                    <ArrowRight size={24} color="#FFFFFF" strokeWidth={2.4} />
+                  </View>
+                  <Text style={styles.heroJoinText} numberOfLines={1}>{heroCta.label}</Text>
                 </View>
-                <Text style={styles.heroJoinText}>join match</Text>
-              </View>
+              )}
             </BlurView>
           </Pressable>
         )}
