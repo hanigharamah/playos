@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useGameRoster, useClaimSide, useStartMatch, useGetGame, useGetMyBookings, MIN_PLAYERS_TO_START } from "@/lib/api";
+import { useGameRoster, useClaimSide, useStartMatch, useGetGame, useGetMyBookings, useCheckIn, MIN_PLAYERS_TO_START } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PillButton } from "@/components/PillButton";
 import { GlassCard } from "@/components/GlassCard";
@@ -53,6 +53,25 @@ export default function MatchDay() {
   const shownTeam = claimedTeam ?? myEntry?.team ?? null;
 
   const [claimingTeam, setClaimingTeam] = useState<1 | 2 | null>(null);
+  const checkIn = useCheckIn();
+
+  const doCheckIn = () => {
+    if (!id) return;
+    checkIn.mutate({ gameId: id }, {
+      onSuccess: (result) => {
+        if (result === "ok" || result === "already_checked_in") return;
+        Alert.alert(
+          "Couldn't check in",
+          result === "too_early" ? "Check-in opens 20 minutes before kickoff."
+          : result === "too_late" ? "Check-in closed at kickoff — find the operator."
+          : result === "no_booking" ? "You don't have a spot in this match."
+          : "Please try again.",
+        );
+      },
+      // The check_in RPC ships in supabase/2026-08-match-day.sql.
+      onError: () => Alert.alert("Couldn't check in", "Check-in isn't available on this server yet."),
+    });
+  };
 
   const claim = (team: 1 | 2) => {
     if (!id) return;
@@ -65,7 +84,9 @@ export default function MatchDay() {
             setClaimedTeam(team);
             track("matchday_flashcard_completed", { gameId: id, team });
           } else if (result === "not_checked_in") {
-            Alert.alert("Check in first", "Scan the QR code at the pitch to check in before picking a side.");
+            // No QR, no geofence — check-in is a tap on the clock. The old copy
+            // described the web app's pitch-scan flow, which is superseded.
+            Alert.alert("Check in first", "Tap check in, then pick your side.");
           } else if (result === "full") {
             Alert.alert("Team full", "That side just filled up — try the other team.");
           } else if (result === "already_picked") {
@@ -138,8 +159,19 @@ export default function MatchDay() {
   return (
     <View style={styles.wrap}>
       <GlassCard style={styles.card}>
-        <Text style={styles.title}>Pick your team</Text>
+        <Text style={styles.title}>{myEntry?.checkedIn ? "Pick your team" : "Check in"}</Text>
         <Text style={styles.sub}>{roster.checkedInCount} of {roster.capacity} checked in</Text>
+
+        {!myEntry?.checkedIn && (
+          <View style={{ width: "100%", marginTop: spacing.lg }}>
+            <PillButton
+              label={checkIn.isPending ? "checking in…" : "I'm here"}
+              onPress={doCheckIn}
+              loading={checkIn.isPending}
+              fullWidth
+            />
+          </View>
+        )}
 
         <View style={styles.teamsRow}>
           <PillButton
