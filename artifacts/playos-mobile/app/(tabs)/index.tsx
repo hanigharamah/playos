@@ -138,7 +138,22 @@ export default function Home() {
               <Text style={styles.heroLabel}>
                 {isTonight ? "TONIGHT" : format(new Date(featured.kickoffTime), "EEE").toUpperCase()} • {format(new Date(featured.kickoffTime), "h:mm a")}
               </Text>
-              <Text style={styles.heroTitle} numberOfLines={1}>{featured.title}</Text>
+              {/* The VENUE, not games.title. The title is free text and was
+                  carrying everything the card already shows — the label above
+                  gives day and time, the meta row below derives the format from
+                  capacity — so "[seed] KAFD Pitch Morning 6v6" printed 6v6
+                  twice and the time twice, then truncated mid-word at 30pt.
+                  The venue is the one fact nothing else on the card states.
+                  adjustsFontSizeToFit stays as the guard for long venue names:
+                  it shrinks instead of cutting, with a 0.55 floor (~16.5pt). */}
+              <Text
+                style={styles.heroTitle}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.55}
+              >
+                {featured.pitchName}
+              </Text>
               <View style={styles.heroMetaRow}>
                 <Users size={20} color={CARD_META} strokeWidth={1.7} />
                 <Text style={styles.heroMeta}>{featured.capacity / 2}v{featured.capacity / 2}</Text>
