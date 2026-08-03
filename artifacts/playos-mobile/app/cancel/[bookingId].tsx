@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, Platform, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { format, isSameDay } from "date-fns";
@@ -8,7 +9,7 @@ import { ArrowLeft, Check, AlertTriangle } from "lucide-react-native";
 import { useGetMyBookings, useCancelBooking, FREE_CANCEL_HOURS } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
-import { serverNow, syncServerTime } from "@/lib/serverTime";
+import { useServerCountdown } from "@/lib/serverTime";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -21,24 +22,34 @@ const RED = "#DB2626";
 /** Free-cancellation cutoff — must stay in sync with the web policy page. */
 // Cutoff lives in lib/api.ts so the screen and the mutation cannot drift.
 
+/** Same shape as the refund screen's, so the two money screens read alike. */
+function sar(amount: number): string {
+  return `SAR ${Number.isInteger(amount) ? amount : amount.toFixed(2)}`;
+}
+
 export default function CancellationConfirm() {
   const { bookingId } = useLocalSearchParams<{ bookingId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data } = useGetMyBookings();
   const cancelBooking = useCancelBooking();
 
-  const [clockTick, setClockTick] = useState(0);
-
   useEffect(() => { screen("CancellationConfirm", { bookingId }); }, [bookingId]);
-
-  // Sync before deciding eligibility: serverNow() returns raw device time until
-  // an offset lands, so a wound-back clock would show the green "full refund"
-  // banner that the mutation then refuses. Must sit above the early return
-  // below — hooks cannot be called conditionally.
-  useEffect(() => { void syncServerTime().then(() => setClockTick((n) => n + 1)); }, []);
 
   const booking =
     data?.upcoming?.find((b) => b.id === bookingId) ?? data?.past?.find((b) => b.id === bookingId);
+
+  // Counts down to the free-cancellation cutoff on the SERVER clock, and must
+  // be called above the early return — hooks cannot be conditional, so it
+  // takes null until the booking lands. This replaces a one-shot sync that
+  // decided eligibility at first render and never looked again: a player who
+  // opened this screen at 26h02m and read for three minutes still saw the
+  // green "free cancellation" banner, tapped, and was silently forfeited by
+  // the mutation, which re-decides server-side. The screen promised a refund
+  // and the server took the money.
+  const kickoffMs = booking ? new Date(booking.game.kickoffTime).getTime() : null;
+  const freeUntilMs = kickoffMs === null ? null : kickoffMs - FREE_CANCEL_HOURS * 3_600_000;
+  const { remainingMs } = useServerCountdown(freeUntilMs);
 
   if (!booking) {
     return (
@@ -50,11 +61,8 @@ export default function CancellationConfirm() {
 
   const kickoff = new Date(booking.game.kickoffTime);
   const teamSize = booking.game.capacity / 2;
-
-  // clockTick is not read: bumping it re-renders, and serverNow() is re-read
-  // on that render with the offset applied.
-  const hoursUntil = (kickoff.getTime() - serverNow()) / 3_600_000;
-  const isFree = hoursUntil > FREE_CANCEL_HOURS;
+  const isFree = remainingMs > 0;
+  const freeUntil = new Date(freeUntilMs!);
 
   const confirmCancel = () => {
     cancelBooking.mutate(
@@ -66,14 +74,21 @@ export default function CancellationConfirm() {
           ]);
         },
         onError: (err: any) =>
-          Alert.alert("Could not cancel", err?.message ?? "Please try again."),
+          // This codebase throws { data: { error } }, not Error. Reading
+          // `.message` meant the one failure the mutation bothers to explain —
+          // "couldn't load this booking" — always fell through to the generic
+          // line, so the player never saw the real reason.
+          Alert.alert("Could not cancel", err?.data?.error ?? "Please try again."),
       },
     );
   };
 
   return (
     <View style={styles.wrap}>
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.md }]}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} hitSlop={10}>
             <BlurView intensity={Platform.OS === "ios" ? 20 : 0} tint="light" style={styles.backBtn}>
@@ -113,9 +128,16 @@ export default function CancellationConfirm() {
             </View>
             <Text style={[styles.policyTitle, { color: GREEN }]}>free cancellation</Text>
             <Text style={styles.policyBody}>
-              You're more than {FREE_CANCEL_HOURS}h from kickoff — you'll get a full refund to your
-              original payment method.
+              {/* The amount is the fact this decision turns on, and it was
+                  nowhere on the screen. It is already on the booking. */}
+              You'll get {sar(booking.game.price)} back. Free cancellation is open until{" "}
+              {format(freeUntil, "h:mm a")} on {format(freeUntil, "EEE, d MMM")}.
             </Text>
+            {/* Payments are cash and STC Pay with a single operator, and the
+                mutation only marks the booking refunded — no money moves by
+                itself. "Your original payment method" promised a rail that
+                does not exist and manufactured a support message. */}
+            <Text style={styles.policyFoot}>the operator returns your money directly</Text>
           </View>
         ) : (
           <View style={[styles.policyCard, styles.policyWarn]}>
@@ -124,15 +146,18 @@ export default function CancellationConfirm() {
             </View>
             <Text style={[styles.policyTitle, { color: RED }]}>no refund</Text>
             <Text style={styles.policyBody}>
-              You're inside the {FREE_CANCEL_HOURS}h window. Cancelling releases your spot so someone
-              else can play, but you won't be refunded.
+              You're inside the {FREE_CANCEL_HOURS}h window, so you'll lose {sar(booking.game.price)}.
+              Cancelling releases your spot so someone else can play.
             </Text>
           </View>
         )}
       </ScrollView>
 
-      {/* Pinned actions */}
-      <View style={styles.actions}>
+      {/* Pinned actions. The destructive button sat on 34pt of hardcoded
+          bottom, which on a home-indicator device puts it under the system
+          swipe strip — the tap and the gesture competing on the one control
+          that spends money. */}
+      <View style={[styles.actions, { bottom: Math.max(insets.bottom, 12) + 12 }]}>
         <Pressable onPress={() => router.back()} style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}>
           <LinearGradient
             colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
@@ -161,7 +186,10 @@ export default function CancellationConfirm() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   loading: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: 180 },
+  // paddingTop comes from the safe-area inset at the call site: the fixed 32
+  // was less than a Dynamic Island's inset, so the back button and the
+  // "cancel booking?" header rendered partly under the island.
+  content: { paddingHorizontal: 20, paddingBottom: 180 },
 
   header: { flexDirection: "row", alignItems: "center", gap: 26 },
   backBtn: {
@@ -194,10 +222,10 @@ const styles = StyleSheet.create({
   },
   policyTitle: { fontSize: 16, fontWeight: "600", marginLeft: 34 },
   policyBody: { fontSize: 13, color: MUTED, marginTop: 12, lineHeight: 19 },
+  policyFoot: { fontSize: 12, color: MUTED, marginTop: 8, fontStyle: "italic" },
 
-  actions: {
-    position: "absolute", left: 20, right: 20, bottom: 34, gap: 8,
-  },
+  // `bottom` comes from the safe-area inset at the call site.
+  actions: { position: "absolute", left: 20, right: 20, gap: 8 },
   keepBtn: {
     height: 56, borderRadius: 28, alignItems: "center", justifyContent: "center", overflow: "hidden",
     shadowColor: "#994D0D", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 6,
