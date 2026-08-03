@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, Pressable, Image, RefreshControl } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { format, isToday, isYesterday } from "date-fns";
 import { MessageCircle } from "lucide-react-native";
 import { useMyConversations } from "@/lib/api";
@@ -32,6 +33,8 @@ function stamp(iso?: string | null) {
 export default function Chat() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Content drops by the bar's height while it is showing (Figma 834:470).
+  const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { data: conversations, isLoading, refetch, isRefetching } = useMyConversations();
   const [tab, setTab] = useState<"messages" | "groups">("groups");
 
@@ -47,7 +50,7 @@ export default function Chat() {
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 
       <FlatList
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
         data={list}
         keyExtractor={(item) => item.id}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}

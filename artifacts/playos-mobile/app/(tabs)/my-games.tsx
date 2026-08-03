@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays } from "lucide-react-native";
@@ -28,6 +29,8 @@ const MUTED = "#6C6C70";
 export default function MyGames() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Content drops by the bar's height while it is showing (Figma 834:470).
+  const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { data, isLoading, isError, refetch, isRefetching } = useGetMyBookings();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
 
@@ -77,7 +80,7 @@ export default function MyGames() {
   return (
     <FlatList
       style={styles.wrap}
-      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+      contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
       data={list}
       keyExtractor={(item) => item.id}
       refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}

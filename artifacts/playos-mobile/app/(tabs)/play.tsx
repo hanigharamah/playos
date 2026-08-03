@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { Search } from "lucide-react-native";
@@ -29,6 +30,8 @@ const GLOWS = [
 export default function Play() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Content drops by the bar's height while it is showing (Figma 834:470).
+  const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { width } = useWindowDimensions();
   const { data: games, isLoading, isError } = useListGames();
   const [query, setQuery] = useState("");
@@ -68,7 +71,7 @@ export default function Play() {
       <DotWaveBackground width={width} height={600} />
 
       <ScrollView
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
         showsVerticalScrollIndicator={false}
       >
         {/* Title (697:509). Missing entirely, which is why the screen started

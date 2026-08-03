@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Image, useWindowDimensions, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { BlurView } from "expo-blur";
 import { format } from "date-fns";
 import { Bell, Users, MapPin, User, ArrowRight } from "lucide-react-native";
@@ -45,6 +46,8 @@ const HOME_GLOWS = [
 export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Content drops by the bar's height while it is showing (Figma 834:470).
+  const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { width } = useWindowDimensions();
   const { data: games, isLoading, isError, refetch, isRefetching } = useListGames();
   const { data: bookings, isLoading: bookingsLoading } = useGetMyBookings();
@@ -92,7 +95,7 @@ export default function Home() {
       <DotWaveBackground width={width} height={600} />
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}
         showsVerticalScrollIndicator={false}
       >

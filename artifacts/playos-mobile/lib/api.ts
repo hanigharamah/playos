@@ -59,6 +59,10 @@ export interface MyBooking {
   slotIndex: number;
   paymentStatus: string;
   bookedAt: string;
+  /** Set by the check_in RPC inside the T-20 window. */
+  checkedIn: boolean;
+  /** When the player answered the T-12h ask. Null = unanswered. */
+  reconfirmedAt: string | null;
   game: {
     id: string;
     title: string;
@@ -488,6 +492,8 @@ export function useGetMyBookings() {
         const item: MyBooking = {
           id: b.id, gameId: b.game_id, team: b.team, slotIndex: b.slot_index,
           paymentStatus: b.payment_status, bookedAt: b.booked_at,
+          checkedIn: b.checked_in ?? false,
+          reconfirmedAt: b.reconfirmed_at ?? null,
           game: {
             id: g.id, title: g.title, pitchName: g.pitch_name,
             pitchPhotoUrl: photos.get(g.pitch_name) ?? null,
@@ -1146,5 +1152,48 @@ export function useSetNotificationPrefs() {
       return { synced: true };
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["notification-prefs"] }),
+  });
+}
+
+
+// ─── Match day ─────────────────────────────────────────────────────────────
+//
+// Backed by supabase/2026-08-match-day.sql. Check-in is bound to the clock and
+// never to a place — the T-20 window is enforced inside the RPC, not here,
+// because a phone's clock is not evidence.
+
+export type CheckInResult =
+  | "ok" | "not_found" | "no_booking" | "already_checked_in" | "too_early" | "too_late";
+
+export function useCheckIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { gameId: string }): Promise<CheckInResult> => {
+      const { data, error } = await supabase.rpc("check_in", { p_game_id: vars.gameId });
+      if (error) throw error;
+      return data as CheckInResult;
+    },
+    onSuccess: (_r, vars) => {
+      queryClient.invalidateQueries({ queryKey: qk.myBookings });
+      queryClient.invalidateQueries({ queryKey: getGameRosterQueryKey(vars.gameId) });
+    },
+  });
+}
+
+/**
+ * The T-12h "still coming tonight?" answer. Carries no money consequence —
+ * it exists so the ask can stop being asked.
+ */
+export function useReconfirmBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { bookingId: string }) => {
+      const { error } = await supabase
+        .from("bookings")
+        .update({ reconfirmed_at: new Date().toISOString() })
+        .eq("id", vars.bookingId);
+      if (error) throw error;
+    },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.myBookings }),
   });
 }

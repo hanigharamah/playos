@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Pressable, Linking, ScrollView, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { CreditCard, Bell, HelpCircle, User as UserIcon, Wallet } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import { useAuth } from "@/lib/auth";
@@ -22,6 +23,8 @@ export default function Profile() {
   const { data: credits = 0 } = useGetMyCredits();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  // Content drops by the bar's height while it is showing (Figma 834:470).
+  const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -72,7 +75,7 @@ export default function Profile() {
   ];
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]} showsVerticalScrollIndicator={false}>
+    <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
       {/* Dot vortex corner art (Figma 253:398) */}
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 
