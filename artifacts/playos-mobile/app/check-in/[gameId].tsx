@@ -4,6 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
 import * as Notifications from "expo-notifications";
+import { Check } from "lucide-react-native";
 import { useGetGame, useGetMyBookings } from "@/lib/api";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
@@ -53,6 +54,7 @@ export default function CheckInNotOpen() {
   const { data: game, isLoading } = useGetGame(gameId!);
   const { data: bookings } = useGetMyBookings();
   const [reminderSet, setReminderSet] = useState(false);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => { screen("CheckInNotOpen", { gameId }); }, [gameId]);
 
@@ -73,25 +75,30 @@ export default function CheckInNotOpen() {
   const booking = bookings?.upcoming?.find((b) => b.gameId === gameId);
 
   const scheduleReminder = async () => {
-    if (opensAt === null) return;
-    const { status: existing } = await Notifications.getPermissionsAsync();
-    const status = existing === "granted" ? existing : (await Notifications.requestPermissionsAsync()).status;
-    if (status !== "granted") {
-      // Respect the "must not reappear more than twice" rule instead of
-      // pushing the primer every time the button is tapped.
-      if (await shouldPromptForNotifications()) router.push("/permission/notifications");
-      return;
+    if (opensAt === null || busy) return;
+    setBusy(true);
+    try {
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      const status = existing === "granted" ? existing : (await Notifications.requestPermissionsAsync()).status;
+      if (status !== "granted") {
+        // Respect the "must not reappear more than twice" rule instead of
+        // pushing the primer every time the button is tapped.
+        if (await shouldPromptForNotifications()) router.push("/permission/notifications");
+        return;
+      }
+      // A local notification, so it fires whether or not the backend is up.
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "check-in is open",
+          body: game ? `${game.title} — tap to check in` : "tap to check in",
+          data: { url: `/match/${gameId}` },
+        },
+        trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(opensAt) },
+      });
+      setReminderSet(true);
+    } finally {
+      setBusy(false);
     }
-    // A local notification, so it fires whether or not the backend is up.
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "check-in is open",
-        body: game ? `${game.title} — tap to check in` : "tap to check in",
-        data: { url: `/match/${gameId}` },
-      },
-      trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: new Date(opensAt) },
-    });
-    setReminderSet(true);
   };
 
   if (isLoading || !game) {
@@ -152,12 +159,27 @@ export default function CheckInNotOpen() {
         style={styles.callout}
       />
 
-      <View style={styles.actions}>
-        <Btn3D
-          label={reminderSet ? "we'll notify you" : "notify me when it opens"}
-          disabled={reminderSet}
-          onPress={scheduleReminder}
-        />
+      <View style={[styles.actions, { bottom: Math.max(insets.bottom + 6, 40) }]}>
+        {/* Confirmed is its own state, not the disabled one. Rendering it as a
+            greyed-out Btn3D put the one message the player wants — yes, we
+            will tell you — at 40% opacity: white text on a knocked-back orange
+            gradient over cream, which outdoors reads as a broken button. Green
+            is already this screen's status-good colour ("you're in · paid"). */}
+        {reminderSet ? (
+          <View style={styles.confirmed}>
+            <Check size={16} color={GREEN} strokeWidth={3} />
+            <Text style={styles.confirmedText}>we'll notify you</Text>
+          </View>
+        ) : (
+          <Btn3D
+            label="notify me when it opens"
+            // The permission check and the schedule call are both awaited, so
+            // without this a tap changed nothing on screen until it finished —
+            // indistinguishable from a missed tap, so players tap again.
+            loading={busy}
+            onPress={scheduleReminder}
+          />
+        )}
         <BtnOutline label="back to the match" tone="neutral" onPress={() => router.replace(`/game/${gameId}`)} style={{ marginTop: 12 }} />
       </View>
     </View>
@@ -191,16 +213,31 @@ const styles = StyleSheet.create({
   matchStatus: { fontSize: 13, fontWeight: "600", color: GREEN, marginTop: 4 },
 
   countCard: {
-    height: 150, borderRadius: 24, marginTop: 20, alignItems: "center", justifyContent: "center",
+    // minHeight, not height: the sub-label is a two-clause line that already
+    // runs near the card's full width, and at Larger Text it wraps and was
+    // clipped — losing the exact wall-clock time this card exists to show.
+    minHeight: 150, paddingVertical: 20,
+    borderRadius: 24, marginTop: 20, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
   countLabel: { fontSize: 13, color: MUTED },
   countValue: { fontSize: 48, fontWeight: "700", color: "#EB6923", marginTop: 4, fontVariant: ["tabular-nums"] },
-  countSub: { fontSize: 11, fontWeight: "600", color: MUTED, marginTop: 10, textAlign: "center" },
+  // 11pt unspaced uppercase was the hardest thing on the card to read at
+  // arm's length, and it is the opposite of incidental — it carries the exact
+  // time the button goes live.
+  countSub: { fontSize: 12, fontWeight: "600", letterSpacing: 0.4, color: MUTED, marginTop: 10, textAlign: "center" },
 
   callout: { marginTop: 20 },
   bang: { fontSize: 13, fontWeight: "700", color: "#C96A00" },
 
-  actions: { position: "absolute", left: 20, right: 20, bottom: 40 },
+  // `bottom` comes from the safe-area inset at the call site.
+  actions: { position: "absolute", left: 20, right: 20 },
+  confirmed: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    height: 56, borderRadius: 28,
+    backgroundColor: "rgba(38,128,51,0.12)",
+    borderWidth: 1, borderColor: "rgba(38,128,51,0.28)",
+  },
+  confirmedText: { fontSize: 15, fontWeight: "700", color: GREEN },
 });
