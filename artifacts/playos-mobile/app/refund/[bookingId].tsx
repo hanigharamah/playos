@@ -16,6 +16,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { screen } from "@/lib/analytics";
 
@@ -132,24 +133,26 @@ export default function RefundScreen() {
   const amount = refund?.row?.amount ?? match.price;
 
   const matchCard = (
-    <View style={styles.matchCard}>
-      <Image source={{ uri: getVenuePhoto(match.pitchName, match.photoUrl) }} style={styles.thumb} />
-      <View style={styles.matchText}>
-        <Text style={styles.matchTitle} numberOfLines={1}>
-          {teamSize}v{teamSize} · {match.pitchName}
-        </Text>
-        <Text style={styles.matchSub}>
-          {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE, d MMM")} · {format(kickoff, "h:mm a")}
-        </Text>
-        {/*
-         * The mock reads "cancelled by the venue". games.cancelled_reason is
-         * written by the cancel_match RPC but is not exposed on GameSummary /
-         * MyBooking, so who cancelled and why cannot be shown without guessing.
-         * The neutral fact — that it is cancelled — is all that is stated.
-         */}
-        {match.status === "cancelled" && <Text style={styles.matchCancelled}>cancelled</Text>}
+    <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
+      <View style={styles.matchInner}>
+        <Image source={{ uri: getVenuePhoto(match.pitchName, match.photoUrl) }} style={styles.thumb} />
+        <View style={styles.matchText}>
+          <Text style={styles.matchTitle} numberOfLines={1}>
+            {teamSize}v{teamSize} · {match.pitchName}
+          </Text>
+          <Text style={styles.matchSub}>
+            {isSameDay(kickoff, new Date()) ? "Today" : format(kickoff, "EEE, d MMM")} · {format(kickoff, "h:mm a")}
+          </Text>
+          {/*
+           * The mock reads "cancelled by the venue". games.cancelled_reason is
+           * written by the cancel_match RPC but is not exposed on GameSummary /
+           * MyBooking, so who cancelled and why cannot be shown without guessing.
+           * The neutral fact — that it is cancelled — is all that is stated.
+           */}
+          {match.status === "cancelled" && <Text style={styles.matchCancelled}>cancelled</Text>}
+        </View>
       </View>
-    </View>
+    </GlassCard>
   );
 
   return state === "settled" ? (
@@ -371,7 +374,7 @@ function Settled({
          * the money moved at settled_at.
          */}
         {openedAtMs !== null && decideBy && (
-          <View style={styles.timeline}>
+          <GlassCard variant="soft" round={24} padding={19} style={styles.timeline}>
             <Text style={styles.timelineTitle}>what happened</Text>
             <TimelineRow at={openedAtMs} text="you were told, choice opened" />
             <TimelineRow
@@ -397,7 +400,7 @@ function Settled({
               tone={GREEN}
               last
             />
-          </View>
+          </GlassCard>
         )}
 
         <Text style={styles.footnote}>
@@ -509,12 +512,11 @@ const styles = StyleSheet.create({
   title: { fontSize: 26, color: "#FA810B", marginLeft: 14, flex: 1 },
   lede: { fontSize: 14, color: MUTED, marginTop: 12 },
 
-  matchCard: {
-    flexDirection: "row", alignItems: "center", minHeight: 92, borderRadius: 18, padding: 11, marginTop: 17,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>. The row
+  // layout lives on the inner view, which is the parent the children actually
+  // lay out in.
+  matchCard: { marginTop: 17 },
+  matchInner: { flexDirection: "row", alignItems: "center", minHeight: 92, padding: 11 },
   thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
   matchText: { flex: 1, marginLeft: 12 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
@@ -556,12 +558,7 @@ const styles = StyleSheet.create({
   warnGlyph: { fontSize: 13, fontWeight: "700", color: "#C96A00" },
   okGlyph: { fontSize: 13, fontWeight: "700", color: GREEN },
 
-  timeline: {
-    borderRadius: 24, padding: 19, marginTop: 20,
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  timeline: { marginTop: 20 },
   timelineTitle: { fontSize: 15, fontWeight: "700", color: INK },
   tlRow: { flexDirection: "row", alignItems: "flex-start", marginTop: 14 },
   tlRail: { width: 7, alignItems: "center" },
