@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Image, useWindowDimensions, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -16,6 +16,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { serverNow } from "@/lib/serverTime";
 import { colors, gradients, spacing } from "@/lib/theme";
+import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
 // Exact palette from the Figma Home (node 1:2)
@@ -46,6 +47,9 @@ const HOME_GLOWS = [
 export default function Home() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop("index", scrollRef);
+
   // Content drops by the bar's height while it is showing (Figma 834:470).
   const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { width } = useWindowDimensions();
@@ -94,6 +98,7 @@ export default function Home() {
       <WarmCanvas base="#FFF8F0" glows={HOME_GLOWS} />
       <DotWaveBackground width={width} height={600} />
       <ScrollView
+        ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.orange} />}

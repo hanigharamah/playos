@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, type LayoutChangeEvent } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { GlassCard } from "@/components/GlassCard";
 import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { colors, spacing } from "@/lib/theme";
+import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
 // Exact palette from the Figma Browse screen (node 1:8)
@@ -39,6 +40,9 @@ const GLOWS = [
 export default function Browse() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop("browse", scrollRef);
+
   // Browse is a tab screen now, so the match-day bar renders over it and its
   // content has to drop by the bar's height while it shows (Figma 834:470).
   const barInset = useMatchDayBar() ? BAR_INSET : 0;
@@ -104,7 +108,7 @@ export default function Browse() {
   return (
     <View style={{ flex: 1 }}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
-      <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
       {canGoBack ? (
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
           <ArrowLeft size={20} color={INK} strokeWidth={2} />

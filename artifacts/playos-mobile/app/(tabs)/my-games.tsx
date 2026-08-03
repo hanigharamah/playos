@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -15,6 +15,7 @@ import { serverNow } from "@/lib/serverTime";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { GlassCard } from "@/components/GlassCard";
 import { colors, spacing } from "@/lib/theme";
+import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
 /** Check-in opens 20 minutes before kickoff. */
@@ -36,6 +37,9 @@ const GLOWS = [
 export default function MyGames() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<FlatList>(null);
+  useScrollToTop("my-games", scrollRef);
+
   // Content drops by the bar's height while it is showing (Figma 834:470).
   const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { data, isLoading, isError, refetch, isRefetching } = useGetMyBookings();
@@ -88,6 +92,7 @@ export default function MyGames() {
     <View style={{ flex: 1 }}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <FlatList
+      ref={scrollRef}
       style={styles.wrap}
       contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]}
       data={list}

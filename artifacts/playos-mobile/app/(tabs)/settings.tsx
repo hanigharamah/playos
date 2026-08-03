@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { View, Text, StyleSheet, Pressable, Linking, ScrollView, Image, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,7 @@ import { registerForPush } from "@/lib/notifications";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { GlassCard } from "@/components/GlassCard";
+import { useScrollToTop } from "@/lib/scrollToTop";
 import { colors, spacing } from "@/lib/theme";
 
 // Exact palette from the Figma Profile screen (node 1:7)
@@ -30,6 +31,9 @@ export default function Profile() {
   const { data: credits = 0 } = useGetMyCredits();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  useScrollToTop("settings", scrollRef);
+
   // Content drops by the bar's height while it is showing (Figma 834:470).
   const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const [pushGranted, setPushGranted] = useState<boolean | null>(null);
@@ -84,7 +88,7 @@ export default function Profile() {
   return (
     <View style={{ flex: 1 }}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
-      <ScrollView style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
+      <ScrollView ref={scrollRef} style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
       {/* Dot vortex corner art (Figma 253:398) */}
       <Image source={require("../../assets/dotvortex.png")} style={styles.vortex} resizeMode="cover" />
 

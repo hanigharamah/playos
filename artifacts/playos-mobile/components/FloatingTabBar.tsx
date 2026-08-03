@@ -12,6 +12,7 @@ interface TabBarProps {
   navigation: any;
 }
 import Svg, { Circle, Path } from "react-native-svg";
+import { scrollTabToTop } from "@/lib/scrollToTop";
 
 /**
  * Floating glass tab bar — exact copy of the Figma "Bottom Nav" component
@@ -75,7 +76,12 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
             const active = state.index === i;
             const onPress = () => {
               const event = navigation.emit({ type: "tabPress", target: route.key, canPreventDefault: true });
-              if (!active && !event.defaultPrevented) navigation.navigate(route.name);
+              if (event.defaultPrevented) return;
+              // Pressing the tab you are already on returns its list to the
+              // top — the iOS convention, and the only way back up a long
+              // Bookings or Browse list without dragging.
+              if (active) scrollTabToTop(route.name);
+              else navigation.navigate(route.name);
             };
             return (
               <Pressable key={route.key} style={styles.tab} onPress={onPress} hitSlop={6}>
