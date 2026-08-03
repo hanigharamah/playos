@@ -46,24 +46,28 @@ const POSITIONS: Record<number, Pos[]> = {
 };
 
 /**
- * A darker shade of the page's own cream, not a separate material.
+ * Smoky green — muted and desaturated so it sits beside the cream rather than
+ * shouting over it, and dark enough that WHITE markings finally work, which is
+ * the convention every real pitch uses. Earlier passes tried cream, clay,
+ * sand, a darker cream, glass and peach; the light ones all failed for the
+ * same reason, that white lines need a dark ground and anything light forced
+ * the markings warm and muddy.
  *
- * The page is #FFF8F0 — hue 32, effectively white. The turf is the same hue
- * stepped down in lightness, so it reads as the cream in shadow rather than
- * as sand or clay, which is where two earlier attempts landed and why they
- * looked muddy against everything around them.
- *
- * The line work is the consequence of that choice. White markings need a dark
- * ground; on cream they sit at 1.4:1 and effectively vanish. So the lines run
- * WARM AND DARKER than the turf instead — the same brown family as the app's
- * shadows — which is both legible (2.5:1) and in palette. On a cream pitch
- * that reads correctly; it is only on green turf that lines must be white.
+ * Open slots are a ringed plus. The ring is NEUTRAL white until the player
+ * taps one — orange is reserved for the slot actually chosen, so the pitch
+ * has exactly one orange thing on it at a time and it means "this is yours".
  */
-const LINE = "rgba(168,130,92,0.55)";
-const TURF_TOP = "#F5E9DC";
-const TURF_BOTTOM = "#EDD8C0";
+const LINE = "rgba(255,255,255,0.85)";
+/** Smoky green — muted and desaturated, so it sits with the cream. */
+const TURF_TOP = "#C6D2C0";
+const TURF_BOTTOM = "#A9B9A3";
 /** Open slots: light on the dark turf now, where they used to be dark on light. */
-const EMPTY = "rgba(150,112,74,0.5)";
+const EMPTY = "rgba(255,255,255,0.9)";
+/** Open-slot ring — the "tap me" affordance the bare plus never had. */
+const SLOT_FILL = "rgba(255,255,255,0.22)";
+/** Neutral until chosen. Orange is reserved for the slot you picked. */
+const SLOT_RING = "rgba(255,255,255,0.75)";
+const SLOT_RING_OFF = "rgba(255,255,255,0.35)";
 /** Design pitch is 326×122 (wide + short); slot POSITIONS were tuned on a
  *  400×260 board, so squash Y to fit without distorting the dots. */
 const VB_H = 150;
@@ -148,12 +152,19 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
       );
     }
 
-    // Open slot: a small plus mark, per the design (no dashed ring)
+    // Open slot: a ringed plus. The design had a bare plus with an invisible
+    // hit circle, which gave no signal that the marks were tappable at all —
+    // they read as pitch decoration. The ring is the affordance.
     return (
       <G key={`${team}-${slot}`} onPress={canClick ? () => onSlotClick(team, slot) : undefined}>
-        <Circle cx={pos.x} cy={pos.y} r={11} fill="transparent" />
-        <Rect x={pos.x - 3.5} y={pos.y - 0.75} width={7} height={1.5} rx={0.5} fill={EMPTY} />
-        <Rect x={pos.x - 0.75} y={pos.y - 3.5} width={1.5} height={7} rx={0.5} fill={EMPTY} />
+        <Circle
+          cx={pos.x} cy={pos.y} r={11}
+          fill={isSelected ? "rgba(255,159,10,0.28)" : SLOT_FILL}
+          stroke={isSelected ? colors.teamOrange : canClick ? SLOT_RING : SLOT_RING_OFF}
+          strokeWidth={isSelected ? 2.2 : 1.4}
+        />
+        <Rect x={pos.x - 4} y={pos.y - 0.85} width={8} height={1.7} rx={0.85} fill={EMPTY} />
+        <Rect x={pos.x - 0.85} y={pos.y - 4} width={1.7} height={8} rx={0.85} fill={EMPTY} />
       </G>
     );
   }
@@ -172,6 +183,11 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
         </LinearGradient>
       </Defs>
       <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="url(#turf)" />
+      {/* Specular rim — the same top-edge highlight the glass cards carry. */}
+      <Rect
+        x={0.75} y={0.75} width={398.5} height={VB_H - 1.5} rx={11.5}
+        fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth={1.5}
+      />
 
       {/* Line work — white on clay */}
       <Rect x={5} y={4} width={390} height={142} fill="none" stroke={LINE} strokeWidth={1.5} />
@@ -193,7 +209,7 @@ export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, curren
       {positions.map((pos, i) => renderSlot(1, i, pos))}
       {positions.map((pos, i) => renderSlot(2, i, mirrorX(pos)))}
 
-      {isPending && <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="rgba(255,248,240,0.45)" />}
+      {isPending && <Rect x={0} y={0} width={400} height={VB_H} rx={12} fill="rgba(255,248,240,0.5)" />}
     </Svg>
   );
 }

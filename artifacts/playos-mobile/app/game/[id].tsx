@@ -442,6 +442,9 @@ const styles = StyleSheet.create({
   pitchWrap: {
     width: "100%", alignSelf: "stretch",
     borderRadius: 12, overflow: "hidden", aspectRatio: 400 / 150, marginTop: 12,
+    // The pitch is glass sitting on a glass card, so it needs its own edge or
+    // the pane has no boundary at all.
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
   },
   pitchFooter: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 5, marginTop: 12 },
   pitchFooterText: { fontSize: 10, color: MUTED },
