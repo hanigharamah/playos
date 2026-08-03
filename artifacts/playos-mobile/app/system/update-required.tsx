@@ -9,6 +9,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { screen } from "@/lib/analytics";
 
 const INK = "#1C1C1E";
@@ -63,17 +64,19 @@ export default function UpdateRequired() {
       <HandwrittenHeader style={styles.title}>time to update</HandwrittenHeader>
       <Text style={styles.sub}>this version cannot book any more</Text>
 
-      <View style={styles.versionCard}>
-        <View>
-          <Text style={styles.versionLabel}>YOU HAVE</Text>
-          <Text style={styles.versionOld}>{have}</Text>
+      <GlassCard variant="soft" round={20} padding={0} style={styles.versionCard}>
+        <View style={styles.versionRow}>
+          <View>
+            <Text style={styles.versionLabel}>YOU HAVE</Text>
+            <Text style={styles.versionOld}>{have}</Text>
+          </View>
+          <Text style={styles.arrow}>→</Text>
+          <View style={{ alignItems: "flex-end" }}>
+            <Text style={styles.versionLabel}>CURRENT</Text>
+            <Text style={styles.versionNew}>{required ?? "—"}</Text>
+          </View>
         </View>
-        <Text style={styles.arrow}>→</Text>
-        <View style={{ alignItems: "flex-end" }}>
-          <Text style={styles.versionLabel}>CURRENT</Text>
-          <Text style={styles.versionNew}>{required ?? "—"}</Text>
-        </View>
-      </View>
+      </GlassCard>
 
       <Callout
         tone="neutral"
@@ -107,11 +110,12 @@ const styles = StyleSheet.create({
   title: { fontSize: 38, color: "#FF9F0A" },
   sub: { fontSize: 15.5, fontWeight: "600", color: INK, marginTop: 10 },
 
-  versionCard: {
+  // Geometry only — fill, stroke and shadows come from <GlassCard>. minHeight,
+  // not the fixed 110 it was: both columns hold a label and a version number.
+  versionCard: { marginTop: 28 },
+  versionRow: {
     flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    height: 110, borderRadius: 20, marginTop: 28, paddingHorizontal: 23,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    minHeight: 110, paddingHorizontal: 23,
   },
   versionLabel: { fontSize: 10.5, fontWeight: "600", color: MUTED, letterSpacing: 0.3 },
   versionOld: { fontSize: 24, fontWeight: "700", color: "#ADADB2", marginTop: 6 },
