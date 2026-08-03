@@ -206,7 +206,9 @@ const styles = StyleSheet.create({
   matchText: { flex: 1, marginLeft: 12, paddingTop: 4 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
   matchSub: { fontSize: 13, color: MUTED, marginTop: 8 },
-  matchSpots: { fontSize: 13, fontWeight: "600", color: ORANGE, marginTop: 6 },
+  // Same correction as booking-confirmed: ORANGE at 13pt over the glass fill
+  // is ~2.3:1, under every contrast floor, on the scarcity line.
+  matchSpots: { fontSize: 14, fontWeight: "700", color: "#C96A00", marginTop: 6 },
 
   payWith: { fontSize: 13, color: MUTED, marginTop: 28, marginBottom: 10 },
 

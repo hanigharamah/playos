@@ -147,7 +147,9 @@ export default function Profile() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
+  // Transparent: this ScrollView sits above <WarmCanvas />, which is
+  // absoluteFill, so an opaque cream here hid the peach glow completely.
+  wrap: { flex: 1, backgroundColor: "transparent" },
     // paddingTop is applied at the call site from the safe-area inset: the
   // fixed value here was smaller than the Dynamic Island's inset, so the first
   // element rendered underneath it.

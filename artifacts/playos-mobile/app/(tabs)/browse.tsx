@@ -228,7 +228,9 @@ export default function Browse() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
+  // Transparent: this ScrollView sits above <WarmCanvas />, which is
+  // absoluteFill, so an opaque cream here hid the peach glow completely.
+  wrap: { flex: 1, backgroundColor: "transparent" },
   content: { paddingHorizontal: 20, paddingBottom: 130 },
 
   back: { height: 28, justifyContent: "center", marginBottom: 8 },

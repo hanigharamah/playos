@@ -1,11 +1,14 @@
 import { useEffect } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Image, Linking, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { ArrowLeft, Check, Calendar } from "lucide-react-native";
 import { useGetGame } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { WarmCanvas } from "@/components/WarmCanvas";
+import { Btn3D } from "@/components/Btn3D";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { colors, spacing } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
@@ -17,6 +20,11 @@ import { screen, track } from "@/lib/analytics";
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
 const ACCENT = "#FA810B";
+
+const GLOWS = [
+  { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
+  { cx: 0.65, cy: 0.3, r: 0.6, color: "rgba(255,217,228,0.2)" },
+];
 
 /** Confetti dots scattered behind the success badge (Figma 369:574–583). */
 const SPARKS: { x: number; y: number; s: number; o: number }[] = [
@@ -35,6 +43,7 @@ const SPARKS: { x: number; y: number; s: number; o: number }[] = [
 export default function BookingConfirmed() {
   const { bookingId, gameId } = useLocalSearchParams<{ bookingId: string; gameId: string }>();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { data: game } = useGetGame(gameId!, { enabled: !!gameId });
 
   useEffect(() => { screen("BookingConfirmed", { bookingId, gameId }); }, [bookingId, gameId]);
@@ -78,7 +87,17 @@ export default function BookingConfirmed() {
   };
 
   return (
-    <ScrollView style={styles.wrap} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={{ flex: 1 }}>
+      {/* The halo rings behind the badge are 6% and 10% orange — on dead cream
+          they nearly vanish, which made the one celebratory screen in the app
+          the dullest-looking one. It was also the only screen in the booking
+          flow without the glow: checkout, check-in and refund all have it. */}
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+      <ScrollView
+        style={styles.wrap}
+        contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
+        showsVerticalScrollIndicator={false}
+      >
       <Pressable onPress={() => router.replace("/(tabs)/my-games")} hitSlop={12} style={styles.back}>
         <ArrowLeft size={20} color={INK} strokeWidth={2} />
       </Pressable>
@@ -122,33 +141,46 @@ export default function BookingConfirmed() {
         </View>
       )}
 
-      {/* Add to calendar (Figma 369:595) */}
-      <Pressable style={styles.calendarRow} onPress={addToCalendar}>
-        <Calendar size={20} color={ACCENT} strokeWidth={2} />
-        <Text style={styles.calendarLabel}>add to calendar</Text>
-        <Text style={styles.chevron}>›</Text>
-      </Pressable>
-
-      {/* 3D CTA (Figma 373:516) */}
-      <Pressable onPress={() => router.replace("/(tabs)/my-games")} style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1 }]}>
-        <LinearGradient
-          colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
-          locations={[0, 0.35, 0.65, 1]}
-          start={{ x: 0.5, y: 0 }}
-          end={{ x: 0.5, y: 1 }}
-          style={styles.cta}
+      {/* Add to calendar (Figma 369:595). Gated on `game` like the card above:
+          addToCalendar returns early without it, so before the query resolved
+          this row was fully drawn, fully tappable, and did nothing. */}
+      {game && (
+        <Pressable
+          style={({ pressed }) => [
+            styles.calendarRow,
+            pressed && { backgroundColor: "rgba(255,255,255,0.75)" },
+          ]}
+          onPress={addToCalendar}
         >
-          <View style={styles.ctaSheen} />
-          <Text style={styles.ctaText}>view my booking</Text>
-        </LinearGradient>
-      </Pressable>
-    </ScrollView>
+          <Calendar size={20} color={ACCENT} strokeWidth={2} />
+          <Text style={styles.calendarLabel}>add to calendar</Text>
+          <Text style={styles.chevron}>›</Text>
+        </Pressable>
+      )}
+
+      {/* Figma 373:516. Was a hand-rolled copy of Btn3D — identical gradient,
+          sheen and geometry, but with a #994D0D shadow where the primitive
+          uses #EB6924. A dark brown drop shadow reads as smudged next to the
+          warm glow every other CTA in the app throws. */}
+      <Btn3D
+        label="view my booking"
+        onPress={() => router.replace("/(tabs)/my-games")}
+        style={{ marginTop: 20 }}
+      />
+      </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: "#FFF8F0" },
-  content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
+  // Transparent, not cream: this ScrollView is a SIBLING above <WarmCanvas />,
+  // which is absoluteFill, so an opaque background here paints the glow out
+  // entirely. The cream comes from the canvas's own Fill.
+  wrap: { flex: 1, backgroundColor: "transparent" },
+  // paddingTop comes from the safe-area inset at the call site: the fixed
+  // 32 is less than a Dynamic Island inset, so the back button rendered with
+  // its upper third under the island.
+  content: { paddingHorizontal: 20, paddingBottom: spacing.xxl * 2 },
 
   back: { height: 42, width: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
@@ -183,7 +215,13 @@ const styles = StyleSheet.create({
   matchText: { flex: 1, marginLeft: 12 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
   matchSub: { fontSize: 13, color: MUTED, marginTop: 6 },
-  matchSpots: { fontSize: 13, fontWeight: "600", color: ACCENT, marginTop: 6 },
+  // #FA810B at 13pt over the glass fill measures ~2.3:1 — below the 4.5:1 body
+  // floor and below even the 3:1 large-text one. This is the scarcity line the
+  // player reads to decide whether to pull a friend in, and it was the faintest
+  // text on the card despite being the loudest colour. #C96A00 is already the
+  // system's warning accent. The 28pt Caveat header keeps the bright orange —
+  // that is the ratified script accent, and it is large.
+  matchSpots: { fontSize: 14, fontWeight: "700", color: "#C96A00", marginTop: 6 },
 
   calendarRow: {
     flexDirection: "row", alignItems: "center", gap: 14,
