@@ -1,6 +1,7 @@
 import { View, Text, StyleSheet } from "react-native";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { BtnOutline } from "@/components/BtnOutline";
+import { GlassCard } from "@/components/GlassCard";
 import { spacing } from "@/lib/theme";
 
 interface Props {
@@ -53,11 +54,13 @@ export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) 
  */
 export function EmptyCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
   return (
-    <View style={styles.card}>
-      <View style={styles.disc}>{icon}</View>
-      <Text style={styles.cardTitle}>{title}</Text>
-      <Text style={styles.cardBody}>{body}</Text>
-    </View>
+    <GlassCard variant="soft" round={22} padding={0} style={styles.card}>
+      <View style={styles.cardInner}>
+        <View style={styles.disc}>{icon}</View>
+        <Text style={styles.cardTitle}>{title}</Text>
+        <Text style={styles.cardBody}>{body}</Text>
+      </View>
+    </GlassCard>
   );
 }
 
@@ -78,15 +81,14 @@ const styles = StyleSheet.create({
   // Geometry and shadow come from BtnOutline; only the spacing above is ours.
   cta: { marginTop: 34, alignSelf: "stretch" },
 
-  card: {
+  // Width constraints stay on the outer glass; the box the content fills sits
+  // on the inner view. Fill, stroke and shadows come from <GlassCard>.
+  card: { alignSelf: "stretch", maxWidth: 350 },
+  cardInner: {
     // minHeight + real bottom padding, not a fixed 148. The mock's card holds
     // a one-line body; a two-line body stacks to ~157 and spilled out of the
     // bottom edge, which is what "overlapping text and boxes" looked like.
-    alignSelf: "stretch", maxWidth: 350, minHeight: 148, paddingBottom: 19,
-    borderRadius: 22, alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.55)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    minHeight: 148, paddingBottom: 19, alignItems: "center",
   },
   disc: {
     width: 64, height: 64, borderRadius: 32, marginTop: 19, alignItems: "center", justifyContent: "center",
