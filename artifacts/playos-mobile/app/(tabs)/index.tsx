@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
 import { BlurView } from "expo-blur";
+import { LinearGradient } from "expo-linear-gradient";
 import { format } from "date-fns";
 import { Bell, Users, MapPin, User, ArrowRight } from "lucide-react-native";
 import { useListGames, useGetMyBookings, useGetMe } from "@/lib/api";
@@ -121,7 +122,19 @@ export default function Home() {
         {/* Hero Match Card (Figma 71:277 — 350×238 glass) */}
         {featured && (
           <Pressable onPress={() => router.push(heroCta?.href ?? `/game/${featured.id}`)} style={styles.heroShadow}>
-            <BlurView intensity={Platform.OS === "ios" ? 28 : 0} tint="light" style={styles.heroCard}>
+            <BlurView intensity={Platform.OS === "ios" ? 18 : 0} tint="light" style={styles.heroCard}>
+              {/* Sheen + rim, same as every other glass surface. The fill is
+                  deliberately thin: white fill stacked on a blur is what makes
+                  a card read as frost rather than glass. */}
+              <LinearGradient
+                colors={["rgba(255,255,255,0.5)", "rgba(255,255,255,0.06)", "rgba(255,246,236,0.14)"]}
+                locations={[0, 0.55, 1]}
+                start={{ x: 0.15, y: 0 }}
+                end={{ x: 0.85, y: 1 }}
+                style={StyleSheet.absoluteFill}
+                pointerEvents="none"
+              />
+              <View style={styles.heroRim} pointerEvents="none" />
               <Text style={styles.heroLabel}>
                 {isTonight ? "TONIGHT" : format(new Date(featured.kickoffTime), "EEE").toUpperCase()} • {format(new Date(featured.kickoffTime), "h:mm a")}
               </Text>
@@ -225,7 +238,14 @@ const styles = StyleSheet.create({
     // ~254 at default line heights, and with overflow hidden that clipped the
     // bottom of the join circle. Larger Dynamic Type made it worse.
     minHeight: 238, borderRadius: 28, overflow: "hidden", padding: 23,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
+    backgroundColor: "rgba(255,255,255,0.22)", borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
+  },
+  heroRim: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 28, borderWidth: 1, borderColor: "transparent",
+    borderTopColor: "rgba(255,255,255,0.95)",
+    borderLeftColor: "rgba(255,255,255,0.5)",
+    borderRightColor: "rgba(255,255,255,0.5)",
   },
   heroLabel: { fontSize: 13, fontWeight: "600", color: CARD_LABEL, letterSpacing: 1.04 },
   heroTitle: { fontSize: 30, fontWeight: "700", color: CARD_TITLE, marginTop: 4 },
@@ -251,7 +271,7 @@ const styles = StyleSheet.create({
   viewAll: { fontSize: 13, fontWeight: "600", color: MUTED, marginBottom: 4 },
   miniCard: {
     flexDirection: "row", alignItems: "center", height: 68, borderRadius: 16, padding: 6,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
+    backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     marginBottom: spacing.sm,
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 18, elevation: 3,
   },
