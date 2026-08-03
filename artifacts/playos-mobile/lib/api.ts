@@ -47,7 +47,7 @@ export interface BookingRow {
   userId: string | null;
   team: number;
   slotIndex: number;
-  paymentStatus: "pending" | "paid" | "refunded";
+  paymentStatus: "pending" | "paid" | "refunded" | "forfeited";
   paymentMethod?: "cash" | "stcpay" | null;
   bookedAt: string;
 }
@@ -306,7 +306,9 @@ export function useBookSpot() {
       // ever inserts "pending", so the same user could book a game repeatedly
       // and two users could land on one slot. This matches PitchSVG, which
       // already treated any non-refunded booking as occupied.
-      const activeBookings = (game.bookings as any[]).filter((b) => b.payment_status !== "refunded");
+      const activeBookings = (game.bookings as any[]).filter(
+        (b) => b.payment_status !== "refunded" && b.payment_status !== "forfeited",
+      );
       if (activeBookings.some((b) => b.user_id === user.id)) {
         throw { data: { error: "You already have a spot in this game" } };
       }
@@ -419,7 +421,11 @@ export function useCancelBooking() {
       const hoursUntil = (new Date(kickoff).getTime() - serverNow()) / 3_600_000;
       const eligible = hoursUntil > FREE_CANCEL_HOURS;
 
-      const { error } = await supabase.from("bookings").update({ payment_status: "refunded" }).eq("id", vars.bookingId);
+      // A cancellation inside the cutoff releases the spot but keeps the
+      // money, so it must not be written as a refund. 'forfeited' is the
+      // terminal state added by 2026-07-booking-integrity.sql.
+      const terminal = eligible ? "refunded" : "forfeited";
+      const { error } = await supabase.from("bookings").update({ payment_status: terminal }).eq("id", vars.bookingId);
       if (error) throw error;
 
       const message = eligible
@@ -972,7 +978,7 @@ export function useOpsRoster(gameId: string | null) {
         .from("bookings")
         .select("id, user_id, booked_at, checked_in, users(name, phone)")
         .eq("game_id", gameId!)
-        .neq("payment_status", "refunded")
+        .not("payment_status", "in", "(refunded,forfeited)")
         .order("booked_at", { ascending: true });
       if (error) throw error;
 

@@ -85,7 +85,9 @@ interface Props {
 
 export function PitchSVG({ teamSize, bookings, selectedSlot, onSlotClick, currentUserId, isPending, gameOpen }: Props) {
   const positions = getPositions(teamSize);
-  const paidBookings = bookings.filter((b) => b.paymentStatus !== "refunded");
+  const paidBookings = bookings.filter(
+    (b) => b.paymentStatus !== "refunded" && b.paymentStatus !== "forfeited",
+  );
 
   function getBooking(team: number, slot: number) {
     return paidBookings.find((b) => b.team === team && b.slotIndex === slot);

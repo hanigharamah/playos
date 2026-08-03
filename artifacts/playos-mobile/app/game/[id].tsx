@@ -58,7 +58,9 @@ export default function GameDetail() {
   // A spot is occupied the moment it is booked. Counting only "paid" left
   // this screen advertising a full game as empty, because the app only ever
   // inserts "pending" — matches useBookSpot and PitchSVG.
-  const bookedCount = game.bookings.filter((b) => b.paymentStatus !== "refunded").length;
+  const bookedCount = game.bookings.filter(
+    (b) => b.paymentStatus !== "refunded" && b.paymentStatus !== "forfeited",
+  ).length;
   const spotsLeft = game.capacity - bookedCount;
   const teamSize = game.capacity / 2;
   // Decided product rule (FIGMA-MAP "Product rules"): a match auto-starts at

@@ -20,24 +20,52 @@
 begin;
 
 -- ── Inspect before enforcing ────────────────────────────────────────────────
--- Run this first. If it returns rows, resolve them before the index is added.
+-- Run BOTH of these first. Either returning rows will abort the whole file,
+-- since the indexes below cannot be created over existing duplicates.
 --
+-- 1. Two players on one slot:
 --   select game_id, team, slot_index, count(*), array_agg(id)
 --   from bookings
---   where payment_status <> 'refunded'
+--   where payment_status not in ('refunded', 'forfeited')
 --   group by game_id, team, slot_index
 --   having count(*) > 1;
+--
+-- 2. One player holding two spots in the same game — this is the one that
+--    actually fires in practice, because the client-side guard against it was
+--    filtering on a status the app never writes:
+--   select game_id, user_id, count(*), array_agg(id)
+--   from bookings
+--   where payment_status not in ('refunded', 'forfeited')
+--   group by game_id, user_id
+--   having count(*) > 1;
+--
+-- To clear the second kind, keeping the paid row if there is one and
+-- otherwise the earliest:
+--   delete from bookings b using (
+--     select id, row_number() over (
+--       partition by game_id, user_id
+--       order by (payment_status = 'paid') desc, booked_at
+--     ) as rn
+--     from bookings where payment_status not in ('refunded', 'forfeited')
+--   ) d
+--   where b.id = d.id and d.rn > 1;
+
+-- Drop first, don't skip: an earlier version of this file created these with
+-- the predicate `payment_status <> 'refunded'`, which does NOT release the
+-- slot on a forfeit. `create index if not exists` would leave that in place.
+drop index if exists bookings_unique_active_slot;
+drop index if exists bookings_unique_active_player;
 
 -- ── Gap 1: one active booking per slot ──────────────────────────────────────
--- Partial index so cancelled/refunded rows free the slot for reuse.
+-- Partial index so released rows free the slot for reuse.
 create unique index if not exists bookings_unique_active_slot
   on bookings (game_id, team, slot_index)
-  where payment_status <> 'refunded';
+  where payment_status not in ('refunded', 'forfeited');
 
 -- One active booking per player per game.
 create unique index if not exists bookings_unique_active_player
   on bookings (game_id, user_id)
-  where payment_status <> 'refunded';
+  where payment_status not in ('refunded', 'forfeited');
 
 -- ── Gap 2: a real terminal state for a forfeited cancellation ───────────────
 alter table bookings drop constraint if exists bookings_payment_status_check;

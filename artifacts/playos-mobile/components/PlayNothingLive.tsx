@@ -42,7 +42,7 @@ export function PlayNothingLive() {
 
   // Soonest still-upcoming booking; that's the match this tab will wake for.
   const next = (bookings?.upcoming ?? [])
-    .filter((b) => b.paymentStatus !== "refunded")
+    .filter((b) => b.paymentStatus !== "refunded" && b.paymentStatus !== "forfeited")
     .sort((a, b) => +new Date(a.game.kickoffTime) - +new Date(b.game.kickoffTime))[0];
 
   return (
