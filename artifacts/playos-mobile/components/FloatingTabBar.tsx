@@ -13,6 +13,7 @@ interface TabBarProps {
 }
 import Svg, { Circle, Path } from "react-native-svg";
 import { scrollTabToTop } from "@/lib/scrollToTop";
+import { useGetMyBookings } from "@/lib/api";
 
 /**
  * Floating glass tab bar — exact copy of the Figma "Bottom Nav" component
@@ -53,6 +54,15 @@ const TABS: Record<string, { label: string; icon: (color: string, weight: number
 
 export function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  // A cancelled match is the one thing that needs the player's attention and
+  // has no other way to reach them: push cannot (no device registers a token)
+  // and Home is a storefront. The match-day bar shows it too, but only while
+  // the app is on a tab screen — the dot persists wherever they are.
+  // useGetMyBookings is already cached by React Query, so this is free.
+  const { data: bookings } = useGetMyBookings();
+  const needsAttention =
+    [...(bookings?.upcoming ?? []), ...(bookings?.past ?? [])]
+      .some((b) => b.game.status === "cancelled");
   return (
     <View style={[styles.wrap, { bottom: Math.max(insets.bottom, 12) }]} pointerEvents="box-none">
       <View style={styles.shadow}>
@@ -89,7 +99,12 @@ export function FloatingTabBar({ state, navigation }: TabBarProps) {
                     made the bar read chunky; the active state is carried by
                     ink and weight instead, which is how iOS system tab bars
                     and every compact floating bar do it. */}
-                {meta.icon(active ? ACTIVE : ICON, active ? 2.3 : 1.7)}
+                <View>
+                  {meta.icon(active ? ACTIVE : ICON, active ? 2.3 : 1.7)}
+                  {route.name === "my-games" && needsAttention && (
+                    <View style={styles.badge} />
+                  )}
+                </View>
                 <Text style={[styles.label, active && styles.labelActive]}>{meta.label}</Text>
               </Pressable>
             );
@@ -135,6 +150,14 @@ const styles = StyleSheet.create({
     alignItems: "center", paddingHorizontal: 4,
   },
   tab: { flex: 1, alignItems: "center", justifyContent: "center", gap: 3 },
+  // Ringed in the bar's own fill so it reads as a dot on the icon rather
+  // than a smudge against it, at any tab-bar translucency.
+  badge: {
+    position: "absolute", top: -2, right: -3,
+    width: 9, height: 9, borderRadius: 4.5,
+    backgroundColor: "#BF2626",
+    borderWidth: 1.5, borderColor: "rgba(255,255,255,0.95)",
+  },
   label: { fontSize: 10.5, color: LABEL, fontWeight: "500" },
   labelActive: { color: ACTIVE, fontWeight: "700" },
 });

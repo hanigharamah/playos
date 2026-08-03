@@ -32,10 +32,13 @@ const T12H_MS = 12 * 60 * 60_000;
 const T20M_MS = 20 * 60_000;
 const T10M_MS = 10 * 60_000;
 
-type BarState = "reconfirm" | "checkin" | "atRisk" | "checkedIn";
+type BarState = "cancelled" | "reconfirm" | "checkin" | "atRisk" | "checkedIn";
 
 const TONE: Record<BarState, { fill: string; accent: string; well: string }> = {
-  // Tints and accents are verbatim from the four frames.
+  // Tints and accents are verbatim from the four frames. `cancelled` is a
+  // fifth state with no frame: it is the at-risk red, because it is the only
+  // other thing on this bar that costs the player money.
+  cancelled: { fill: "rgba(255,233,233,0.78)", accent: "#BF2626", well: "rgba(191,38,38,0.15)" },
   reconfirm: { fill: "rgba(255,244,230,0.70)", accent: "#C96A00", well: "rgba(201,106,0,0.15)" },
   checkin:   { fill: "rgba(255,238,221,0.76)", accent: "#D4550A", well: "rgba(212,85,10,0.15)" },
   atRisk:    { fill: "rgba(255,233,233,0.78)", accent: "#BF2626", well: "rgba(191,38,38,0.15)" },
@@ -76,9 +79,18 @@ export function useMatchDayBar(): { booking: MyBooking; state: BarState } | null
   // bar off at T+0 — taking the red "not checked in" state away from the one
   // player it exists for, at the exact minute their fee goes. The window runs
   // to T+20m, which is as long as the operator is still working the phone.
-  const booking = [...(data?.upcoming ?? []), ...(data?.past ?? [])].find((b) => {
-    // A cancelled match has no check-in and no kickoff. Counting down to one
-    // would be the bar's worst possible state: urgent, prominent, and wrong.
+  const all = [...(data?.upcoming ?? []), ...(data?.past ?? [])];
+
+  // A CANCELLED match outranks everything and ignores the T-12h window. It can
+  // happen days out, and nothing else in the app will tell the player: push
+  // cannot reach them (no device ever registers a token) and Home is a
+  // storefront now. The booking drops out of useGetMyBookings the moment it is
+  // refunded or forfeited, so this clears itself once the refund is settled.
+  const cancelled = all.find((b) => b.game.status === "cancelled");
+
+  const booking = cancelled ?? all.find((b) => {
+    // No countdown for a match that is not happening — urgent, prominent and
+    // wrong is the bar's worst possible state.
     if (b.game.status === "cancelled") return false;
     const ms = new Date(b.game.kickoffTime).getTime() - serverNow();
     return ms <= T12H_MS && ms > -T20M_MS;
@@ -89,9 +101,11 @@ export function useMatchDayBar(): { booking: MyBooking; state: BarState } | null
   // tree once a second for the whole session — on a week with nothing booked.
   // Outside T-12h we sleep until the window opens (capped so a resync still
   // lands); inside it, 30s until the last 20 minutes, then 1s.
-  const nextMs = booking
-    ? new Date(booking.game.kickoffTime).getTime() - serverNow()
-    : soonestKickoffMs(data?.upcoming);
+  const nextMs = cancelled
+    ? null                                   // nothing to count down to
+    : booking
+      ? new Date(booking.game.kickoffTime).getTime() - serverNow()
+      : soonestKickoffMs(data?.upcoming);
   const period =
     nextMs === null ? null
     : nextMs > T12H_MS ? Math.min(nextMs - T12H_MS, 30 * 60_000)
@@ -108,6 +122,8 @@ export function useMatchDayBar(): { booking: MyBooking; state: BarState } | null
   }, [period, tick]);
 
   if (!booking) return null;
+
+  if (cancelled) return { booking, state: "cancelled" };
 
   const msToKickoff = new Date(booking.game.kickoffTime).getTime() - serverNow();
 
@@ -134,7 +150,12 @@ export function MatchDayBar() {
   const tone = TONE[state];
   const kickoff = new Date(booking.game.kickoffTime);
   const msToKickoff = kickoff.getTime() - serverNow();
-  const open = () => router.push(`/match/${booking.gameId}`);
+  const open = () =>
+    router.push(
+      state === "cancelled"
+        ? `/match-cancelled/${booking.gameId}`
+        : `/match/${booking.gameId}`,
+    );
   /** Server clock, like everything else here — the ask is time-bound. */
   const sameDay = isSameDay(kickoff, new Date(serverNow()));
 
@@ -150,6 +171,13 @@ export function MatchDayBar() {
     );
 
   const copy = {
+    cancelled: {
+      glyph: "!",
+      title: "match cancelled",
+      // The money is the point. Says what happens next rather than only what
+      // went wrong, because the player did nothing and is owed a choice.
+      sub: `${booking.game.pitchName}  ·  choose cash or a token`,
+    },
     reconfirm: {
       glyph: "?",
       // The ask fires at T-12h for ANY kickoff, so "tonight" was wrong half
