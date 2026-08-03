@@ -46,22 +46,24 @@ const POSITIONS: Record<number, Pos[]> = {
 };
 
 /**
- * Light warm sand with a vertical gradient for depth.
+ * A darker shade of the page's own cream, not a separate material.
  *
- * The history is worth keeping, because this value has a floor and a ceiling.
- * It started at #F6EADE — within a few percent of the page's own #FFF8F0 — so
- * the pitch did not separate from its card at all. It was then taken to a deep
- * clay, which separated well but read as heavy and muddy against everything
- * else on the screen. This is the lighter end: it still clears the page, but
- * the white line work now sits at roughly 1.8:1 rather than 2.6:1, so the
- * lines are drawn slightly thicker and at fuller opacity to hold up.
- * Going lighter than this starts to lose the markings.
+ * The page is #FFF8F0 — hue 32, effectively white. The turf is the same hue
+ * stepped down in lightness, so it reads as the cream in shadow rather than
+ * as sand or clay, which is where two earlier attempts landed and why they
+ * looked muddy against everything around them.
+ *
+ * The line work is the consequence of that choice. White markings need a dark
+ * ground; on cream they sit at 1.4:1 and effectively vanish. So the lines run
+ * WARM AND DARKER than the turf instead — the same brown family as the app's
+ * shadows — which is both legible (2.5:1) and in palette. On a cream pitch
+ * that reads correctly; it is only on green turf that lines must be white.
  */
-const LINE = "rgba(255,255,255,0.98)";
-const TURF_TOP = "#EADBC7";
-const TURF_BOTTOM = "#D8BFA4";
+const LINE = "rgba(168,130,92,0.55)";
+const TURF_TOP = "#F5E9DC";
+const TURF_BOTTOM = "#EDD8C0";
 /** Open slots: light on the dark turf now, where they used to be dark on light. */
-const EMPTY = "rgba(255,255,255,0.6)";
+const EMPTY = "rgba(150,112,74,0.5)";
 /** Design pitch is 326×122 (wide + short); slot POSITIONS were tuned on a
  *  400×260 board, so squash Y to fit without distorting the dots. */
 const VB_H = 150;
