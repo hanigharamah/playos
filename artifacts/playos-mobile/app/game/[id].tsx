@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Share, Pressable, Image, Linking, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { BlurView } from "expo-blur";
 import { format } from "date-fns";
@@ -38,6 +39,7 @@ export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
+  const insets = useSafeAreaInsets();
   const { data: game, isLoading, error: loadError, refetch } = useGetGame(id!);
   const bookSpot = useBookSpot();
   const { data: myBookings } = useGetMyBookings();
@@ -130,7 +132,7 @@ export default function GameDetail() {
     <View style={styles.wrap}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Full-bleed hero photo (Figma 602:8 — 455×251, bleeds both edges) */}
-        <View style={styles.hero} pointerEvents="none">
+        <View style={[styles.hero, { height: 251 + insets.top }]} pointerEvents="none">
           <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.heroImg} />
           <LinearGradient
             colors={["transparent", "rgba(255,248,240,0.65)", "#FFF8F0"]}
@@ -140,7 +142,7 @@ export default function GameDetail() {
         </View>
 
         {/* Nav row */}
-        <View style={styles.nav}>
+        <View style={[styles.nav, { paddingTop: insets.top + 8 }]}>
           <Pressable onPress={() => router.back()} hitSlop={10}>
             <BlurView intensity={Platform.OS === "ios" ? 20 : 0} tint="light" style={styles.navCircle}>
               <ArrowLeft size={20} color={INK} strokeWidth={2} />
@@ -152,7 +154,7 @@ export default function GameDetail() {
         </View>
 
         {/* Title over the photo */}
-        <Text style={styles.title} numberOfLines={1}>{game.title}</Text>
+        <Text style={styles.title} numberOfLines={2}>{game.title}</Text>
 
         {/* Meta pills (Figma 585:482-484) */}
         <View style={styles.metaRow}>
@@ -296,12 +298,16 @@ export default function GameDetail() {
               gameOpen={gameOpen}
             />
           </View>
-          <View style={styles.pitchFooter}>
-            <Users size={13} color={MUTED} strokeWidth={2} />
-            <Text style={styles.pitchFooterText}>Minimum {minPlayers} players to start</Text>
-          </View>
+          {/* The spots card at the top of the screen already states both the
+              minimum and the count. Repeating them under the pitch put the
+              same two facts on screen twice, a few hundred pixels apart. */}
           {spotsLeft > 0 && (
-            <Text style={styles.pitchFooterSpots}>{spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left</Text>
+            <View style={styles.pitchFooter}>
+              <Users size={13} color={MUTED} strokeWidth={2} />
+              <Text style={styles.pitchFooterSpots}>
+                {spotsLeft} {spotsLeft === 1 ? "spot" : "spots"} left
+              </Text>
+            </View>
           )}
         </View>
 
@@ -361,10 +367,14 @@ const styles = StyleSheet.create({
   loading: { flex: 1, backgroundColor: "#FFF8F0" },
   content: { paddingBottom: spacing.xxl },
 
-  hero: { position: "absolute", top: 0, left: -32, right: -32, height: 251 },
+  hero: { position: "absolute", top: 0, left: -32, right: -32 },
   heroImg: { width: "100%", height: "100%" },
 
-  nav: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 21, paddingTop: 57 },
+  // paddingTop comes from the safe-area inset at the call site. It was a
+  // fixed 57, which is LESS than a Dynamic Island inset (59), so the back
+  // and share buttons sat under the island and the title scrolled up
+  // behind the clock.
+  nav: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", paddingHorizontal: 21 },
   navCircle: {
     width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center", overflow: "hidden",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
