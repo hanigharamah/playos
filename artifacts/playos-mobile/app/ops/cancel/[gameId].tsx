@@ -11,6 +11,7 @@ import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { useServerCountdown } from "@/lib/serverTime";
 import { colors } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -131,17 +132,19 @@ export default function OpsCancelMatch() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.statsCard}>
-          <View>
-            <Text style={styles.statNum}>{players}</Text>
-            <Text style={styles.statLabel}>PLAYERS</Text>
+        <GlassCard variant="soft" round={20} padding={0}>
+          <View style={styles.statsInner}>
+            <View>
+              <Text style={styles.statNum}>{players}</Text>
+              <Text style={styles.statLabel}>PLAYERS</Text>
+            </View>
+            <View>
+              <Text style={styles.statMoney}>SAR {toRefund}</Text>
+              <Text style={styles.statLabel}>TO REFUND</Text>
+            </View>
+            <Text style={styles.toKickoff}>{toKickoff}</Text>
           </View>
-          <View>
-            <Text style={styles.statMoney}>SAR {toRefund}</Text>
-            <Text style={styles.statLabel}>TO REFUND</Text>
-          </View>
-          <Text style={styles.toKickoff}>{toKickoff}</Text>
-        </View>
+        </GlassCard>
 
         <HandwrittenHeader style={styles.sectionLabel}>reason</HandwrittenHeader>
         <View style={styles.reasonRow}>
@@ -159,21 +162,23 @@ export default function OpsCancelMatch() {
           })}
         </View>
 
-        <View style={styles.firesCard}>
-          <Text style={styles.firesTitle}>what fires</Text>
-          {[
-            `push + in-app to all ${players} ${players === 1 ? "player" : "players"}`,
-            "every booking moves to refund_pending",
-            "each player picks cash or a game token",
-            "no XP either way, no game was played",
-            "48h with no choice, we auto-refund cash",
-          ].map((line) => (
-            <View key={line} style={styles.firesRow}>
-              <Text style={styles.firesArrow}>→</Text>
-              <Text style={styles.firesText}>{line}</Text>
-            </View>
-          ))}
-        </View>
+        <GlassCard variant="soft" round={24} padding={0} style={styles.firesCard}>
+          <View style={styles.firesInner}>
+            <Text style={styles.firesTitle}>what fires</Text>
+            {[
+              `push + in-app to all ${players} ${players === 1 ? "player" : "players"}`,
+              "every booking moves to refund_pending",
+              "each player picks cash or a game token",
+              "no XP either way, no game was played",
+              "48h with no choice, we auto-refund cash",
+            ].map((line) => (
+              <View key={line} style={styles.firesRow}>
+                <Text style={styles.firesArrow}>→</Text>
+                <Text style={styles.firesText}>{line}</Text>
+              </View>
+            ))}
+          </View>
+        </GlassCard>
 
         <Callout
           tone="blocker"
@@ -267,7 +272,9 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 60 },
 
-  statsCard: { ...card, flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", minHeight: 84, borderRadius: 20, paddingHorizontal: 19, paddingTop: 17 },
+  // Layout only — fill, stroke and shadows come from <GlassCard>. It sits on
+  // the inner view because that is the parent the children lay out in.
+  statsInner: { flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between", minHeight: 84, paddingHorizontal: 19, paddingTop: 17 },
   statNum: { fontSize: 30, fontWeight: "700", color: INK },
   statMoney: { fontSize: 26, fontWeight: "700", color: INK, marginTop: 2 },
   statLabel: { fontSize: 10, fontWeight: "600", color: MUTED, marginTop: 6, letterSpacing: 0.3 },
@@ -288,7 +295,8 @@ const styles = StyleSheet.create({
   reasonText: { fontSize: 12.5, fontWeight: "600", color: MUTED },
   reasonTextActive: { color: "#FFFFFF" },
 
-  firesCard: { ...card, borderRadius: 24, marginTop: 22, paddingHorizontal: 19, paddingVertical: 17 },
+  firesCard: { marginTop: 22 },
+  firesInner: { paddingHorizontal: 19, paddingVertical: 17 },
   firesTitle: { fontSize: 13, fontWeight: "600", color: INK },
   firesRow: { flexDirection: "row", marginTop: 14 },
   firesArrow: { fontSize: 12, fontWeight: "700", color: "#FA810B", width: 22 },
