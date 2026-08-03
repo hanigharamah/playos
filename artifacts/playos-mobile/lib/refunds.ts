@@ -23,7 +23,7 @@
  *     so rather than inventing a deadline;
  *   • the write path throws — see submitRefundChoiceNotImplemented below.
  */
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 import { useServerCountdown } from "./serverTime";
 
@@ -193,5 +193,16 @@ export async function submitRefundChoiceNotImplemented(vars: {
 }
 
 export function useSubmitRefundChoice() {
-  return useMutation({ mutationFn: submitRefundChoiceNotImplemented });
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: submitRefundChoiceNotImplemented,
+    // Without this the screen cannot move. Its state is a pure function of the
+    // refund row, so a successful write left useRefundChoice holding the stale
+    // pre-choice row, refundScreenState kept returning "choosing", and the
+    // player watched the spinner stop on the same two options — the same dead
+    // end that was already fixed once in checkout. Latent while the write
+    // throws; free to fix now, and wrong the moment the RPC lands.
+    onSuccess: (_result, vars) =>
+      queryClient.invalidateQueries({ queryKey: refundChoiceKey(vars.bookingId) }),
+  });
 }

@@ -246,9 +246,24 @@ function Choosing({
           onPress={() => setChoice("cash")}
           glyph="💳"
           title="get my money back"
-          /* No saved-card store, so the mock's card digits are omitted. */
-          subtitle={`${sar(amount)} back to the card you paid with, 3 to 5 days`}
-          noteTone="neutral"
+          /*
+           * No saved-card store, and no card rail at all: payments are cash
+           * and STC Pay with a single operator. The mock's card digits were
+           * already dropped here, but the word "card" survived — so one of the
+           * two options the player is choosing between described a process
+           * that does not exist.
+           */
+          subtitle={`${sar(amount)} returned to you by the operator`}
+          /*
+           * "good", matching the token card. Both notes say the same thing —
+           * the streak survives either way — and rendering one in confirm-green
+           * and the other in neutral grey put a thumb on the scale. This screen
+           * went out of its way to remove the mock's pre-selected token so a
+           * mis-tap could not default anyone into it; colour was doing the same
+           * job more quietly. Cash is the ratified fallback and must not look
+           * like the lesser choice.
+           */
+          noteTone="good"
           /*
            * The mock's cash card reads "your streak pauses this week / not
            * broken, not advanced". The ratified policy is that the streak is
@@ -308,17 +323,25 @@ function Settled({
 }) {
   const insets = useSafeAreaInsets();
   const auto = choice === null;
+  // This screen is the receipt for BOTH outcomes — refundScreenState returns
+  // "settled" whenever settled_at is set, whichever way the player went. It
+  // used to describe only the cash one, so someone who deliberately took a
+  // game token was told six separate times that their money went back to a
+  // card. A receipt's whole job is to prove the decision that was made.
+  const token = choice === "token";
 
   return (
     <View style={styles.wrap}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <DotWaveBackground width={width} height={600} />
       <ScrollView contentContainerStyle={[styles.content, { paddingTop: insets.top + 5 }]} showsVerticalScrollIndicator={false}>
-        <Header title="refunded" onBack={() => router.back()} />
+        <Header title={token ? "token added" : "refunded"} onBack={() => router.back()} />
         <Text style={styles.lede}>
-          {auto
-            ? `the ${REFUND_WINDOW_HOURS} hour window closed, so we sent the cash.`
-            : "you asked for the cash, so we sent it."}
+          {token
+            ? "you took the game token, so it's in your wallet."
+            : auto
+              ? `the ${REFUND_WINDOW_HOURS} hour window closed, so we sent the cash.`
+              : "you asked for the cash, so we sent it."}
         </Text>
 
         {matchCard}
@@ -326,9 +349,15 @@ function Settled({
         <Callout
           tone="confirm"
           icon={<Text style={styles.okGlyph}>✓</Text>}
-          title={`${sar(amount)} refunded`}
-          /* Card digits omitted — there is no saved-payment-method store. */
-          body="Back to the card you paid with. Most banks show it within 3 to 5 working days. Nothing else is needed from you."
+          title={token ? "1 game token added" : `${sar(amount)} refunded`}
+          /* Payments are cash and STC Pay with a single operator — there is no
+             card rail and no bank in the loop, so promising one invented a
+             process the player would then wait for. */
+          body={
+            token
+              ? `Worth ${sar(amount)} on any match. It expires in ${TOKEN_EXPIRY_DAYS} days. Nothing else is needed from you.`
+              : "The operator returns your money directly. Nothing else is needed from you."
+          }
           style={{ marginTop: 20 }}
         />
 
@@ -347,12 +376,24 @@ function Settled({
             <TimelineRow at={openedAtMs} text="you were told, choice opened" />
             <TimelineRow
               at={Date.parse(decideBy)}
-              text={auto ? `${REFUND_WINDOW_HOURS}h passed, no choice made` : "you chose the cash"}
+              text={
+                token
+                  ? "you chose the token"
+                  : auto
+                    ? `${REFUND_WINDOW_HOURS}h passed, no choice made`
+                    : "you chose the cash"
+              }
               muted
             />
             <TimelineRow
               at={settledAt ? Date.parse(settledAt) : null}
-              text={auto ? "cash refund sent automatically" : "cash refund sent"}
+              text={
+                token
+                  ? "game token added to your wallet"
+                  : auto
+                    ? "cash refund sent automatically"
+                    : "cash refund sent"
+              }
               tone={GREEN}
               last
             />
@@ -360,7 +401,9 @@ function Settled({
         )}
 
         <Text style={styles.footnote}>
-          the token option is gone for this match. cash is always the fallback, never the other way round.
+          {token
+            ? `the token expires in ${TOKEN_EXPIRY_DAYS} days and the cash option is gone for this match.`
+            : "the token option is gone for this match. cash is always the fallback, never the other way round."}
         </Text>
 
         <Btn3D label="find another match" onPress={() => router.push("/browse")} style={{ marginTop: 28 }} />
@@ -478,7 +521,11 @@ const styles = StyleSheet.create({
   matchSub: { fontSize: 13, color: MUTED, marginTop: 5 },
   matchCancelled: { fontSize: 13, fontWeight: "600", color: RED, marginTop: 4 },
 
-  eyebrow: { fontSize: 13, fontWeight: "600", color: FAINT, marginTop: 18 },
+  // MUTED, not FAINT: these three carry the ratified rules the player is
+  // deciding against — that the streak survives, that no XP applies either
+  // way, and that cash is the fallback. #8A8091 over the glass fill is about
+  // 3.1:1, so the load-bearing lines were the faintest text on the screen.
+  eyebrow: { fontSize: 13, fontWeight: "600", color: MUTED, marginTop: 18 },
 
   option: { borderRadius: 20, padding: 18, marginTop: 10 },
   optionOn: { borderWidth: 2, borderColor: ORANGE, backgroundColor: "rgba(255,255,255,0.75)" },
@@ -503,9 +550,9 @@ const styles = StyleSheet.create({
   noteGood: { backgroundColor: "rgba(224,242,224,0.6)" },
   noteNeutral: { backgroundColor: "rgba(240,236,230,0.8)" },
   noteTitle: { fontSize: 13, fontWeight: "600", color: MUTED },
-  noteBody: { fontSize: 11.5, color: FAINT, marginTop: 4 },
+  noteBody: { fontSize: 12.5, color: MUTED, marginTop: 4 },
 
-  footnote: { fontSize: 12.5, color: FAINT, marginTop: 16, lineHeight: 18 },
+  footnote: { fontSize: 12.5, color: MUTED, marginTop: 16, lineHeight: 18 },
   warnGlyph: { fontSize: 13, fontWeight: "700", color: "#C96A00" },
   okGlyph: { fontSize: 13, fontWeight: "700", color: GREEN },
 
