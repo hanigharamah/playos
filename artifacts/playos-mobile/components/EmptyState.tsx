@@ -1,6 +1,6 @@
-import { View, Text, StyleSheet, Pressable } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { View, Text, StyleSheet } from "react-native";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { Btn3D } from "@/components/Btn3D";
 import { spacing } from "@/lib/theme";
 
 interface Props {
@@ -10,7 +10,7 @@ interface Props {
   title: string;
   /** One-line explanation under the headline. */
   body: string;
-  /** Optional lavender gradient CTA. */
+  /** Optional primary action, rendered as the app's Btn3D CTA. */
   actionLabel?: string;
   onAction?: () => void;
 }
@@ -18,7 +18,8 @@ interface Props {
 /**
  * Shared empty-state layout — exact port of the Figma empty screens
  * (Bookings-Empty 353:400, Chats-Empty 353:471, Activity-Empty 353:546):
- * peach halo badge, script headline, muted body, lavender gradient CTA.
+ * peach halo badge, script headline, muted body — with the mock's lavender
+ * gradient CTA deliberately replaced by Btn3D, see the note at the call site.
  */
 export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) {
   return (
@@ -26,17 +27,16 @@ export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) 
       <View style={styles.halo}>{icon}</View>
       <HandwrittenHeader style={styles.title}>{title}</HandwrittenHeader>
       <Text style={styles.body}>{body}</Text>
+      {/*
+       * Btn3D, not the mock's pink-to-lavender gradient. That CTA was the only
+       * thing in the app in that colour family — 20pt purple text on pink over
+       * cream, under a magenta glow — and it appears on the empty Bookings,
+       * Activity and Chats screens, so it read as a different app's button.
+       * Btn3D is the ratified primary CTA (FIGMA-MAP: fixed four-stop orange,
+       * never a flat colour, one per screen), which is what this is.
+       */}
       {actionLabel && onAction && (
-        <Pressable onPress={onAction} style={({ pressed }) => [{ opacity: pressed ? 0.9 : 1, width: "100%" }]}>
-          <LinearGradient
-            colors={["rgba(251,193,244,0.95)", "rgba(224,201,252,0.95)", "rgba(198,197,252,0.95)"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.cta}
-          >
-            <Text style={styles.ctaText}>{actionLabel}</Text>
-          </LinearGradient>
-        </Pressable>
+        <Btn3D label={actionLabel} onPress={onAction} style={styles.cta} />
       )}
     </View>
   );
@@ -48,7 +48,7 @@ export function EmptyState({ icon, title, body, actionLabel, onAction }: Props) 
  * 64px disc, 18px semibold headline, 13px muted line under it.
  *
  * Distinct from <EmptyState /> above, which is the older full-page layout
- * with a peach halo and a lavender CTA. These newer screens put the message
+ * with a peach halo and a primary CTA. These newer screens put the message
  * in a card so real content can sit underneath it.
  */
 export function EmptyCard({ icon, title, body }: { icon: React.ReactNode; title: string; body: string }) {
@@ -75,11 +75,8 @@ const styles = StyleSheet.create({
   },
   title: { fontSize: 20, marginTop: 26, textAlign: "center" },
   body: { fontSize: 14, color: "#6C6C70", textAlign: "center", marginTop: 12, paddingHorizontal: spacing.lg },
-  cta: {
-    height: 54, borderRadius: 27, alignItems: "center", justifyContent: "center", marginTop: 34,
-    shadowColor: "#D973D9", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 30, elevation: 6,
-  },
-  ctaText: { fontSize: 20, fontWeight: "700", color: "#6630F7" },
+  // Geometry and shadow now come from Btn3D; only the spacing above it is ours.
+  cta: { marginTop: 34, alignSelf: "stretch" },
 
   card: {
     // minHeight + real bottom padding, not a fixed 148. The mock's card holds
