@@ -56,7 +56,7 @@ Checkout is node **345:364** (dev notes 432:550).
 | Legal — Terms of Service | 361:544 | new: `app/legal/terms.tsx` |
 | Enable Notifications | 410:478 | `app/onboarding.tsx` — **ORPHANED**, nothing routes here |
 | Dynamic Island / Live Activity | 383:499 | parked (needs dev build + Apple membership) |
-| Flashcards: Check-in / Waiting / Hold / Starting / Pick side / Coin flip / Teams | 387:632 / 388:478 / 394:478 / 394:507 / 387:649 / 390:478 / 388:496 | `app/matchday/[id].tsx` (single flow, phase-driven like web `MatchDayFlow.tsx`) |
+| Flashcards: Check-in / Waiting / Hold / Starting / Pick side / Coin flip / Teams | 387:632 / 388:478 / 394:478 / 394:507 / 387:649 / 390:478 / 388:496 | `app/match/[id].tsx` — built. One route, one `derivePhase()`, seven cards (see below) |
 
 User-added screens (Auth, Onboarding, Checkout, Booking Confirmed, Chat screens,
 Settings, Player Profile, empty states) live in named sections on the Screens
@@ -116,6 +116,50 @@ Four money states, and only four:
   no booking" line is wrong; push 3's "a sub takes your shirt" is right.
 - The T-12h ask carries no money consequence. It is a nudge that keeps the
   game on, and needs only a `reconfirmed` flag so mini-bar state 1 can vanish.
+
+#### Match-day flashcards — `app/match/[id].tsx`
+
+The seven flashcard frames are one route, not seven. `derivePhase()` reads
+server state on every render and returns one of
+`loading · no_booking · check_in · pick_side · waiting · hold · starting ·
+coin_flip · teams`. Only `starting` (the 3-2-1 belongs to whoever pressed
+start) and `coin_flip` (a `sawCoinFlip` flag so the reveal doesn't repeat)
+carry local state; everything else is a pure function of `useGameRoster`, so
+realtime moves every player's screen together and reopening restores the card.
+
+"Me" is found by matching `RosterEntry.bookingId` against the player's own
+booking from `useGetMyBookings()`, searched across **upcoming and past** — a
+booking moves to `past` at kickoff and this screen lives past kickoff.
+
+Deviations from the frames, all deliberate:
+
+- **Team 1 is "Orange", not "Yellow".** The frames say Orange (`#F28C26`,
+  ink `#7A4B00`); the old code's "Yellow" came from the web app.
+- **"8 / 12 holding" is not shown.** The hold frame (394:478) implies a shared
+  hold — "match starts when all 12 are holding", "releasing resets your hold".
+  There is no holding state in the schema: no column, no RPC, no presence
+  channel. The card shows `checkedInCount / capacity` checked in instead, and
+  says any checked-in player can start. This also matches the ratified rule
+  that a human starts the match.
+- **Player photos are initial avatars.** `get_game_roster` returns a name only.
+  Open squad places render as the frames' dashed outlines.
+- **Script headers are Caveat, not Pacifico.** The frames use Pacifico and
+  `@expo-google-fonts/pacifico` is installed, but it is not registered in
+  `app/_layout.tsx` and every other script accent in the app is Caveat via
+  `HandwrittenHeader`. **Open question for design:** register Pacifico for the
+  flashcards, or correct the frames to Caveat. Do not do both fonts.
+- **The card is vertically centred**, not pinned to the frames' `top: 190`, and
+  the screen scrolls — 388:496 is 478pt tall and would clip on a small device.
+- **The coin is drawn in RN**, not exported. The dot wave remains the only
+  mandated image asset.
+- The check-in eyebrow ("CHECK-IN · NOW OPEN") is derived from
+  `useServerCountdown` for **copy only**. The button is never disabled by it:
+  the T-20 window is enforced by the `check_in` RPC and this screen only
+  surfaces its answer (`too_early` / `too_late` / `no_booking`).
+- The coin-flip card is skipped entirely when `games.kickoff_team` is null —
+  a coin with no stored result would be an invented one.
+- `no_booking` is a card the frames don't have. The route is a deep link; a
+  player without a spot can open it.
 
 ## Edge, errors & ops (⚠️ page)
 

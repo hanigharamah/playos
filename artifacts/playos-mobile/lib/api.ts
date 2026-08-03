@@ -537,11 +537,12 @@ export function useGetSettings() {
 }
 
 // ─── Match day: roster, check-in, side-claiming, start ─────────────────
-// Mirrors ../playos/src/lib/supabase-api.ts's flashcard section exactly.
-// Check-in itself happens by scanning a pitch QR code (see the web's
-// /checkin/[pitchId] page + `check_in_by_pitch` RPC) — out of scope for a
-// remote app screen, so the mobile match screen assumes check-in already
-// happened and focuses on side-claiming + start.
+// Mirrors ../playos/src/lib/supabase-api.ts's flashcard section.
+// Check-in is a TAP BOUND TO THE CLOCK — see useCheckIn below and the
+// `check_in` RPC, which enforces the T-20 window server-side. There is no QR
+// code and no geofence; the web's /checkin/[pitchId] page and its
+// `check_in_by_pitch` RPC are superseded and are not ported. The mobile
+// match-day flow (app/match/[id].tsx) does check-in, side-claiming and start.
 
 export interface RosterEntry {
   bookingId: string;
