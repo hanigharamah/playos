@@ -4,7 +4,7 @@ import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { format } from "date-fns";
+import { format, isSameDay } from "date-fns";
 import { MessageCircle } from "lucide-react-native";
 import { useGetMyBookings, useGameRoster, useReconfirmBooking, useGetOrCreateGameChat, type MyBooking } from "@/lib/api";
 import { serverNow, syncServerTime } from "@/lib/serverTime";
@@ -132,6 +132,8 @@ export function MatchDayBar() {
   const kickoff = new Date(booking.game.kickoffTime);
   const msToKickoff = kickoff.getTime() - serverNow();
   const open = () => router.push(`/match/${booking.gameId}`);
+  /** Server clock, like everything else here — the ask is time-bound. */
+  const sameDay = isSameDay(kickoff, new Date(serverNow()));
 
   // If the chat can't be opened — no booking, or the RPC not applied yet — fall
   // back to the match room rather than stranding the tap.
@@ -147,8 +149,14 @@ export function MatchDayBar() {
   const copy = {
     reconfirm: {
       glyph: "?",
-      title: "still coming tonight?",
-      sub: `${booking.game.pitchName}  ·  ${format(kickoff, "h:mm aaa")}`,
+      // The ask fires at T-12h for ANY kickoff, so "tonight" was wrong half
+      // the time: a 10am Friday match is asked about at 10pm Thursday. The
+      // mock's one example happened to be a same-day evening game — that is an
+      // example, not a rule. The sub-line printed time only, so nothing on the
+      // bar could correct it.
+      title: !sameDay ? "still coming?" : kickoff.getHours() >= 17 ? "still coming tonight?" : "still coming today?",
+      // Time only reads as today; anything else has to carry its day.
+      sub: `${booking.game.pitchName}  ·  ${format(kickoff, sameDay ? "h:mm aaa" : "EEE h:mm aaa")}`,
     },
     checkin: {
       glyph: "→",
@@ -172,7 +180,21 @@ export function MatchDayBar() {
 
   return (
     <View style={[styles.wrap, { top: insets.top + 5 }]} pointerEvents="box-none">
-      <Pressable onPress={state === "reconfirm" ? undefined : open} style={styles.shadow}>
+      {/* Nothing on this bar was exposed to VoiceOver. Deliberately not a live
+          region: the countdown updates every second inside T-20, and an
+          announcement at that rate is unusable. */}
+      <Pressable
+        onPress={state === "reconfirm" ? undefined : open}
+        style={styles.shadow}
+        accessibilityRole={state === "reconfirm" ? "none" : "button"}
+        accessibilityLabel={
+          state === "reconfirm"
+            ? undefined
+            : `${copy.title}. ${copy.sub}.${
+                state === "checkedIn" ? "" : ` ${mmss(msToKickoff)} until kickoff.`
+              }`
+        }
+      >
         <View style={styles.clip}>
           <BlurView intensity={Platform.OS === "ios" ? 12 : 0} tint="light" style={StyleSheet.absoluteFill} />
           <View style={[StyleSheet.absoluteFill, { backgroundColor: tone.fill }]} />
@@ -187,19 +209,37 @@ export function MatchDayBar() {
           </View>
 
           {state === "reconfirm" ? (
+            // The design makes the bar vanishing the confirmation, so there is
+            // no success state — but that answer only arrives after a network
+            // round-trip and a refetch. On a real cellular link the chip sat
+            // dead for a second or two, and a failed write left it looking
+            // exactly like an untapped chip, so the player taps again or
+            // decides the app is broken.
             <Pressable
               onPress={() => reconfirm.mutate({ bookingId: booking.id })}
               disabled={reconfirm.isPending}
-              style={styles.chipWrap}
+              // 90x34 is under Apple's 44pt minimum on the one control that
+              // answers the ask. hitSlop grows the target without moving the
+              // frame the mock specifies.
+              hitSlop={{ top: 6, bottom: 6, left: 8, right: 8 }}
+              style={[styles.chipWrap, reconfirm.isPending && { opacity: 0.6 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Yes, I am still coming"
             >
               <LinearGradient
-                colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
+                colors={
+                  reconfirm.isError
+                    ? ["#FFC9C9", "#F79999", "#EE7373", "#BF2626"]
+                    : ["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]
+                }
                 locations={[0, 0.35, 0.65, 1]}
                 start={{ x: 0.5, y: 0 }}
                 end={{ x: 0.5, y: 1 }}
                 style={styles.chip}
               >
-                <Text style={styles.chipText}>yes, i am</Text>
+                <Text style={styles.chipText}>
+                  {reconfirm.isPending ? "sending…" : reconfirm.isError ? "try again" : "yes, i am"}
+                </Text>
               </LinearGradient>
             </Pressable>
           ) : state === "checkedIn" ? (
