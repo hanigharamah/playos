@@ -10,6 +10,8 @@ import { useGetMyBookings, useGetGame, useBookSpot } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { PitchSVG } from "@/components/PitchSVG";
 import { Avatar } from "@/components/Avatar";
+import { Callout } from "@/components/Callout";
+import { BtnOutline } from "@/components/BtnOutline";
 import { MatchGone } from "@/components/MatchGone";
 import { GameDetailSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { colors, spacing } from "@/lib/theme";
@@ -36,7 +38,7 @@ export default function GameDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { user } = useAuth();
-  const { data: game, isLoading } = useGetGame(id!);
+  const { data: game, isLoading, error: loadError, refetch } = useGetGame(id!);
   const bookSpot = useBookSpot();
   const { data: myBookings } = useGetMyBookings();
 
@@ -60,8 +62,23 @@ export default function GameDetail() {
     return <View style={styles.loading}>{showSkeleton && <GameDetailSkeleton />}</View>;
   }
 
-  // Dead deep link — the game was cancelled or has already kicked off.
-  if (!game) return <MatchGone />;
+  // MatchGone only for a genuinely missing row. A transport failure is not a
+  // deleted match, and this is the app's main deep-link target — from browse,
+  // from shares, from pushes.
+  if (!game && (loadError as any)?.notFound) return <MatchGone />;
+  if (!game) {
+    return (
+      <View style={styles.loading}>
+        <Callout
+          tone="neutral"
+          title="we couldn't load this match"
+          body="Check your connection and try again — the match itself is fine, and your booking if you have one is untouched."
+          style={{ marginHorizontal: 20 }}
+        />
+        <BtnOutline label="try again" onPress={() => refetch()} style={{ marginTop: 16, marginHorizontal: 20 }} />
+      </View>
+    );
+  }
 
   const kickoff = new Date(game.kickoffTime);
   // A spot is occupied the moment it is booked. Counting only "paid" left

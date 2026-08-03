@@ -286,7 +286,15 @@ export function useGetGame(id: string, options?: { enabled?: boolean }) {
         .select("*, bookings(id, game_id, user_id, team, slot_index, payment_status, payment_method, booked_at)")
         .eq("id", id)
         .single();
-      if (error || !game) throw { data: { error: "Game not found" } };
+      // "Not found" and "could not reach the server" are different facts, and
+      // collapsing them told a player on weak signal that their match had been
+      // deleted — via MatchGone, which is convincing enough that they stop
+      // trying and phone the operator. PGRST116 is PostgREST's no-rows result
+      // from .single(); anything else is transport.
+      if (error && (error as any).code !== "PGRST116") {
+        throw { data: { error: error.message ?? "Couldn't load this match." }, notFound: false };
+      }
+      if (!game) throw { data: { error: "Game not found" }, notFound: true };
 
       const bookings: BookingRow[] = (game.bookings as any[]).map((b) => ({
         id: b.id, gameId: b.game_id, userId: b.user_id, team: b.team,
