@@ -8,7 +8,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { format } from "date-fns";
 import { Bell, Users, MapPin, User, ArrowRight } from "lucide-react-native";
 import { useListGames, useGetMyBookings, useGetMe } from "@/lib/api";
-import { Avatar } from "@/components/Avatar";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { HomeSkeleton, useDelayedVisible } from "@/components/Skeleton";
@@ -16,7 +15,7 @@ import { HomeNothingBooked } from "@/components/HomeNothingBooked";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { serverNow } from "@/lib/serverTime";
-import { colors, spacing } from "@/lib/theme";
+import { colors, gradients, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
 // Exact palette from the Figma Home (node 1:2)
@@ -163,9 +162,20 @@ export default function Home() {
                     every match regardless of the pitch. */}
               </View>
               <View style={styles.heroAvatars}>
+                {/* Neutral discs, not initials. GameSummary carries bookedCount
+                    and no names (lib/api.ts), so `P1 P2 P3` rendered as four
+                    identical letter Ps — fake data wearing a letter. Same
+                    mistake the surface and skill-level fields avoided a few
+                    lines above by being omitted rather than hardcoded. The
+                    COUNT is real; the identities are not. */}
                 {Array.from({ length: shownAvatars }).map((_, i) => (
                   <View key={i} style={[styles.heroAvatar, { marginLeft: i === 0 ? 0 : -11 }]}>
-                    <Avatar name={`P${i + 1}`} size={34} />
+                    <LinearGradient
+                      colors={gradients.cta}
+                      start={{ x: 0, y: 0 }}
+                      end={{ x: 1, y: 1 }}
+                      style={styles.heroAvatarDisc}
+                    />
                   </View>
                 ))}
                 {overflow > 0 && (
@@ -191,7 +201,10 @@ export default function Home() {
           <View style={{ marginTop: spacing.xl }}>
             <View style={styles.rowBetween}>
               <HandwrittenHeader style={styles.sectionLabel}>coming up</HandwrittenHeader>
-              <Pressable onPress={() => router.push("/(tabs)/my-games")}>
+              <Pressable
+                onPress={() => router.push("/(tabs)/my-games")}
+                hitSlop={{ top: 14, bottom: 14, left: 16, right: 16 }}
+              >
                 <Text style={styles.viewAll}>see all</Text>
               </Pressable>
             </View>
@@ -246,7 +259,11 @@ const styles = StyleSheet.create({
   headline: { fontSize: 42, lineHeight: 50, marginTop: spacing.xl },
   heroShadow: {
     marginTop: spacing.xxl + 12, borderRadius: 28,
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.14, shadowRadius: 32, elevation: 6,
+    // No elevation here: this wrapper has no background, and Android derives
+    // its shadow from the background outline, so it drew nothing at all —
+    // the biggest surface in the app sat flat on Android while every fixed
+    // primitive floated. It lives on heroCard, which has a fill.
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.14, shadowRadius: 32,
   },
   heroCard: {
     // minHeight, not height: the mock is 238 but the stacked content reaches
@@ -254,6 +271,8 @@ const styles = StyleSheet.create({
     // bottom of the join circle. Larger Dynamic Type made it worse.
     minHeight: 238, borderRadius: 28, overflow: "hidden", padding: 23,
     backgroundColor: "rgba(255,255,255,0.22)", borderWidth: 1, borderColor: "rgba(255,255,255,0.6)",
+    // Android's shadow, on the layer that actually has a fill to cast it.
+    elevation: 6,
   },
   heroRim: {
     ...StyleSheet.absoluteFillObject,
@@ -262,16 +281,21 @@ const styles = StyleSheet.create({
     borderLeftColor: "rgba(255,255,255,0.5)",
     borderRightColor: "rgba(255,255,255,0.5)",
   },
-  heroLabel: { fontSize: 13, fontWeight: "600", color: CARD_LABEL, letterSpacing: 1.04 },
+  // CARD_META, not CARD_LABEL: this is WHEN the match is, and #8A8178 put it
+  // at ~3.4:1 — the faintest thing on the card, read outdoors one-handed.
+  heroLabel: { fontSize: 13, fontWeight: "600", color: CARD_META, letterSpacing: 1.04 },
   heroTitle: { fontSize: 30, fontWeight: "700", color: CARD_TITLE, marginTop: 4 },
   heroMetaRow: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 14 },
   heroMeta: { fontSize: 15, color: CARD_META },
   heroMetaGap: { marginLeft: 14 },
   heroAvatars: { flexDirection: "row", alignItems: "center", marginTop: 13 },
-  heroAvatar: { borderWidth: 2, borderColor: "#FFFFFF", borderRadius: 17 },
+  heroAvatar: { borderWidth: 2, borderColor: "#FFFFFF", borderRadius: 19 },
+  heroAvatarDisc: { width: 34, height: 34, borderRadius: 17 },
+  // 38/-11 to match the avatars' border box and overlap — it was 32/-8, so the
+  // stack ended on a visibly smaller, differently-spaced disc.
   heroOverflow: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: "#FFFFFF",
-    alignItems: "center", justifyContent: "center", marginLeft: -8,
+    width: 38, height: 38, borderRadius: 19, backgroundColor: "#FFFFFF",
+    alignItems: "center", justifyContent: "center", marginLeft: -11,
   },
   heroOverflowText: { fontSize: 13, fontWeight: "600", color: "#F07C1A" },
   heroJoinRow: { flexDirection: "row", alignItems: "center", gap: 15, marginTop: 6 },
@@ -285,14 +309,16 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 24 },
   viewAll: { fontSize: 13, fontWeight: "600", color: MUTED, marginBottom: 4 },
   miniCard: {
-    flexDirection: "row", alignItems: "center", height: 68, borderRadius: 16, padding: 6,
+    // minHeight, not height: three text rows plus 6pt padding just fit at
+    // default type and clip the format line at Larger Text.
+    flexDirection: "row", alignItems: "center", minHeight: 68, borderRadius: 16, padding: 6,
     backgroundColor: "rgba(255,255,255,0.34)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     marginBottom: spacing.sm,
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.14, shadowRadius: 18, elevation: 3,
   },
   miniThumb: { width: 54, height: 54, borderRadius: 12 },
   miniText: { flex: 1, paddingHorizontal: 11 },
-  miniMeta: { fontSize: 10, fontWeight: "600", color: colors.orange },
+  miniMeta: { fontSize: 11, fontWeight: "600", color: colors.orangeText },
   miniTitle: { fontSize: 15, fontWeight: "700", color: INK, marginTop: 2 },
   miniSub: { fontSize: 12, color: MUTED, marginTop: 2 },
   empty: { alignItems: "center", paddingVertical: spacing.xxl * 2 },

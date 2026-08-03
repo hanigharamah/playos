@@ -23,6 +23,13 @@ export const colors = {
   purple: "#8E3DFF",
   deepPurple: "#6D28D9",
   orange: "#FF9F0A",
+  /**
+   * Brand orange for SMALL TEXT. #FF9F0A measures about 1.9:1 on the glass
+   * cards and fails every contrast floor — it has already had to be fixed
+   * one-off on booking-confirmed, checkout and home. Use this for anything
+   * under ~16pt; keep the bright orange for fills, icons and display type.
+   */
+  orangeText: "#A85A00",
 
   // Semantics
   success: "#30D158",
