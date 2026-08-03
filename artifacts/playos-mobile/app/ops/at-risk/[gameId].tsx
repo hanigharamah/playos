@@ -11,6 +11,7 @@ import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { Avatar } from "@/components/Avatar";
 import { useServerCountdown, serverNow } from "@/lib/serverTime";
 import { colors } from "@/lib/theme";
@@ -158,53 +159,57 @@ export default function OpsAtRisk() {
             release rather than silently logging "??" — the operator is told
             every action is logged against this, so it has to actually be. */}
         {needsInitial && (
-          <View style={styles.initialCard}>
-            <Text style={styles.initialTitle}>your initials</Text>
-            <Text style={styles.initialBody}>
-              every release on this screen is logged against them.
-            </Text>
-            <View style={styles.initialRow}>
-              <TextInput
-                style={styles.initialInput}
-                value={initialDraft}
-                onChangeText={(v) => setInitialDraft(v.slice(0, 3).toUpperCase())}
-                placeholder="AB"
-                placeholderTextColor={colors.inkFaint}
-                autoCapitalize="characters"
-                autoCorrect={false}
-                maxLength={3}
-                returnKeyType="done"
-                onSubmitEditing={() => initialDraft.trim() && setOperatorInitial(initialDraft.trim())}
-              />
-              <Pressable
-                style={[styles.initialBtn, !initialDraft.trim() && { opacity: 0.4 }]}
-                disabled={!initialDraft.trim()}
-                onPress={() => setOperatorInitial(initialDraft.trim())}
-              >
-                <Text style={styles.initialBtnText}>start</Text>
-              </Pressable>
+          <GlassCard variant="soft" round={20} padding={0} style={styles.initialCard}>
+            <View style={styles.initialInner}>
+              <Text style={styles.initialTitle}>your initials</Text>
+              <Text style={styles.initialBody}>
+                every release on this screen is logged against them.
+              </Text>
+              <View style={styles.initialRow}>
+                <TextInput
+                  style={styles.initialInput}
+                  value={initialDraft}
+                  onChangeText={(v) => setInitialDraft(v.slice(0, 3).toUpperCase())}
+                  placeholder="AB"
+                  placeholderTextColor={colors.inkFaint}
+                  autoCapitalize="characters"
+                  autoCorrect={false}
+                  maxLength={3}
+                  returnKeyType="done"
+                  onSubmitEditing={() => initialDraft.trim() && setOperatorInitial(initialDraft.trim())}
+                />
+                <Pressable
+                  style={[styles.initialBtn, !initialDraft.trim() && { opacity: 0.4 }]}
+                  disabled={!initialDraft.trim()}
+                  onPress={() => setOperatorInitial(initialDraft.trim())}
+                >
+                  <Text style={styles.initialBtnText}>start</Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
+          </GlassCard>
         )}
 
         {/* Live counts */}
-        <View style={styles.statsCard}>
-          <View>
-            <Text style={styles.statNum}>{checkedIn}</Text>
-            <Text style={styles.statLabel}>CHECKED IN</Text>
+        <GlassCard variant="soft" round={20} padding={0}>
+          <View style={styles.statsInner}>
+            <View>
+              <Text style={styles.statNum}>{checkedIn}</Text>
+              <Text style={styles.statLabel}>CHECKED IN</Text>
+            </View>
+            <View>
+              <Text style={[styles.statNum, checkedIn < AUTO_CANCEL_MIN_CHECKED_IN && styles.statNumBad]}>{missing}</Text>
+              <Text style={styles.statLabel}>MISSING</Text>
+            </View>
+            <View style={{ alignItems: "flex-end" }}>
+              <Text style={styles.clock}>{clockLabel}</Text>
+              {/* The T-10 rule is the auto-cancel floor, not capacity and not the
+                T+15 start floor. Showing capacity told the operator two more
+                were needed when the ratified threshold had already been met. */}
+              <Text style={styles.statLabel}>AUTO-CANCEL BELOW {AUTO_CANCEL_MIN_CHECKED_IN}</Text>
+            </View>
           </View>
-          <View>
-            <Text style={[styles.statNum, checkedIn < AUTO_CANCEL_MIN_CHECKED_IN && styles.statNumBad]}>{missing}</Text>
-            <Text style={styles.statLabel}>MISSING</Text>
-          </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={styles.clock}>{clockLabel}</Text>
-            {/* The T-10 rule is the auto-cancel floor, not capacity and not the
-              T+15 start floor. Showing capacity told the operator two more
-              were needed when the ratified threshold had already been met. */}
-          <Text style={styles.statLabel}>AUTO-CANCEL BELOW {AUTO_CANCEL_MIN_CHECKED_IN}</Text>
-          </View>
-        </View>
+        </GlassCard>
 
         <Callout
           tone="neutral"
@@ -221,36 +226,38 @@ export default function OpsAtRisk() {
         )}
 
         {notCheckedIn.map((entry) => (
-          <View key={entry.bookingId} style={styles.row}>
-            <Avatar name={entry.name} size={48} />
-            <View style={styles.rowText}>
-              <Text style={styles.rowName} numberOfLines={1}>{entry.name}</Text>
-              <Text style={styles.rowMeta}>
-                {isToday(new Date(entry.bookedAt))
-                  ? "booked today"
-                  : `booked ${formatDistanceToNowStrict(new Date(entry.bookedAt))} ago`}
-              </Text>
-              <View style={styles.riskChip}>
-                <Text style={styles.riskChipText}>at risk</Text>
+          <GlassCard key={entry.bookingId} variant="soft" round={18} padding={0} style={styles.rowCard}>
+            <View style={styles.row}>
+              <Avatar name={entry.name} size={48} />
+              <View style={styles.rowText}>
+                <Text style={styles.rowName} numberOfLines={1}>{entry.name}</Text>
+                <Text style={styles.rowMeta}>
+                  {isToday(new Date(entry.bookedAt))
+                    ? "booked today"
+                    : `booked ${formatDistanceToNowStrict(new Date(entry.bookedAt))} ago`}
+                </Text>
+                <View style={styles.riskChip}>
+                  <Text style={styles.riskChipText}>at risk</Text>
+                </View>
               </View>
-            </View>
 
-            {/* Only offer the call when there is a number behind it. */}
-            {entry.phone && (
-              <Pressable style={styles.callBtn} onPress={() => call(entry)} hitSlop={{ top: 4, bottom: 4 }}>
-                <Text style={styles.callBtnText}>call</Text>
+              {/* Only offer the call when there is a number behind it. */}
+              {entry.phone && (
+                <Pressable style={styles.callBtn} onPress={() => call(entry)} hitSlop={{ top: 4, bottom: 4 }}>
+                  <Text style={styles.callBtnText}>call</Text>
+                </Pressable>
+              )}
+              <Pressable
+                style={[styles.releaseBtn, needsInitial && { opacity: 0.4 }]}
+                onPress={() => release(entry)}
+                // Blocked until attribution exists, rather than logging "??".
+                disabled={releaseSpot.isPending || !!needsInitial}
+                hitSlop={{ top: 4, bottom: 4 }}
+              >
+                <Text style={styles.releaseBtnText}>release</Text>
               </Pressable>
-            )}
-            <Pressable
-              style={[styles.releaseBtn, needsInitial && { opacity: 0.4 }]}
-              onPress={() => release(entry)}
-              // Blocked until attribution exists, rather than logging "??".
-              disabled={releaseSpot.isPending || !!needsInitial}
-              hitSlop={{ top: 4, bottom: 4 }}
-            >
-              <Text style={styles.releaseBtnText}>release</Text>
-            </Pressable>
-          </View>
+            </View>
+          </GlassCard>
         ))}
 
         <Text style={styles.footnote}>players never see who is flagged</Text>
@@ -265,17 +272,6 @@ export default function OpsAtRisk() {
   );
 }
 
-const card = {
-  backgroundColor: "rgba(255,255,255,0.55)",
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.85)",
-  shadowColor: "#8C5926",
-  shadowOffset: { width: 0, height: 6 },
-  shadowOpacity: 0.12,
-  shadowRadius: 8,
-  elevation: 3,
-};
-
 const styles = StyleSheet.create({
   // paddingTop comes from the safe-area inset at the call site; the fixed
   // value was smaller than the Dynamic Island's inset.
@@ -286,9 +282,10 @@ const styles = StyleSheet.create({
   deniedLink: { fontSize: 15, fontWeight: "600", color: AMBER, marginTop: 12 },
 
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
-  initialCard: {
-    ...card, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 17, marginBottom: 14,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>; padding
+  // and layout sit on the inner view the children lay out in.
+  initialCard: { marginBottom: 14 },
+  initialInner: { paddingHorizontal: 19, paddingVertical: 17 },
   initialTitle: { fontSize: 14, fontWeight: "700", color: INK },
   initialBody: { fontSize: 12.5, color: MUTED, marginTop: 6 },
   initialRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
@@ -316,7 +313,7 @@ const styles = StyleSheet.create({
 
   content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 60 },
 
-  statsCard: { ...card, flexDirection: "row", justifyContent: "space-between", minHeight: 84, borderRadius: 20, paddingHorizontal: 19, paddingTop: 17 },
+  statsInner: { flexDirection: "row", justifyContent: "space-between", minHeight: 84, paddingHorizontal: 19, paddingTop: 17 },
   statNum: { fontSize: 30, fontWeight: "700", color: INK },
   statNumBad: { color: RED },
   statLabel: { fontSize: 10, fontWeight: "600", color: MUTED, marginTop: 6, letterSpacing: 0.3 },
@@ -328,7 +325,8 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 28, marginBottom: 14 },
   allIn: { fontSize: 14, color: MUTED, marginLeft: 4 },
 
-  row: { ...card, flexDirection: "row", alignItems: "center", minHeight: 72, borderRadius: 18, paddingHorizontal: 9, paddingVertical: 11, marginBottom: 12 },
+  rowCard: { marginBottom: 12 },
+  row: { flexDirection: "row", alignItems: "center", minHeight: 72, paddingHorizontal: 9, paddingVertical: 11 },
   rowText: { flex: 1, marginLeft: 10 },
   rowName: { fontSize: 15, fontWeight: "600", color: INK },
   rowMeta: { fontSize: 12, color: MUTED, marginTop: 4 },
