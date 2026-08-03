@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, Linking, Alert, useWindowDimensions,
+  View, Text, StyleSheet, Pressable, ScrollView, TextInput, Linking, Alert, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -13,6 +13,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Callout } from "@/components/Callout";
 import { Avatar } from "@/components/Avatar";
 import { useServerCountdown, serverNow } from "@/lib/serverTime";
+import { colors } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
 
 const INK = "#1C1C1E";
@@ -63,16 +64,14 @@ export default function OpsAtRisk() {
   const kickoff = game ? new Date(game.kickoffTime).getTime() : null;
   const { remainingMs } = useServerCountdown(kickoff);
 
-  // Ask once per visit. A shared login means the initial is the only
-  // attribution the audit log will ever have.
-  useEffect(() => {
-    if (!isOperator || operatorInitial) return;
-    Alert.prompt?.(
-      "Operator initial",
-      "Every action on this screen is logged against it.",
-      (value) => setOperatorInitial((value ?? "").trim().slice(0, 3).toUpperCase() || "??"),
-    );
-  }, [isOperator, operatorInitial]);
+  // Captured in-screen, not via Alert.prompt: that API is iOS-only, so on
+  // Android the optional call no-oped, no dialog ever appeared, and every
+  // release went to the audit log as "??" — while the screen told the operator
+  // their actions were logged against their initial. A shared login means this
+  // is the only attribution the log will ever have, so it cannot be a
+  // platform-conditional nicety.
+  const [initialDraft, setInitialDraft] = useState("");
+  const needsInitial = isOperator && !operatorInitial;
 
   if (roleLoading) return <View style={[styles.wrap, { paddingTop: insets.top + 5 }]} />;
 
@@ -132,7 +131,7 @@ export default function OpsAtRisk() {
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       {/* 0.35, not the player-facing 0.75 — ops chrome must read differently. */}
       <DotWaveBackground width={width} height={600} opacity={0.35} />
@@ -155,6 +154,39 @@ export default function OpsAtRisk() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Attribution gate. Runs identically on both platforms, and blocks
+            release rather than silently logging "??" — the operator is told
+            every action is logged against this, so it has to actually be. */}
+        {needsInitial && (
+          <View style={styles.initialCard}>
+            <Text style={styles.initialTitle}>your initials</Text>
+            <Text style={styles.initialBody}>
+              every release on this screen is logged against them.
+            </Text>
+            <View style={styles.initialRow}>
+              <TextInput
+                style={styles.initialInput}
+                value={initialDraft}
+                onChangeText={(v) => setInitialDraft(v.slice(0, 3).toUpperCase())}
+                placeholder="AB"
+                placeholderTextColor={colors.inkFaint}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                maxLength={3}
+                returnKeyType="done"
+                onSubmitEditing={() => initialDraft.trim() && setOperatorInitial(initialDraft.trim())}
+              />
+              <Pressable
+                style={[styles.initialBtn, !initialDraft.trim() && { opacity: 0.4 }]}
+                disabled={!initialDraft.trim()}
+                onPress={() => setOperatorInitial(initialDraft.trim())}
+              >
+                <Text style={styles.initialBtnText}>start</Text>
+              </Pressable>
+            </View>
+          </View>
+        )}
+
         {/* Live counts */}
         <View style={styles.statsCard}>
           <View>
@@ -205,14 +237,16 @@ export default function OpsAtRisk() {
 
             {/* Only offer the call when there is a number behind it. */}
             {entry.phone && (
-              <Pressable style={styles.callBtn} onPress={() => call(entry)}>
+              <Pressable style={styles.callBtn} onPress={() => call(entry)} hitSlop={{ top: 4, bottom: 4 }}>
                 <Text style={styles.callBtnText}>call</Text>
               </Pressable>
             )}
             <Pressable
-              style={styles.releaseBtn}
+              style={[styles.releaseBtn, needsInitial && { opacity: 0.4 }]}
               onPress={() => release(entry)}
-              disabled={releaseSpot.isPending}
+              // Blocked until attribution exists, rather than logging "??".
+              disabled={releaseSpot.isPending || !!needsInitial}
+              hitSlop={{ top: 4, bottom: 4 }}
             >
               <Text style={styles.releaseBtnText}>release</Text>
             </Pressable>
@@ -252,6 +286,22 @@ const styles = StyleSheet.create({
   deniedLink: { fontSize: 15, fontWeight: "600", color: AMBER, marginTop: 12 },
 
   header: { flexDirection: "row", alignItems: "center", paddingHorizontal: 20 },
+  initialCard: {
+    ...card, borderRadius: 20, paddingHorizontal: 19, paddingVertical: 17, marginBottom: 14,
+  },
+  initialTitle: { fontSize: 14, fontWeight: "700", color: INK },
+  initialBody: { fontSize: 12.5, color: MUTED, marginTop: 6 },
+  initialRow: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 14 },
+  initialInput: {
+    flex: 1, height: 44, borderRadius: 14, paddingHorizontal: 15,
+    backgroundColor: "rgba(255,255,255,0.7)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
+    fontSize: 16, fontWeight: "700", letterSpacing: 1, color: INK,
+  },
+  initialBtn: {
+    height: 44, borderRadius: 22, paddingHorizontal: 20, backgroundColor: NAVY,
+    alignItems: "center", justifyContent: "center",
+  },
+  initialBtnText: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
   backBtn: {
     width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
@@ -285,10 +335,14 @@ const styles = StyleSheet.create({
   riskChip: { alignSelf: "flex-start", height: 20, borderRadius: 10, paddingHorizontal: 10, marginTop: 6, backgroundColor: "rgba(191,38,38,0.12)", justifyContent: "center" },
   riskChipText: { fontSize: 10, fontWeight: "600", color: RED },
 
-  callBtn: { height: 36, minWidth: 44, borderRadius: 18, paddingHorizontal: 12, backgroundColor: "#F28C26", alignItems: "center", justifyContent: "center" },
+  // 44pt, not 36: this is the screen used one-handed under time pressure, and
+  // the two actions are not symmetrical — "call" is free and repeatable,
+  // "release" takes the player's fee and gives their shirt to a sub. The gap
+  // between them widened from 8 for the same reason.
+  callBtn: { height: 44, minWidth: 44, borderRadius: 22, paddingHorizontal: 14, backgroundColor: "#F28C26", alignItems: "center", justifyContent: "center" },
   callBtnText: { fontSize: 12, fontWeight: "600", color: "#FFFFFF" },
   releaseBtn: {
-    height: 36, minWidth: 50, borderRadius: 18, paddingHorizontal: 10, marginLeft: 8,
+    height: 44, minWidth: 50, borderRadius: 22, paddingHorizontal: 12, marginLeft: 16,
     backgroundColor: "rgba(255,255,255,0.4)", borderWidth: 1.5, borderColor: RED,
     alignItems: "center", justifyContent: "center",
   },

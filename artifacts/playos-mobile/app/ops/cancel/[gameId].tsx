@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import {
-  View, Text, StyleSheet, Pressable, ScrollView, TextInput, Alert, useWindowDimensions,
+  View, Text, StyleSheet, Pressable, ScrollView, TextInput, ActivityIndicator, Alert, useWindowDimensions,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -12,6 +12,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Callout } from "@/components/Callout";
 import { useServerCountdown } from "@/lib/serverTime";
+import { colors } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
 const INK = "#1C1C1E";
@@ -106,7 +107,7 @@ export default function OpsCancelMatch() {
   };
 
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + 5 }]}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       {/* 0.35, not the player-facing 0.75 — ops chrome must read differently. */}
       <DotWaveBackground width={width} height={600} opacity={0.35} />
@@ -191,23 +192,40 @@ export default function OpsCancelMatch() {
           autoCapitalize="characters"
           autoCorrect={false}
           placeholder={CONFIRM_WORD}
-          placeholderTextColor="#ADADB2"
+          placeholderTextColor={colors.inkFaint}
         />
 
-        <Pressable onPress={confirm} disabled={!armed || cancelMatch.isPending} style={!armed && styles.ctaOff}>
-          <LinearGradient
-            colors={["#E86A6A", "#D13B3B", "#8F1B1B"]}
-            locations={[0, 0.5, 1]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
-            style={styles.cta}
-          >
-            <Text style={styles.ctaText}>
-              {cancelMatch.isPending
-                ? "cancelling…"
-                : `cancel match and notify ${players} ${players === 1 ? "player" : "players"}`}
-            </Text>
-          </LinearGradient>
+        {/* The button BECOMES dangerous when the word is typed, rather than
+            merely getting brighter. Disarmed used to be the same red gradient
+            at 40% — a dusty pink that means nothing here, and which already
+            looked like the final button before the gate had been passed. */}
+        <Pressable onPress={confirm} disabled={!armed || cancelMatch.isPending}>
+          {armed ? (
+            <LinearGradient
+              colors={["#E86A6A", "#D13B3B", "#8F1B1B"]}
+              locations={[0, 0.5, 1]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.cta}
+            >
+              {cancelMatch.isPending ? (
+                <View style={styles.ctaBusy}>
+                  <ActivityIndicator color="#FFFFFF" size="small" />
+                  <Text style={styles.ctaText}>cancelling…</Text>
+                </View>
+              ) : (
+                <Text style={styles.ctaText}>
+                  cancel match and notify {players} {players === 1 ? "player" : "players"}
+                </Text>
+              )}
+            </LinearGradient>
+          ) : (
+            <View style={[styles.cta, styles.ctaDisarmed]}>
+              <Text style={[styles.ctaText, { color: RED }]}>
+                cancel match and notify {players} {players === 1 ? "player" : "players"}
+              </Text>
+            </View>
+          )}
         </Pressable>
       </ScrollView>
     </View>
@@ -258,8 +276,13 @@ const styles = StyleSheet.create({
   sectionLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 24, marginBottom: 12 },
   reasonRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   reasonChip: {
-    height: 36, borderRadius: 18, paddingHorizontal: 18, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.5)", borderWidth: 1, borderColor: "#ADADB2",
+    // #ADADB2 is iOS systemGray3 — a blue-grey, the one place on either ops
+    // screen where the warm language slipped. It was also the sole boundary of
+    // an unselected chip over a 50% fill, so in daylight the two unselected
+    // reasons nearly vanished next to the solid orange selected one. These
+    // record WHY 12 people lose their evening; they have to read as choices.
+    height: 44, borderRadius: 22, paddingHorizontal: 18, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.7)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
   },
   reasonChipActive: { backgroundColor: "#F28C26", borderWidth: 1.5, borderColor: "#F28C26" },
   reasonText: { fontSize: 12.5, fontWeight: "600", color: MUTED },
@@ -279,7 +302,13 @@ const styles = StyleSheet.create({
     fontSize: 16, fontWeight: "700", color: INK, letterSpacing: 1,
   },
 
-  ctaOff: { opacity: 0.4 },
+  // Disarmed is a neutral glass button, not the red one at 40%.
+  ctaDisarmed: {
+    backgroundColor: "rgba(255,255,255,0.55)",
+    borderWidth: 1.5, borderColor: RED,
+    shadowOpacity: 0, elevation: 0,
+  },
+  ctaBusy: { flexDirection: "row", alignItems: "center", gap: 10 },
   cta: {
     height: 56, borderRadius: 28, marginTop: 20, alignItems: "center", justifyContent: "center",
     shadowColor: "#8F1B1B", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 6,
