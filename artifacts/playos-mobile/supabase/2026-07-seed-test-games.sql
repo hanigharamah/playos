@@ -1,53 +1,69 @@
 -- ============================================================================
--- PlayOS mobile testing — seed 8 upcoming games spanning different days,
--- times of day, and team sizes, so the Play tab's filters (When/Time/
--- Players), Popular areas grouping, and the full booking → checkout →
--- chat flow all have real data to exercise.
+-- PlayOS mobile testing — seed open games so the whole loop has real data:
+-- browse → game detail → book → checkout → bookings → check-in → match day.
 --
--- Reuses the existing organiser_id (149b24ae-6d15-4954-840c-d3804bed5577)
--- already present on your other games — a valid FK, not invented.
--- Run in the Supabase SQL editor. Safe to run more than once (each run
--- adds 8 more games; delete via the query at the bottom if you want a
--- clean slate first).
+-- Run in the Supabase SQL editor. Safe to run repeatedly: it clears its own
+-- seeded rows first, so you get the same eight games rather than eight more.
+--
+-- WHY THIS WAS REWRITTEN: the previous version hardcoded July 2026 dates.
+-- They are all in the past now, and `useListGames` filters to
+-- `kickoff_time >= now()`, so the app showed an empty feed everywhere — Home,
+-- Play and Browse each fell through to their empty states. Times are relative
+-- to when you run it, so this cannot go stale again.
 -- ============================================================================
 
+begin;
+
+-- ── Clear a previous run of THIS seed only ──────────────────────────────────
+-- Bookings cascade, so any test bookings against these games go with them.
+delete from public.games where title like '[seed]%';
+
+-- ── Eight games across the next week ────────────────────────────────────────
+-- The organiser is resolved from the table rather than hardcoded, so this
+-- works on any database without hand-editing a UUID.
+with organiser as (
+  select id from public.users
+   where role in ('admin', 'organiser', 'host')
+   order by created_at
+   limit 1
+),
+picked as (
+  -- Fall back to any user at all if no organiser role exists yet.
+  select coalesce(
+    (select id from organiser),
+    (select id from public.users order by created_at limit 1)
+  ) as id
+)
 insert into public.games
-  (id, organiser_id, title, pitch_name, kickoff_time, price, capacity, status, auto_cancel_hours, duration_minutes, is_public)
-values
-  -- Today, evening — 6v6
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'Al Rowad Evening 6v6', 'Al Rowad', '2026-07-21T18:00:00+00:00', 30, 12, 'open', 4, 90, true),
+  (id, organiser_id, title, pitch_name, location_text, kickoff_time,
+   price, capacity, status, auto_cancel_hours, duration_minutes, is_public)
+select
+  gen_random_uuid()::text, picked.id, g.title, g.pitch_name, g.location_text,
+  date_trunc('hour', now()) + g.kickoff_in,
+  g.price, g.capacity, 'open', 4, 90, true
+from picked, (values
+  -- Deliberately close, so check-in can be exercised without waiting a day:
+  -- this one's check-in window opens roughly 40 minutes from now.
+  ('[seed] Al Rowad Evening 6v6',       'Al Rowad',         'Al Olaya',   interval '1 hour',         30, 12),
+  ('[seed] Arena Riyadh Tonight 7v7',   'Arena Riyadh',     'Al Nakheel', interval '4 hours',        35, 14),
+  ('[seed] KAFD Pitch Morning 6v6',     'KAFD Pitch',       'Al Aqiq',    interval '1 day 9 hours',  28, 12),
+  ('[seed] Al Rowad 8-a-side Night',    'Al Rowad 8 a side','Al Olaya',   interval '1 day 20 hours', 40, 16),
+  ('[seed] King Fahd Arena Afternoon',  'King Fahd Arena',  'Hittin',     interval '2 days 15 hours',32, 12),
+  ('[seed] Al Rowad Friday Night',      'Al Rowad',         'Al Olaya',   interval '3 days 20 hours',30, 12),
+  ('[seed] Arena Riyadh Saturday 7v7',  'Arena Riyadh',     'Al Nakheel', interval '4 days 14 hours',35, 14),
+  ('[seed] KAFD Pitch Next Week 8v8',   'KAFD Pitch',       'Al Aqiq',    interval '7 days 18 hours',40, 16)
+) as g(title, pitch_name, location_text, kickoff_in, price, capacity);
 
-  -- Tomorrow, morning — 7v7
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'Arena Riyadh Morning 7v7', 'Arena Riyadh', '2026-07-22T08:00:00+00:00', 35, 14, 'open', 4, 90, true),
+commit;
 
-  -- Tomorrow, afternoon — 6v6
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'KAFD Pitch Afternoon 6v6', 'KAFD Pitch', '2026-07-22T13:00:00+00:00', 28, 12, 'open', 4, 90, true),
+-- ── Check what landed ───────────────────────────────────────────────────────
+select title, pitch_name, location_text, kickoff_time, capacity, price
+  from public.games
+ where kickoff_time >= now()
+ order by kickoff_time;
 
-  -- Tomorrow, evening — 8v8
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'Al Rowad 8-a-side Night', 'Al Rowad 8 a side', '2026-07-22T19:00:00+00:00', 40, 16, 'open', 4, 90, true),
-
-  -- Day after tomorrow, afternoon — 6v6
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'King Fahd Arena Afternoon', 'King Fahd Arena', '2026-07-23T16:00:00+00:00', 32, 12, 'open', 4, 90, true),
-
-  -- This weekend (Fri), evening — 6v6
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'Al Rowad Friday Night', 'Al Rowad', '2026-07-24T20:00:00+00:00', 30, 12, 'open', 4, 90, true),
-
-  -- This weekend (Sat), afternoon — 7v7
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'Arena Riyadh Saturday 7v7', 'Arena Riyadh', '2026-07-25T14:00:00+00:00', 35, 14, 'open', 4, 90, true),
-
-  -- Next week, evening — 8v8
-  (gen_random_uuid(), '149b24ae-6d15-4954-840c-d3804bed5577', 'KAFD Pitch Next Week 8v8', 'KAFD Pitch', '2026-07-28T18:00:00+00:00', 40, 16, 'open', 4, 90, true);
-
--- ── Report ───────────────────────────────────────────────────────────────────
-select id, title, pitch_name, kickoff_time, capacity, status
-from public.games
-where kickoff_time >= now()
-order by kickoff_time;
-
--- ── To wipe just these seeded games and start over, run: ──────────────────────
--- delete from public.games
--- where title in (
---   'Al Rowad Evening 6v6', 'Arena Riyadh Morning 7v7', 'KAFD Pitch Afternoon 6v6',
---   'Al Rowad 8-a-side Night', 'King Fahd Arena Afternoon', 'Al Rowad Friday Night',
---   'Arena Riyadh Saturday 7v7', 'KAFD Pitch Next Week 8v8'
--- );
+-- ── To remove them again ────────────────────────────────────────────────────
+-- delete from public.games where title like '[seed]%';
+--
+-- The '[seed] ' prefix is what makes this re-runnable and reversible. Strip it
+-- from a row only if you want that game to survive the next run.
