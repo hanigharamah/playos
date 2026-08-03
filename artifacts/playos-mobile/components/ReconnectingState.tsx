@@ -8,6 +8,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
@@ -107,12 +108,14 @@ export function ReconnectingState({ pitchName, kickoffTime, isCheckedIn, queuedM
       <Text style={styles.subtitle}>{pitchName}  ·  kickoff {format(kickoff, "h:mm a")}</Text>
 
       {/* Pinned: the one thing worth panicking about, answered first. */}
-      <View style={[styles.card, styles.stale]}>
-        <Text style={styles.eyebrow}>YOU ARE</Text>
-        <Text style={[styles.status, !isCheckedIn && styles.statusPending]}>
-          {isCheckedIn ? "checked in ✓" : "not checked in yet"}
-        </Text>
-      </View>
+      <GlassCard variant="soft" round={20} padding={0} style={[styles.card, styles.stale]}>
+        <View style={styles.cardInner}>
+          <Text style={styles.eyebrow}>YOU ARE</Text>
+          <Text style={[styles.status, !isCheckedIn && styles.statusPending]}>
+            {isCheckedIn ? "checked in ✓" : "not checked in yet"}
+          </Text>
+        </View>
+      </GlassCard>
 
       {isCheckedIn && (
         <Callout
@@ -124,23 +127,25 @@ export function ReconnectingState({ pitchName, kickoffTime, isCheckedIn, queuedM
         />
       )}
 
-      <View style={[styles.card, styles.stale, { marginTop: 20 }]}>
-        <View style={styles.syncRow}>
-          <Text style={styles.syncLabel}>teams</Text>
-          <Text style={styles.syncValue}>waiting for the server</Text>
-        </View>
-        {/* Only claim a chat state when we actually know the queue depth. */}
-        {queuedMessages !== undefined && (
+      <GlassCard variant="soft" round={20} padding={0} style={[styles.card, styles.stale, { marginTop: 20 }]}>
+        <View style={styles.cardInner}>
           <View style={styles.syncRow}>
-            <Text style={styles.syncLabel}>chat</Text>
-            <Text style={styles.syncValue}>
-              {queuedMessages > 0
-                ? `${queuedMessages} message${queuedMessages === 1 ? "" : "s"} queued`
-                : "up to date"}
-            </Text>
+            <Text style={styles.syncLabel}>teams</Text>
+            <Text style={styles.syncValue}>waiting for the server</Text>
           </View>
-        )}
-      </View>
+          {/* Only claim a chat state when we actually know the queue depth. */}
+          {queuedMessages !== undefined && (
+            <View style={styles.syncRow}>
+              <Text style={styles.syncLabel}>chat</Text>
+              <Text style={styles.syncValue}>
+                {queuedMessages > 0
+                  ? `${queuedMessages} message${queuedMessages === 1 ? "" : "s"} queued`
+                  : "up to date"}
+              </Text>
+            </View>
+          )}
+        </View>
+      </GlassCard>
 
       <View style={styles.actions}>
         <BtnOutline label="retry now" tone="warning" onPress={onRetry} />
@@ -166,11 +171,10 @@ const styles = StyleSheet.create({
   title: { fontSize: 34, color: "#FF9F0A", marginTop: 22 },
   subtitle: { fontSize: 13, color: MUTED, marginTop: 6, marginLeft: 2 },
 
-  card: {
-    borderRadius: 20, marginTop: 20, paddingHorizontal: 19, paddingVertical: 17,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>; the
+  // asymmetric padding sits on the inner view.
+  card: { marginTop: 20 },
+  cardInner: { paddingHorizontal: 19, paddingVertical: 17 },
   stale: { opacity: STALE_OPACITY },
 
   eyebrow: { fontSize: 11, fontWeight: "600", color: MUTED, letterSpacing: 0.3 },
