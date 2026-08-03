@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay, subHours } from "date-fns";
@@ -69,6 +69,14 @@ export default function Checkout() {
             params: { bookingId, gameId: gameId ?? "" },
           });
         },
+        // Without this a failed write looked exactly like success minus the
+        // navigation: the spinner stopped and nothing else happened. The
+        // mutation already builds a message; show it.
+        onError: (err: any) =>
+          Alert.alert(
+            "Couldn't confirm",
+            err?.data?.error ?? "Something went wrong — please try again.",
+          ),
       },
     );
   };

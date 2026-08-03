@@ -41,6 +41,10 @@ export default function GameDetail() {
   const { data: myBookings } = useGetMyBookings();
 
   // A spot this player already holds in THIS game, if any.
+  // A booking row is written when the slot is picked, BEFORE checkout. Back
+  // out there and the pending row keeps holding the spot: the booking guard
+  // then refuses a second attempt, so the player could neither finish paying
+  // nor release it.
   const myBooking = [...(myBookings?.upcoming ?? []), ...(myBookings?.past ?? [])]
     .find((b) => b.gameId === id);
   const [selectedSlot, setSelectedSlot] = useState<{ team: number; slot: number } | null>(null);
@@ -293,7 +297,12 @@ export default function GameDetail() {
             <Text style={styles.ctaPer}>per player</Text>
           </View>
           <Pressable
-            onPress={myBooking ? () => router.push(`/check-in/${id}`) : confirmBooking}
+            onPress={
+              !myBooking ? confirmBooking
+              : myBooking.paymentStatus === "pending"
+                ? () => router.push({ pathname: "/checkout/[bookingId]", params: { bookingId: myBooking.id, gameId: id! } })
+                : () => router.push(`/check-in/${id}`)
+            }
             disabled={myBooking ? false : !selectedSlot || !gameOpen || bookSpot.isPending}
             style={({ pressed }) => [{ opacity: pressed ? 0.88 : 1 }]}
           >
@@ -308,7 +317,9 @@ export default function GameDetail() {
               ) : (
                 <>
                   <Text style={styles.ctaBtnText}>
-                    {myBooking ? "You're in" : selectedSlot ? "Join match" : "Pick a spot"}
+                    {!myBooking ? (selectedSlot ? "Join match" : "Pick a spot")
+                      : myBooking.paymentStatus === "pending" ? "Finish checkout"
+                      : "You're in"}
                   </Text>
                   <View style={styles.ctaOrb}>
                     <ArrowRight size={15} color="#FF7A2E" strokeWidth={2.6} />

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TextInput, Pressable, ActivityIndicator , useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Star, Trophy, Users2 } from "lucide-react-native";
 import { useGetGame, useSubmitMatchStats, useMyMatchStats } from "@/lib/api";
 import { PillButton } from "@/components/PillButton";
@@ -28,6 +29,7 @@ export default function PostMatch() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { data: game } = useGetGame(id!);
+  const insets = useSafeAreaInsets();
   const { width } = useWindowDimensions();
   const submitStats = useSubmitMatchStats();
 
@@ -108,8 +110,23 @@ export default function PostMatch() {
     );
   }
 
+  // Hold the form until saved stats land, or it renders 0 / 0 / no rating and
+  // then visibly repopulates — which looks like the values were just reset.
+  if (statsLoading) {
+    return (
+      <View style={[styles.wrap, { paddingTop: insets.top + spacing.xl }]}>
+        <WarmCanvas base="#FFF8F0" glows={GLOWS} />
+        <ActivityIndicator color={colors.orange} style={{ marginTop: spacing.xxl }} />
+      </View>
+    );
+  }
+
   return (
-    <View style={styles.wrap}>
+    <View style={[styles.wrap, { paddingTop: insets.top + spacing.xl }]}>
+      {/* The glows belong here too. Rendering them only on submit made the
+          background pop into existence at the celebration, which read as a
+          glitch rather than a reward. */}
+      <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <Text style={styles.formTitle}>How did it go?</Text>
       <Text style={styles.formSub}>{game?.title ?? "Your match"}</Text>
 
@@ -117,7 +134,7 @@ export default function PostMatch() {
         <Text style={styles.fieldLabel}>Rate your performance</Text>
         <View style={styles.starsRow}>
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((n) => (
-            <Pressable key={n} onPress={() => setRating(n)}>
+            <Pressable key={n} onPress={() => setRating(n)} hitSlop={{ top: 12, bottom: 12, left: 9, right: 9 }}>
               <Star size={20} color={colors.orange} fill={rating != null && n <= rating ? colors.orange : "transparent"} />
             </Pressable>
           ))}
@@ -126,11 +143,11 @@ export default function PostMatch() {
         <View style={styles.fieldRow}>
           <View style={styles.fieldHalf}>
             <Text style={styles.fieldLabel}><Trophy size={13} color={colors.inkMuted} /> Goals</Text>
-            <TextInput style={styles.input} keyboardType="number-pad" value={goals} onChangeText={setGoals} />
+            <TextInput style={styles.input} keyboardType="number-pad" value={goals} onChangeText={setGoals} selectTextOnFocus />
           </View>
           <View style={styles.fieldHalf}>
             <Text style={styles.fieldLabel}><Users2 size={13} color={colors.inkMuted} /> Assists</Text>
-            <TextInput style={styles.input} keyboardType="number-pad" value={assists} onChangeText={setAssists} />
+            <TextInput style={styles.input} keyboardType="number-pad" value={assists} onChangeText={setAssists} selectTextOnFocus />
           </View>
         </View>
 
@@ -145,13 +162,17 @@ export default function PostMatch() {
         )}
       </GlassCard>
 
+      <PillButton label="book your next match" onPress={() => router.replace("/browse")} fullWidth />
+
       <Pressable onPress={() => router.replace("/(tabs)")}><Text style={styles.skipLink}>skip for now</Text></Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: colors.creamDeep, padding: spacing.xl, paddingTop: spacing.xxl * 1.5, alignItems: "center" },
+  // paddingTop comes from the safe-area inset at the call site: a fixed 48
+  // is under the Dynamic Island on the phones the launch cohort carries.
+  wrap: { flex: 1, backgroundColor: colors.creamDeep, padding: spacing.xl, alignItems: "center" },
   formTitle: { fontSize: 24, fontWeight: "800", color: colors.inkNavy, alignSelf: "flex-start" },
   formSub: { fontSize: 14, color: colors.inkMuted, marginTop: 2, alignSelf: "flex-start" },
   formCard: { width: "100%", marginTop: spacing.xl },
