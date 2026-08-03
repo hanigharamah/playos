@@ -4,6 +4,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays } from "lucide-react-native";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
+import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
@@ -94,10 +95,30 @@ export function HomeNothingBooked({
               people read a number and assume they will not be missed. Silent
               until 2026-08-game-lineup.sql is applied, so the card keeps its
               spots badge and simply says less. */}
-          {lineup && (
-            <Text style={styles.lineup} numberOfLines={1}>
-              {lineupSentence(lineup.names, lineup.total)}
-            </Text>
+          {/* Initials, not photos. There is no avatar column and no storage
+              bucket, so real images do not exist yet — and at launch nobody
+              would have uploaded one, so photo discs would render 35 empty
+              grey circles. An initial from a real first name is recognisable
+              in a group this size and degrades to something meaningful. When
+              photos land, these same discs show them and nothing else moves. */}
+          {lineup && lineup.names.length > 0 && (
+            <View style={styles.lineupRow}>
+              <View style={styles.avatarStack}>
+                {lineup.names.slice(0, 3).map((n, i) => (
+                  <View key={`${n}-${i}`} style={[styles.avatarRing, { marginLeft: i === 0 ? 0 : -9 }]}>
+                    <Avatar name={n} size={26} />
+                  </View>
+                ))}
+                {lineup.total > lineup.names.length && (
+                  <View style={[styles.avatarRing, styles.avatarMore, { marginLeft: -9 }]}>
+                    <Text style={styles.avatarMoreText}>+{lineup.total - lineup.names.length}</Text>
+                  </View>
+                )}
+              </View>
+              <Text style={styles.lineup} numberOfLines={1}>
+                {lineupSentence(lineup.names, lineup.total)}
+              </Text>
+            </View>
           )}
 
           <LinearGradient
@@ -164,7 +185,15 @@ const styles = StyleSheet.create({
   heroTextCol: { flex: 1 },
   heroTitle: { fontSize: 17, fontWeight: "600", color: INK },
   heroSub: { fontSize: 13, color: MUTED, marginTop: 6 },
-  lineup: { fontSize: 13, fontWeight: "600", color: "#1F7A2C", marginTop: 10 },
+  lineupRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 12 },
+  avatarStack: { flexDirection: "row", alignItems: "center" },
+  avatarRing: { borderWidth: 1.5, borderColor: "#FFFFFF", borderRadius: 15 },
+  avatarMore: {
+    width: 26, height: 26, borderRadius: 13, backgroundColor: "rgba(255,255,255,0.9)",
+    alignItems: "center", justifyContent: "center",
+  },
+  avatarMoreText: { fontSize: 11, fontWeight: "700", color: "#C96A00" },
+  lineup: { flex: 1, fontSize: 13, fontWeight: "600", color: "#1F7A2C" },
   heroPrice: { fontSize: 18, fontWeight: "700", color: INK, marginLeft: 12 },
 
   heroCta: {

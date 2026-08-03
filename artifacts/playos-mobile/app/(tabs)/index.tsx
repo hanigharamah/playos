@@ -1,43 +1,25 @@
 import { useEffect, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, Image, useWindowDimensions, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, RefreshControl, useWindowDimensions } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
-import { BlurView } from "expo-blur";
-import { LinearGradient } from "expo-linear-gradient";
-import { format } from "date-fns";
-import { Bell, Users, MapPin, User, ArrowRight } from "lucide-react-native";
-import { useListGames, useGetMyBookings, useGetMe, rankOpenGames } from "@/lib/api";
+import { Bell } from "lucide-react-native";
+import { useListGames, useGetMe, rankOpenGames } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { HomeSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { HomeNothingBooked } from "@/components/HomeNothingBooked";
 import { WarmCanvas } from "@/components/WarmCanvas";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { serverNow } from "@/lib/serverTime";
-import { colors, gradients, spacing } from "@/lib/theme";
+import { colors, spacing } from "@/lib/theme";
 import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
 // Exact palette from the Figma Home (node 1:2)
 const INK = "#1C1C1E";
-const CARD_TITLE = "#262D48";
 const CARD_META = "#5A564E";
 const CARD_LABEL = "#8A8178";
 const MUTED = "#6C6C70";
-
-/** Check-in opens 20 minutes before kickoff. */
-const CHECK_IN_OPENS_MS = 20 * 60_000;
-
-/** "2d 4h" / "4h 12m" / "12m" — coarse enough not to need a ticking timer. */
-function formatOpensIn(ms: number): string {
-  const mins = Math.floor(ms / 60_000);
-  const days = Math.floor(mins / 1440);
-  const hours = Math.floor((mins % 1440) / 60);
-  if (days > 0) return `${days}d ${hours}h`;
-  if (hours > 0) return `${hours}h ${mins % 60}m`;
-  return `${mins}m`;
-}
 
 const HOME_GLOWS = [
   { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
@@ -54,7 +36,6 @@ export default function Home() {
   const barInset = useMatchDayBar() ? BAR_INSET : 0;
   const { width } = useWindowDimensions();
   const { data: games, isLoading, isError, refetch, isRefetching } = useListGames();
-  const { data: bookings, isLoading: bookingsLoading } = useGetMyBookings();
   const { data: me } = useGetMe();
 
   // Skeleton is held back 300ms so a fast response doesn't flash it (698:518).
@@ -66,11 +47,10 @@ export default function Home() {
   // server error screen, which owns retry.
   useEffect(() => { if (isError) router.push("/error/server"); }, [isError, router]);
 
-  const upcoming = bookings?.upcoming ?? [];
-  // showed games[0] — any open game — under a headline claiming it was yours.
+  // Ranked for conversion, not by kickoff: fullest first, today first, with a
+  // fallback to the rest of the week. Home no longer reads bookings at all —
+  // the mini-bar owns match day, the Bookings tab owns the rest.
   const ranked = rankOpenGames(games ?? [], serverNow());
-
-
 
   return (
     <View style={styles.wrap}>
@@ -88,7 +68,12 @@ export default function Home() {
           <Text style={styles.logo}>PLAYOS</Text>
           <Pressable hitSlop={12} onPress={() => router.push("/activity")}>
             <Bell size={22} color={INK} strokeWidth={1.8} />
-            {upcoming.length > 0 && <View style={styles.bellDot} />}
+            {/* No dot. It fired on "you have a booking", which was never news
+                and never cleared — a permanent mark that taught the player to
+                ignore it. Attention now lives where it means something: the
+                match-day bar, and the dot on the Bookings tab for a cancelled
+                match. Restore this only when there is unread activity to
+                point at. */}
           </Pressable>
         </View>
 
@@ -123,7 +108,6 @@ const styles = StyleSheet.create({
   content: { paddingHorizontal: 20, paddingBottom: 130 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   logo: { fontSize: 17, fontWeight: "700", color: INK },
-  bellDot: { position: "absolute", top: -1, right: -1, width: 8, height: 8, borderRadius: 4, backgroundColor: colors.orange },
   headline: { fontSize: 42, lineHeight: 50, marginTop: spacing.xl },
   heroShadow: {
     marginTop: spacing.xxl + 12, borderRadius: 28,

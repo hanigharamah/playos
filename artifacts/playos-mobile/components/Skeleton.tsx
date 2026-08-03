@@ -90,34 +90,45 @@ export function SkelCard({ h, style, children }: { h: number; style?: StyleProp<
 export function HomeSkeleton() {
   return (
     <View style={styles.body}>
-      <SkelBlock w={150} h={14} r={7} style={{ marginLeft: 4 }} />
+      {/* Redrawn for the storefront. It used to model the your-match hero
+          (238pt) plus two 68pt "coming up" rows plus a 92pt block — none of
+          which Home renders any more, so the page visibly jumped when data
+          landed. Geometry below is lifted from HomeNothingBooked's real
+          cards, which is this file's stated rule. */}
 
-      {/* hero card — 238 tall to match the real featured card, not the
-          mock's 196; see FIGMA-MAP for why the row wins over the mock. */}
-      <SkelCard h={238} style={{ marginTop: 24 }}>
-        <SkelBlock x={13} y={13} w={322} h={110} r={14} />
-        <SkelBlock x={13} y={137} w={200} h={16} r={8} />
-        <SkelBlock x={13} y={161} w={140} h={12} r={6} />
-        <SkelBlock xr={15} y={135} w={90} h={36} r={18} tone="b" />
+      {/* eyebrow: TONIGHT IN RIYADH */}
+      <SkelBlock w={140} h={11} r={5} style={{ marginLeft: 4 }} />
+
+      {/* Promo hero: 19pt padding, 110pt photo, title/sub row, lineup, CTA. */}
+      <SkelCard h={286} style={{ marginTop: 12 }}>
+        <SkelBlock x={19} y={19} w={312} h={110} r={16} />
+        <SkelBlock x={31} y={31} w={86} h={26} r={13} tone="b" />
+        <SkelBlock x={19} y={141} w={190} h={17} r={8} />
+        <SkelBlock x={19} y={165} w={130} h={13} r={6} />
+        <SkelBlock xr={19} y={141} w={68} h={18} r={9} tone="b" />
+        {/* avatar stack + "Ali and Ahmed are in" */}
+        <SkelBlock x={19} y={190} w={26} h={26} r={13} tone="b" />
+        <SkelBlock x={36} y={190} w={26} h={26} r={13} tone="b" />
+        <SkelBlock x={53} y={190} w={26} h={26} r={13} tone="b" />
+        <SkelBlock x={88} y={196} w={150} h={13} r={6} />
+        <SkelBlock x={19} y={228} w={312} h={44} r={22} tone="b" />
       </SkelCard>
 
-      <SkelBlock w={120} h={12} r={6} style={{ marginTop: 24, marginLeft: 4 }} />
+      {/* "also tonight" script label */}
+      <SkelBlock w={110} h={16} r={8} style={{ marginTop: 28, marginLeft: 4 }} />
 
+      {/* Two 68pt rows — 48pt thumb, text at x=69, price on the right. */}
       {[0, 1].map((i) => (
-        <SkelCard key={i} h={68} style={{ marginTop: i === 0 ? 12 : 12 }}>
-          <SkelBlock x={6} y={7} w={54} h={54} r={12} />
-          <SkelBlock x={71} y={14} w={180} h={14} r={7} />
-          <SkelBlock x={71} y={36} w={120} h={11} r={5} />
-          <SkelBlock xr={15} y={24} w={54} h={20} r={10} tone="b" />
+        <SkelCard key={i} h={68} style={{ marginTop: 12 }}>
+          <SkelBlock x={9} y={10} w={48} h={48} r={12} />
+          <SkelBlock x={69} y={17} w={160} h={14} r={7} />
+          <SkelBlock x={69} y={39} w={110} h={12} r={6} />
+          <SkelBlock xr={15} y={26} w={54} h={16} r={8} tone="b" />
         </SkelCard>
       ))}
 
-      <SkelBlock w={140} h={12} r={6} style={{ marginTop: 28, marginLeft: 4 }} />
-
-      <SkelCard h={92} style={{ marginTop: 24 }}>
-        <SkelBlock x={15} y={17} w={90} h={26} r={8} />
-        <SkelBlock x={15} y={53} w={220} h={12} r={6} />
-      </SkelCard>
+      {/* "browse everything in riyadh →" */}
+      <SkelBlock w={200} h={16} r={8} style={{ marginTop: 22, alignSelf: "center" }} />
     </View>
   );
 }
