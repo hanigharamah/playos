@@ -12,6 +12,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
+import { GlassCard } from "@/components/GlassCard";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { useServerCountdown, formatCountdown, serverNow } from "@/lib/serverTime";
 import { colors } from "@/lib/theme";
@@ -125,31 +126,35 @@ export default function CheckInNotOpen() {
       </View>
 
       {/* Match card */}
-      <View style={styles.matchCard}>
-        <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
-        <View style={styles.matchText}>
-          <Text style={styles.matchTitle} numberOfLines={1}>{teamSize}v{teamSize}  ·  {game.pitchName}</Text>
-          <Text style={styles.matchSub}>
-            {isSameDay(kickoffDate, new Date()) ? "Today" : format(kickoffDate, "EEE")}  ·  {format(kickoffDate, "h:mm a")}
-          </Text>
-          {/* Only claim "paid" when the booking actually says so. */}
-          {booking && (
-            <Text style={styles.matchStatus}>
-              you're in{booking.paymentStatus === "paid" ? "  ·  paid" : ""}
+      <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
+        <View style={styles.matchInner}>
+          <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+          <View style={styles.matchText}>
+            <Text style={styles.matchTitle} numberOfLines={1}>{teamSize}v{teamSize}  ·  {game.pitchName}</Text>
+            <Text style={styles.matchSub}>
+              {isSameDay(kickoffDate, new Date()) ? "Today" : format(kickoffDate, "EEE")}  ·  {format(kickoffDate, "h:mm a")}
             </Text>
-          )}
+            {/* Only claim "paid" when the booking actually says so. */}
+            {booking && (
+              <Text style={styles.matchStatus}>
+                you're in{booking.paymentStatus === "paid" ? "  ·  paid" : ""}
+              </Text>
+            )}
+          </View>
         </View>
-      </View>
+      </GlassCard>
 
       {/* Countdown */}
-      <View style={styles.countCard}>
-        <Text style={styles.countLabel}>check-in opens in</Text>
-        <Text style={styles.countValue}>{formatCountdown(remainingMs)}</Text>
-        {/* Exact wall-clock time as well as the countdown, per the annotation. */}
-        <Text style={styles.countSub}>
-          OPENS AT {format(new Date(opensAt ?? 0), "h:mm a").toUpperCase()}  ·  {CHECK_IN_OPENS_MINUTES_BEFORE} MINUTES BEFORE KICKOFF
-        </Text>
-      </View>
+      <GlassCard variant="soft" round={24} padding={0} style={styles.countCard}>
+        <View style={styles.countInner}>
+          <Text style={styles.countLabel}>check-in opens in</Text>
+          <Text style={styles.countValue}>{formatCountdown(remainingMs)}</Text>
+          {/* Exact wall-clock time as well as the countdown, per the annotation. */}
+          <Text style={styles.countSub}>
+            OPENS AT {format(new Date(opensAt ?? 0), "h:mm a").toUpperCase()}  ·  {CHECK_IN_OPENS_MINUTES_BEFORE} MINUTES BEFORE KICKOFF
+          </Text>
+        </View>
+      </GlassCard>
 
       <Callout
         tone="warning"
@@ -201,25 +206,23 @@ const styles = StyleSheet.create({
   backGlyph: { fontSize: 20, fontWeight: "700", color: INK, lineHeight: 22 },
   title: { fontSize: 26, color: "#FA810B", marginLeft: 14, flex: 1 },
 
-  matchCard: {
-    flexDirection: "row", minHeight: 92, borderRadius: 18, marginTop: 26, padding: 11,
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
-  },
+  // Geometry only — fill, stroke and shadows come from <GlassCard>; the row
+  // and its padding sit on the inner view the children lay out in.
+  matchCard: { marginTop: 26 },
+  matchInner: { flexDirection: "row", minHeight: 92, padding: 11 },
   thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
   matchText: { flex: 1, marginLeft: 12, paddingTop: 6 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
   matchSub: { fontSize: 13, color: MUTED, marginTop: 6 },
   matchStatus: { fontSize: 13, fontWeight: "600", color: GREEN, marginTop: 4 },
 
-  countCard: {
+  countCard: { marginTop: 20 },
+  countInner: {
     // minHeight, not height: the sub-label is a two-clause line that already
     // runs near the card's full width, and at Larger Text it wraps and was
     // clipped — losing the exact wall-clock time this card exists to show.
     minHeight: 150, paddingVertical: 20,
-    borderRadius: 24, marginTop: 20, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
+    alignItems: "center", justifyContent: "center",
   },
   countLabel: { fontSize: 13, color: MUTED },
   countValue: { fontSize: 48, fontWeight: "700", color: "#EB6923", marginTop: 4, fontVariant: ["tabular-nums"] },
