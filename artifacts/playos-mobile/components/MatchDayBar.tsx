@@ -48,25 +48,61 @@ function mmss(ms: number): string {
 }
 
 /**
+ * Time to the nearest future kickoff, or null if nothing is booked. Used only
+ * to decide when to wake up next — `upcoming` is sorted by kickoff ascending,
+ * so the first one still ahead of the clock is the soonest.
+ */
+function soonestKickoffMs(upcoming: MyBooking[] | undefined): number | null {
+  for (const b of upcoming ?? []) {
+    const ms = new Date(b.game.kickoffTime).getTime() - serverNow();
+    if (ms > 0) return ms;
+  }
+  return null;
+}
+
+/**
  * Which booking, if any, the bar is for, and which state it is in. Returns
  * null when there is nothing to show — which is almost always.
  */
 export function useMatchDayBar(): { booking: MyBooking; state: BarState } | null {
   const { data } = useGetMyBookings();
-  const [, setTick] = useState(0);
+  const [tick, setTick] = useState(0);
 
-  // The bar's states turn over on the clock, so it has to re-evaluate. Once a
-  // second only matters inside the last 20 minutes; a minute is plenty before.
-  useEffect(() => {
-    void syncServerTime();
-    const id = setInterval(() => setTick((n) => n + 1), 1000);
-    return () => clearInterval(id);
-  }, []);
+  useEffect(() => { void syncServerTime(); }, []);
 
-  const booking = (data?.upcoming ?? []).find((b) => {
+  // Both lists, not just `upcoming`: api.ts moves a booking to `past` the
+  // instant the clock passes kickoff, so reading `upcoming` alone switched the
+  // bar off at T+0 — taking the red "not checked in" state away from the one
+  // player it exists for, at the exact minute their fee goes. The window runs
+  // to T+20m, which is as long as the operator is still working the phone.
+  const booking = [...(data?.upcoming ?? []), ...(data?.past ?? [])].find((b) => {
     const ms = new Date(b.game.kickoffTime).getTime() - serverNow();
-    return ms <= T12H_MS && ms > 0;
+    return ms <= T12H_MS && ms > -T20M_MS;
   });
+
+  // Only tick when a tick can change something. This hook runs in all five tab
+  // screens plus the bar, so an unconditional 1s interval re-rendered every tab
+  // tree once a second for the whole session — on a week with nothing booked.
+  // Outside T-12h we sleep until the window opens (capped so a resync still
+  // lands); inside it, 30s until the last 20 minutes, then 1s.
+  const nextMs = booking
+    ? new Date(booking.game.kickoffTime).getTime() - serverNow()
+    : soonestKickoffMs(data?.upcoming);
+  const period =
+    nextMs === null ? null
+    : nextMs > T12H_MS ? Math.min(nextMs - T12H_MS, 30 * 60_000)
+    : nextMs > T20M_MS ? 30_000
+    : 1000;
+
+  // setTimeout keyed on `tick`, not setInterval: every fire re-runs this effect,
+  // so the delay is recomputed as the states approach instead of being frozen
+  // at whatever it was when the interval was armed.
+  useEffect(() => {
+    if (period === null) return;
+    const id = setTimeout(() => setTick((n) => n + 1), period);
+    return () => clearTimeout(id);
+  }, [period, tick]);
+
   if (!booking) return null;
 
   const msToKickoff = new Date(booking.game.kickoffTime).getTime() - serverNow();
