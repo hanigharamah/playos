@@ -1,12 +1,12 @@
 import { View, Text, StyleSheet, Pressable, Image } from "react-native";
 import { useRouter } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { CalendarDays } from "lucide-react-native";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
+import { BtnOutline } from "@/components/BtnOutline";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { useGameLineup, useSignedAvatarUrls, lineupSentence, gameFillLabel, type GameSummary } from "@/lib/api";
 
@@ -131,15 +131,18 @@ export function HomeNothingBooked({
             </View>
           )}
 
-          <LinearGradient
-            colors={["#FFDEA0", "#FEC15F", "#FDAA5F", "#EB6923"]}
-            locations={[0, 0.35, 0.65, 1]}
-            start={{ x: 0.5, y: 0 }}
-            end={{ x: 0.5, y: 1 }}
+          {/* Glass, matching every other button in the app. The liquid
+              treatment lives in BtnOutline — blur, top-lit sheen, specular
+              rim, contact + ambient shadows — so this stays one material with
+              the card it sits in rather than a solid orange slab on top of it. */}
+          <BtnOutline
+            label="join this one"
+            tone="accent"
+            // Its own onPress, not the card's: BtnOutline is a Pressable, so
+            // without one it swallows the tap and the button does nothing.
+            onPress={() => router.push(`/game/${next.id}`)}
             style={styles.heroCta}
-          >
-            <Text style={styles.heroCtaText}>join this one</Text>
-          </LinearGradient>
+          />
         </GlassCard>
       </Pressable>
 
@@ -206,11 +209,8 @@ const styles = StyleSheet.create({
   lineup: { flex: 1, fontSize: 13, fontWeight: "600", color: "#1F7A2C" },
   heroPrice: { fontSize: 18, fontWeight: "700", color: INK, marginLeft: 12 },
 
-  heroCta: {
-    height: 44, borderRadius: 22, marginTop: 16, alignItems: "center", justifyContent: "center",
-    shadowColor: "#EB6923", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.35, shadowRadius: 20, elevation: 6,
-  },
-  heroCtaText: { fontSize: 15, fontWeight: "700", color: "#FFFFFF" },
+  // Geometry and the glass itself come from BtnOutline; only the gap is ours.
+  heroCta: { marginTop: 16 },
 
   alsoLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 28, marginBottom: 12 },
 
