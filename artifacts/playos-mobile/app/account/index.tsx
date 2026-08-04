@@ -2,13 +2,13 @@ import { useEffect, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, Pressable, Switch, Linking, Alert, Platform, AppState, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { BlurView } from "expo-blur";
-import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock, Bell, Camera } from "lucide-react-native";
+import { ArrowLeft, User as UserIcon, Smartphone, CreditCard, Coins, Globe, FileText, Lock, Bell, Camera, Trash2 } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/lib/auth";
 import { useI18n } from "@/lib/i18n";
 import { Avatar } from "@/components/Avatar";
-import { useGetMe, useGetMyCredits, useSignedAvatarUrls, useUploadMyAvatar, useSetAvatarPreset } from "@/lib/api";
+import { useGetMe, useGetMyCredits, useSignedAvatarUrls, useUploadMyAvatar, useSetAvatarPreset, useDeleteMyAccount } from "@/lib/api";
 import { allAvatarPresets } from "@/lib/avatarPresets";
 import { registerForPush } from "@/lib/notifications";
 import { resetAnalytics, track, screen } from "@/lib/analytics";
@@ -40,6 +40,7 @@ function maskPhone(phone?: string | null) {
 export default function Settings() {
   const router = useRouter();
   const { signOut } = useAuth();
+  const deleteAccount = useDeleteMyAccount();
   const { language, toggleLanguage } = useI18n();
   const { data: me } = useGetMe();
   const { data: credits = 0 } = useGetMyCredits();
@@ -144,6 +145,68 @@ export default function Settings() {
         },
       },
     ]);
+  };
+
+  /**
+   * Required by App Store Review Guideline 5.1.1(v).
+   *
+   * Two confirmations, because this is irreversible and there is no undo:
+   * the first states what goes, the second makes you choose "delete" again
+   * rather than letting one mistaken tap through. The server refuses two
+   * cases, and both get a real explanation instead of a generic failure —
+   * "it didn't work" on a delete button reads as a broken app.
+   */
+  const handleDeleteAccount = () => {
+    Alert.alert(
+      "Delete your account?",
+      "This removes your profile, your bookings and your match history. It cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert("Are you sure?", "There is no way to get this back.", [
+              { text: "Keep my account", style: "cancel" },
+              {
+                text: "Delete forever",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    const result = await deleteAccount.mutateAsync();
+                    if (result === "ok") {
+                      track("account_deleted");
+                      resetAnalytics();
+                      await signOut();
+                      router.replace("/(auth)/login");
+                      return;
+                    }
+                    if (result === "has_balance") {
+                      Alert.alert(
+                        "You're owed money",
+                        "You have a refund or a game token outstanding. Deleting now would cancel it. " +
+                          "Contact us to collect it first, then delete.",
+                      );
+                      return;
+                    }
+                    if (result === "is_organiser") {
+                      Alert.alert(
+                        "This account organises matches",
+                        "Deleting it here would remove those matches and everyone booked into them. " +
+                          "Contact support and we'll move them across first.",
+                      );
+                      return;
+                    }
+                    Alert.alert("Please sign in again", "Your session expired before we could do that.");
+                  } catch (e: any) {
+                    Alert.alert("Couldn't delete your account", e?.message ?? "Please try again.");
+                  }
+                },
+              },
+            ]),
+        },
+      ],
+    );
   };
 
   const Row = ({
@@ -281,6 +344,27 @@ export default function Settings() {
       <Pressable style={styles.signOut} onPress={handleSignOut}>
         <Text style={styles.signOutText}>sign out</Text>
       </Pressable>
+
+      {/* Apple requires this to be reachable in the app, not only by writing
+          in. Placed last and styled as the one destructive thing on the
+          screen, so it is findable without sitting next to sign out where it
+          could be hit by accident. */}
+      <Pressable
+        style={styles.deleteAccount}
+        onPress={handleDeleteAccount}
+        disabled={deleteAccount.isPending}
+        accessibilityRole="button"
+        accessibilityLabel="Delete my account"
+      >
+        {deleteAccount.isPending ? (
+          <ActivityIndicator color="#BF2626" />
+        ) : (
+          <>
+            <Trash2 size={17} color="#BF2626" strokeWidth={1.9} />
+            <Text style={styles.deleteAccountText}>delete my account</Text>
+          </>
+        )}
+      </Pressable>
     </ScrollView>
   );
 }
@@ -297,6 +381,12 @@ const rowSurface = {
 };
 
 const styles = StyleSheet.create({
+  deleteAccount: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    marginTop: 14, paddingVertical: 14, borderRadius: 16, minHeight: 48,
+  },
+  deleteAccountText: { fontSize: 15, fontWeight: "600", color: "#BF2626" },
+
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   content: { paddingHorizontal: 20, paddingTop: spacing.xxl, paddingBottom: spacing.xxl * 2 },
 

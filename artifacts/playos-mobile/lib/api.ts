@@ -1650,3 +1650,33 @@ export function useSpotHold(bookingId: string | null) {
     },
   });
 }
+
+// ─── Account deletion ───────────────────────────────────────────────────
+
+/** What delete_my_account() can answer. See supabase/2026-08-delete-account.sql. */
+export type DeleteAccountResult = "ok" | "not_authenticated" | "is_organiser" | "has_balance";
+
+/**
+ * Delete the signed-in player's account and everything attached to it.
+ *
+ * Required by App Store Review Guideline 5.1.1(v): an app that creates
+ * accounts must let you delete one from inside the app.
+ *
+ * Goes through an RPC because the client cannot do this safely or at all.
+ * Deleting the auth row needs privileges the anon key does not have, and two
+ * foreign keys make a naive delete destructive: games.organiser_id and
+ * pitches.organiser_id CASCADE, so deleting an organiser would take the whole
+ * catalogue and every other player's bookings with it.
+ *
+ * Refusals come back as DATA, not errors — the caller must branch on the
+ * returned string rather than treating a non-throw as success.
+ */
+export function useDeleteMyAccount() {
+  return useMutation({
+    mutationFn: async (): Promise<DeleteAccountResult> => {
+      const { data, error } = await supabase.rpc("delete_my_account");
+      if (error) throw new Error(error.message);
+      return (data as DeleteAccountResult) ?? "not_authenticated";
+    },
+  });
+}
