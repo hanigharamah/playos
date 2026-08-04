@@ -22,13 +22,13 @@ import { screen } from "@/lib/analytics";
 
 // Measured off the Figma frames (668:697 / 669:717), matching the Read Me
 // palette section: ink #1C1C1E, secondary #6C6C70, tertiary #8A8091,
-// danger #BF2626, confirm green #268033, brand orange #FF9F0A / #FA810B.
+// danger #BF2626, confirm green #268033, brand orange #FD6A03 / #FA810B.
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
 const FAINT = "#8A8091";
 const RED = "#BF2626";
 const GREEN = "#268033";
-const ORANGE = "#FF9F0A";
+const ORANGE = "#FD6A03";
 
 const GLOWS = [
   { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },

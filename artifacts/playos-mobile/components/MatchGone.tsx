@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
   discGlyph: { fontSize: 13, fontWeight: "700", color: "#6C6C70" },
 
   altBlock: { marginTop: 24 },
-  altLabel: { fontSize: 22, color: "#FF9F0A", marginBottom: 10, marginLeft: 4 },
+  altLabel: { fontSize: 22, color: "#FD6A03", marginBottom: 10, marginLeft: 4 },
   altThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
   altCard: { marginBottom: 12 },
   // minHeight, not the fixed 68 it was: the row holds two lines of text.

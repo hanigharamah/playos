@@ -22,12 +22,22 @@ export const colors = {
   pink: "#FF3D9A",
   purple: "#8E3DFF",
   deepPurple: "#6D28D9",
-  orange: "#FF9F0A",
   /**
-   * Brand orange for SMALL TEXT. #FF9F0A measures about 1.9:1 on the glass
-   * cards and fails every contrast floor — it has already had to be fixed
-   * one-off on booking-confirmed, checkout and home. Use this for anything
-   * under ~16pt; keep the bright orange for fills, icons and display type.
+   * Sampled off the Browse mock (2026-08-04) and adopted app-wide, replacing
+   * #FF9F0A. Two reasons: #FF9F0A is close enough to iOS system amber to read
+   * as a default rather than a brand, and this measures 2.75:1 on the cream
+   * against the old 1.95:1 — a 41% improvement.
+   *
+   * NOT a licence to use it for small text: 2.75:1 is still under every
+   * contrast floor. orangeText below remains load-bearing.
+   */
+  orange: "#FD6A03",
+  /**
+   * Brand orange for SMALL TEXT. The bright orange above measures about
+   * 2.8:1 on the glass cards and fails every contrast floor — it has already
+   * had to be fixed one-off on booking-confirmed, checkout and home. Use this
+   * for anything under ~16pt; keep the bright orange for fills, icons and
+   * display type.
    */
   orangeText: "#A85A00",
 

@@ -23,7 +23,7 @@ import { screen } from "@/lib/analytics";
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
 const GREEN = "#268033";
-const ORANGE = "#FF9F0A";
+const ORANGE = "#FD6A03";
 
 const GLOWS = [
   { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },

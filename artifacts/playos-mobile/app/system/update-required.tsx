@@ -107,7 +107,7 @@ const styles = StyleSheet.create({
   // value was smaller than the Dynamic Island's inset.
   wrap: { flex: 1, backgroundColor: "#FFF8F0", paddingHorizontal: 20 },
 
-  title: { fontSize: 38, color: "#FF9F0A" },
+  title: { fontSize: 38, color: "#FD6A03" },
   sub: { fontSize: 15.5, fontWeight: "600", color: INK, marginTop: 10 },
 
   // Geometry only — fill, stroke and shadows come from <GlassCard>. minHeight,

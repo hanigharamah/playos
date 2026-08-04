@@ -51,7 +51,7 @@ export async function registerForPush(userId: string): Promise<RegisterResult> {
       importance: Notifications.AndroidImportance.HIGH,
       sound: "default",
       vibrationPattern: [0, 250, 250, 250],
-      lightColor: "#FF9F0A",
+      lightColor: "#FD6A03",
     });
   }
 

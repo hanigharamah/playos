@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
   statLabel: { fontSize: 10, fontWeight: "600", color: MUTED, marginTop: 6, letterSpacing: 0.3 },
   toKickoff: { fontSize: 13, fontWeight: "600", color: AMBER, marginTop: 12 },
 
-  sectionLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 24, marginBottom: 12 },
+  sectionLabel: { fontSize: 22, color: "#FD6A03", marginTop: 24, marginBottom: 12 },
   reasonRow: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   reasonChip: {
     // #ADADB2 is iOS systemGray3 — a blue-grey, the one place on either ops

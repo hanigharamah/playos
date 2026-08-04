@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
   dot: { width: 10, height: 10, borderRadius: 5, backgroundColor: "#C96A00" },
   bannerText: { fontSize: 14, fontWeight: "600", color: "#C96A00", marginLeft: 12 },
 
-  title: { fontSize: 34, color: "#FF9F0A", marginTop: 22 },
+  title: { fontSize: 34, color: "#FD6A03", marginTop: 22 },
   subtitle: { fontSize: 13, color: MUTED, marginTop: 6, marginLeft: 2 },
 
   // Geometry only — fill, stroke and shadows come from <GlassCard>; the

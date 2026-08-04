@@ -56,6 +56,6 @@ export default function Offline() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },
   centre: { ...StyleSheet.absoluteFillObject, alignItems: "center", justifyContent: "center", paddingHorizontal: 20 },
-  title: { fontSize: 36, color: "#FF9F0A", textAlign: "center" },
+  title: { fontSize: 36, color: "#FD6A03", textAlign: "center" },
   body: { fontSize: 13.5, color: "#6C6C70", textAlign: "center", marginTop: 21, width: 260, lineHeight: 19 },
 });

@@ -322,7 +322,7 @@ const styles = StyleSheet.create({
   callout: { marginTop: 14 },
   phoneGlyph: { fontSize: 13, fontWeight: "700", color: NAVY },
 
-  sectionLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 28, marginBottom: 14 },
+  sectionLabel: { fontSize: 22, color: "#FD6A03", marginTop: 28, marginBottom: 14 },
   allIn: { fontSize: 14, color: MUTED, marginLeft: 4 },
 
   rowCard: { marginBottom: 12 },

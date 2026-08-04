@@ -56,7 +56,7 @@ const TEAM = {
     ink: "#7A4B00",
     tile: "rgba(255,178,89,0.28)",
     panel: "rgba(255,178,89,0.12)",
-    chip: "#FF9F0A",
+    chip: "#FD6A03",
   },
   2: {
     label: "Purple",
@@ -887,7 +887,7 @@ const styles = StyleSheet.create({
   holdBtn: {
     height: 60, borderRadius: 30, marginTop: 24, alignSelf: "center", width: "84%",
     backgroundColor: colors.orange, alignItems: "center", justifyContent: "center", overflow: "hidden",
-    shadowColor: "#FF9F0A", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 22, elevation: 6,
+    shadowColor: "#FD6A03", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.45, shadowRadius: 22, elevation: 6,
   },
   holdFill: { position: "absolute", left: 0, top: 0, bottom: 0, backgroundColor: "rgba(255,255,255,0.28)" },
   holdLabel: { fontSize: 16, fontWeight: "600", color: "#FFFFFF" },

@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   // Geometry and the glass itself come from BtnOutline; only the gap is ours.
   heroCta: { marginTop: 16 },
 
-  alsoLabel: { fontSize: 22, color: "#FF9F0A", marginTop: 28, marginBottom: 12 },
+  alsoLabel: { fontSize: 22, color: "#FD6A03", marginTop: 28, marginBottom: 12 },
 
   rowCard: { marginBottom: 12 },
   // minHeight, not the fixed 68 it was: the row holds two lines of text.
@@ -223,5 +223,5 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12.5, color: MUTED, marginTop: 5 },
   rowPrice: { fontSize: 14, fontWeight: "600", color: INK, marginLeft: 8 },
 
-  browseAll: { fontSize: 22, color: "#FF9F0A", textAlign: "center", marginTop: 18 },
+  browseAll: { fontSize: 22, color: "#FD6A03", textAlign: "center", marginTop: 18 },
 });

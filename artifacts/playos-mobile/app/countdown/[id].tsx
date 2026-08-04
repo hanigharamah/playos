@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   colon: { fontSize: 32, fontWeight: "700", color: "rgba(255,255,255,0.5)", marginBottom: 14 },
   card: { width: "100%", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: radius.lg, padding: spacing.lg, marginTop: spacing.xxl, borderWidth: 1, borderColor: "rgba(255,255,255,0.15)" },
   cardTitle: { fontSize: 20, fontWeight: "800", color: "#FFFFFF" },
-  cardWhen: { fontSize: 12, fontWeight: "600", color: "#FF9F0A", marginTop: 8 },
+  cardWhen: { fontSize: 12, fontWeight: "600", color: "#FD6A03", marginTop: 8 },
   cardMeta: { fontSize: 13, color: "#99999E", marginTop: 4 },
   avatarRow: { marginTop: spacing.md },
   detailsBtn: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: spacing.sm, backgroundColor: "rgba(255,255,255,0.15)", borderRadius: radius.pill, paddingVertical: spacing.md, marginTop: spacing.lg },

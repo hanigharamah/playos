@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.55)", borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 3,
   },
-  chipActive: { backgroundColor: "rgba(255,138,0,0.12)", borderWidth: 2, borderColor: "#FF9F0A" },
+  chipActive: { backgroundColor: "rgba(255,138,0,0.12)", borderWidth: 2, borderColor: "#FD6A03" },
   chipText: { fontSize: 14.5, color: INK },
   chipTextActive: { fontWeight: "600", color: "#C96A00" },
 
