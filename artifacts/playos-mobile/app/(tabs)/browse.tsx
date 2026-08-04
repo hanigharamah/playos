@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
-import { Search, ArrowLeft } from "lucide-react-native";
+import { Search, ArrowLeft, LocateFixed, MapPin, Navigation, ChevronRight } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
@@ -66,7 +66,6 @@ export default function Browse() {
     (g) => !q || g.title.toLowerCase().includes(q) || g.pitchName.toLowerCase().includes(q),
   );
 
-  // Underline position comes from the tabs' own layout.
   const [tabRects, setTabRects] = useState<Record<Tab, { x: number; w: number }>>({
     venues: { x: 0, w: 54 },
     matches: { x: 88, w: 64 },
@@ -77,13 +76,19 @@ export default function Browse() {
       prev[key].x === x && prev[key].w === width ? prev : { ...prev, [key]: { x, w: width } },
     );
   };
-  const tabBar = tabRects[tab];
 
   const venues = useMemo(() => {
-    const map = new Map<string, { count: number; photo: string | null }>();
+    // Also totals the open spots across a venue's games and keeps its district,
+    // which is what the card shows in place of the mock's distance.
+    const map = new Map<string, { count: number; photo: string | null; spots: number; area: string | null }>();
     for (const g of matches) {
-      const existing = map.get(g.pitchName);
-      map.set(g.pitchName, { count: (existing?.count ?? 0) + 1, photo: existing?.photo ?? g.pitchPhotoUrl });
+      const e = map.get(g.pitchName);
+      map.set(g.pitchName, {
+        count: (e?.count ?? 0) + 1,
+        photo: e?.photo ?? g.pitchPhotoUrl,
+        spots: (e?.spots ?? 0) + Math.max(0, g.capacity - g.bookedCount),
+        area: e?.area ?? g.locationText ?? null,
+      });
     }
     return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
   }, [matches]);
@@ -109,29 +114,47 @@ export default function Browse() {
     <View style={{ flex: 1 }}>
       <WarmCanvas base="#FFF8F0" glows={GLOWS} />
       <ScrollView ref={scrollRef} style={styles.wrap} contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 + barInset }]} showsVerticalScrollIndicator={false}>
-      {canGoBack ? (
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.back}>
+      {/* The arrow only renders where it can go somewhere — at the tab root it
+          would be a dead tap. The heading below carries the screen either way,
+          which is why the title no longer has to substitute for it. */}
+      {canGoBack && (
+        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backCircle}>
           <ArrowLeft size={20} color={INK} strokeWidth={2} />
         </Pressable>
-      ) : (
-        // Without the arrow the screen would start flush against the status
-        // bar, so the tab root gets the title the pushed screen doesn't need.
-        <HandwrittenHeader style={styles.pageTitle}>browse</HandwrittenHeader>
       )}
 
+      <HandwrittenHeader style={styles.eyebrow}>browse</HandwrittenHeader>
+      <Text style={styles.title}>Find a pitch</Text>
+      <Text style={styles.subtitle}>book a game near you</Text>
+
       {/* Search (Figma 9:3) */}
-      <GlassCard variant="soft" round={14} padding={0}>
-        <View style={styles.searchBar}>
-          <Search size={20} color={MUTED} strokeWidth={1.8} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="search venues or matches"
-            placeholderTextColor={MUTED}
-            value={query}
-            onChangeText={setQuery}
-          />
-        </View>
-      </GlassCard>
+      <View style={styles.searchRow}>
+        <GlassCard variant="soft" round={26} padding={0} style={{ flex: 1 }}>
+          <View style={styles.searchBar}>
+            <Search size={20} color={MUTED} strokeWidth={1.8} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="search venues or matches"
+              placeholderTextColor={MUTED}
+              value={query}
+              onChangeText={setQuery}
+              returnKeyType="search"
+            />
+          </View>
+        </GlassCard>
+        {/* Area picker, not GPS. The design shows a locate control, but there
+            is no device-location wiring and no venue coordinates — so this
+            opens the area chooser, which is the real thing behind it. */}
+        <Pressable
+          onPress={() => router.push("/permission/location")}
+          style={styles.locateBtn}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel="Choose your area"
+        >
+          <LocateFixed size={20} color={colors.orange} strokeWidth={2} />
+        </Pressable>
+      </View>
 
       {/* Areas near you (Figma 3:12) */}
       {areas.length > 0 && (
@@ -162,32 +185,82 @@ export default function Browse() {
         </>
       )}
 
-      {/* Tabs (Figma 9:7 / 9:8) */}
-      <View style={styles.tabs}>
-        <Pressable onPress={() => setTab("venues")} onLayout={measure("venues")}>
-          <Text style={[styles.tab, tab === "venues" && styles.tabActive]}>venues</Text>
-        </Pressable>
-        <Pressable onPress={() => setTab("matches")} onLayout={measure("matches")}>
-          <Text style={[styles.tab, tab === "matches" && styles.tabActive]}>matches</Text>
-        </Pressable>
+      {/* A segmented control, not underlined tabs: the two halves are peers
+          and a filled thumb says which one you are on more plainly than a
+          2pt rule. Replaces the measured-underline machinery entirely. */}
+      <View style={styles.segment}>
+        {(["venues", "matches"] as const).map((t) => (
+          <Pressable
+            key={t}
+            onPress={() => setTab(t)}
+            style={[styles.segmentHalf, tab === t && styles.segmentOn]}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: tab === t }}
+          >
+            <Text style={[styles.segmentText, tab === t && styles.segmentTextOn]}>{t}</Text>
+          </Pressable>
+        ))}
       </View>
-      {/* Measured rather than hard-coded: the offsets were pixel values tied to
-          a tab gap that has since changed, so the bar drifted off its label. */}
-      <View style={[styles.underline, { marginLeft: tabBar.x, width: tabBar.w }]} />
+
+      {/* The count, from the data rather than the mock's "24 pitches near
+          you" — there is no distance, and the venue list is whatever the open
+          games actually name. */}
+      <View style={styles.countRow}>
+        <MapPin size={15} color={colors.orange} strokeWidth={2.2} />
+        <Text style={styles.countText}>
+          <Text style={styles.countStrong}>
+            {tab === "venues" ? venues.length : matches.length}
+          </Text>
+          {tab === "venues"
+            ? ` ${venues.length === 1 ? "venue" : "venues"} with games open`
+            : ` ${matches.length === 1 ? "match" : "matches"} open`}
+        </Text>
+      </View>
+
 
       {showSkeleton && <BrowseSkeleton />}
 
       {!showSkeleton && (tab === "venues"
-        ? venues.map(([name, { count, photo }]) => (
+        ? venues.map(([name, { count, photo, spots, area }]) => (
             <Pressable key={name} onPress={() => { setQuery(name); setTab("matches"); }}>
-              <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
-                <View style={styles.row}>
-                  <Image source={{ uri: getVenuePhoto(name, photo) }} style={styles.thumb} />
-                  <View style={styles.rowText}>
-                    <Text style={styles.rowTitle} numberOfLines={1}>{name}</Text>
-                    <Text style={styles.rowSub}>{count} {count === 1 ? "game" : "games"} open</Text>
+              <GlassCard variant="soft" round={22} padding={0} style={styles.venueCard}>
+                <View style={styles.venueRow}>
+                  <Image source={{ uri: getVenuePhoto(name, photo) }} style={styles.venueThumb} />
+                  <View style={styles.venueText}>
+                    <View style={styles.venueTitleRow}>
+                      <Text style={styles.venueName} numberOfLines={1}>{name}</Text>
+                      <ChevronRight size={18} color={MUTED} strokeWidth={2.2} />
+                    </View>
+
+                    {/* The mock puts "2.1 km away" here. There is no device
+                        location and no venue coordinates, so the district is
+                        what is actually known — and it is the thing a Riyadh
+                        player navigates by anyway. */}
+                    {!!area && (
+                      <View style={styles.venueMeta}>
+                        <Navigation size={12} color={MUTED} strokeWidth={2} />
+                        <Text style={styles.venueMetaText}>{area}</Text>
+                      </View>
+                    )}
+
+                    {/* Two pills, not four. The mock's Outdoor/Indoor needs a
+                        surface column and its 4.8 needs a ratings system;
+                        neither exists, and inventing them is exactly what the
+                        omitted star rating and distance were omitted for. */}
+                    <View style={styles.pillRow}>
+                      <View style={styles.pill}>
+                        <View style={styles.pillDot} />
+                        <Text style={styles.pillText}>
+                          {spots} {spots === 1 ? "spot" : "spots"} left
+                        </Text>
+                      </View>
+                      <View style={styles.pill}>
+                        <Text style={styles.pillText}>
+                          {count} {count === 1 ? "match" : "matches"}
+                        </Text>
+                      </View>
+                    </View>
                   </View>
-                  <Text style={styles.chevron}>›</Text>
                 </View>
               </GlassCard>
             </Pressable>
@@ -248,7 +321,62 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: "transparent" },
   content: { paddingHorizontal: 20, paddingBottom: 130 },
 
-  back: { height: 28, justifyContent: "center", marginBottom: 8 },
+  backCircle: {
+    width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
+    marginBottom: 18,
+  },
+
+  // Script eyebrow, big ink headline, muted line — the mock's masthead.
+  eyebrow: { fontSize: 22, color: colors.orange },
+  title: { fontSize: 34, fontWeight: "800", color: INK, marginTop: 2, letterSpacing: -0.5 },
+  subtitle: { fontSize: 15, color: MUTED, marginTop: 4 },
+
+  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 22 },
+  locateBtn: {
+    width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.72)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 2,
+  },
+
+  segment: {
+    flexDirection: "row", marginTop: 18, borderRadius: 26, padding: 5,
+    backgroundColor: "rgba(240,232,224,0.55)",
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.7)",
+  },
+  segmentHalf: { flex: 1, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  segmentOn: {
+    backgroundColor: "rgba(255,255,255,0.95)",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 2,
+  },
+  segmentText: { fontSize: 15, color: MUTED, fontWeight: "500" },
+  segmentTextOn: { color: INK, fontWeight: "700" },
+
+  // Bigger, rounder card than the old row: the mock gives the venue a block,
+  // not a list line. minHeight because the pill row wraps at larger type.
+  venueCard: { marginBottom: 14 },
+  venueRow: { flexDirection: "row", alignItems: "center", minHeight: 104, padding: 12 },
+  venueThumb: { width: 104, height: 80, borderRadius: 16, backgroundColor: "#EFE3D6" },
+  venueText: { flex: 1, marginLeft: 14 },
+  venueTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
+  venueName: { flex: 1, fontSize: 18, fontWeight: "700", color: INK },
+  venueMeta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
+  venueMetaText: { fontSize: 12.5, color: MUTED },
+
+  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 10 },
+  pill: {
+    flexDirection: "row", alignItems: "center", gap: 5,
+    height: 26, paddingHorizontal: 10, borderRadius: 13,
+    backgroundColor: "rgba(255,236,222,0.9)",
+  },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.orange },
+  pillText: { fontSize: 11.5, fontWeight: "600", color: "#A85A00" },
+
+  countRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 22, marginBottom: 14 },
+  countText: { fontSize: 14, color: MUTED },
+  countStrong: { fontWeight: "700", color: INK },
+
   pageTitle: { fontSize: 34, color: "#FF9F0A", marginBottom: 18 },
 
   // Ported from the Play tab, which Browse absorbed — geometry unchanged.
