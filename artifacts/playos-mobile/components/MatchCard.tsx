@@ -1,4 +1,4 @@
-import { View, Text, Pressable, StyleSheet, ImageBackground } from "react-native";
+import { View, Text, Pressable, StyleSheet } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Users, Shield, Gauge, ArrowRight } from "lucide-react-native";
 import { format } from "date-fns";
@@ -7,7 +7,7 @@ import { useGameRoster } from "@/lib/api";
 import { AvatarStack } from "./AvatarStack";
 import { PillButton } from "./PillButton";
 import { colors, radius, spacing } from "@/lib/theme";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import type { GameSummary } from "@/lib/api";
 
 /**
@@ -29,7 +29,6 @@ export function MatchCard({
   const router = useRouter();
   const spotsLeft = game.capacity - game.bookedCount;
   const teamSize = game.capacity / 2;
-  const photo = getVenuePhoto(game.pitchName, game.pitchPhotoUrl);
   // Roster fetch is cheap (paid bookings only) and only runs for cards that
   // are actually mounted — acceptable at PlayOS's current game volume.
   const { data: roster } = useGameRoster(game.id);
@@ -84,13 +83,13 @@ export function MatchCard({
   return (
     <Pressable onPress={onPress} style={styles.wrap}>
       <View style={styles.photoWrap}>
-        <ImageBackground source={{ uri: photo }} style={styles.photoCompact} imageStyle={styles.photoImage}>
+        <VenueArt name={game.pitchName} style={styles.photoCompact}>
           {spotsLeft > 0 && spotsLeft <= 3 && (
             <View style={styles.badge}>
               <Text style={styles.badgeText}>{spotsLeft} SPOT{spotsLeft === 1 ? "" : "S"} LEFT</Text>
             </View>
           )}
-        </ImageBackground>
+        </VenueArt>
       </View>
 
       <View style={styles.body}>

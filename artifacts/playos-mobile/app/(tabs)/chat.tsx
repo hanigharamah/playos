@@ -8,7 +8,7 @@ import { MessageCircle } from "lucide-react-native";
 import { useMyConversations } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -98,10 +98,7 @@ export default function Chat() {
         }
         renderItem={({ item }) => (
           <Pressable style={styles.row} onPress={() => router.push(`/chat/${item.id}`)}>
-            <Image
-              source={{ uri: getVenuePhoto(item.pitchName ?? "?", item.pitchPhotoUrl) }}
-              style={styles.avatar}
-            />
+            <VenueArt name={item.pitchName ?? "?"} style={styles.avatar} />
             <View style={styles.rowText}>
               <Text style={styles.name} numberOfLines={1}>{item.gameTitle ?? "Group chat"}</Text>
               <Text style={styles.preview} numberOfLines={2}>{item.lastMessage ?? "No messages yet"}</Text>

@@ -7,7 +7,7 @@ import { Avatar } from "@/components/Avatar";
 import { EmptyState } from "@/components/EmptyState";
 import { GlassCard } from "@/components/GlassCard";
 import { BtnOutline } from "@/components/BtnOutline";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { useGameLineup, useSignedAvatarUrls, lineupSentence, gameFillLabel, type GameSummary } from "@/lib/api";
 
 const INK = "#1C1C1E";
@@ -75,7 +75,7 @@ export function HomeNothingBooked({
       <Pressable onPress={() => router.push(`/game/${next.id}`)}>
         <GlassCard variant="soft" round={24} padding={19} style={styles.hero}>
           <View>
-            <Image source={{ uri: getVenuePhoto(next.pitchName, next.pitchPhotoUrl) }} style={styles.heroPhoto} />
+            <VenueArt name={next.pitchName} style={styles.heroPhoto} />
             {/* "needs 6 more" below the viable threshold, not "6 spots left".
                 A game that cannot start yet is a different offer, and saying
                 so is what stops someone booking a match that gets cancelled. */}
@@ -157,7 +157,7 @@ export function HomeNothingBooked({
               <Pressable key={g.id} onPress={() => router.push(`/game/${g.id}`)}>
                 <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
                   <View style={styles.row}>
-                    <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.rowThumb} />
+                    <VenueArt name={g.pitchName} style={styles.rowThumb} />
                     <View style={styles.rowText}>
                       <Text style={styles.rowTitle} numberOfLines={1}>{ts}v{ts}  ·  {g.pitchName}</Text>
                       <Text style={styles.rowSub}>

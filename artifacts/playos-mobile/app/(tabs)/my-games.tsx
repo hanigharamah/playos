@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, FlatList, RefreshControl, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
@@ -10,7 +10,7 @@ import { useGetMyBookings, type MyBooking } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { EmptyState } from "@/components/EmptyState";
 import { BookingsSkeleton, useDelayedVisible } from "@/components/Skeleton";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { serverNow } from "@/lib/serverTime";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { GlassCard } from "@/components/GlassCard";
@@ -155,10 +155,7 @@ export default function MyGames() {
           >
             <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
               <View style={styles.row}>
-                <Image
-                  source={{ uri: getVenuePhoto(item.game.pitchName, item.game.pitchPhotoUrl) }}
-                  style={styles.thumb}
-                />
+                <VenueArt name={item.game.pitchName} style={styles.thumb} />
                 <View style={styles.rowText}>
                   <Text style={[styles.rowMeta, cancelled && styles.rowMetaCancelled]}>
                     {cancelled

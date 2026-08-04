@@ -1,7 +1,5 @@
 import { useEffect } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, Image, ActivityIndicator, useWindowDimensions,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
@@ -16,7 +14,7 @@ import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
 import { GlassCard } from "@/components/GlassCard";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { screen } from "@/lib/analytics";
 
 // Measured off Figma 696:556 (Read Me palette section).
@@ -88,7 +86,7 @@ export default function MatchAutoCancelled() {
 
         <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
           <View style={styles.matchInner}>
-            <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+            <VenueArt name={game.pitchName} style={styles.thumb} />
             <View style={styles.matchText}>
               <Text style={styles.matchTitle} numberOfLines={1}>
                 {teamSize}v{teamSize} · {game.pitchName}

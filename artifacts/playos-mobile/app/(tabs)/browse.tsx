@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState, useRef } from "react";
-import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, Image, type LayoutChangeEvent } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TextInput, Pressable, type LayoutChangeEvent } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { Search, ArrowLeft, LocateFixed, MapPin, Navigation, ChevronRight } from "lucide-react-native";
 import { useListGames, usePitchMeta } from "@/lib/api";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { useMyLocation, sortByDistance, distanceKm, distanceLabel } from "@/lib/nearby";
 import { PitchSchematic } from "@/components/PitchSchematic";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
@@ -21,14 +21,18 @@ import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
 // Sampled off the Browse mock at 2x rather than the Figma tokens — the mock
-// runs materially darker on ink and colder on the greys, and its orange is a
-// vermilion (#FD6A03), not the amber `colors.orange` (#FF9F0A) the rest of the
-// app uses. Kept local to this screen: changing the shared token would repaint
-// every other screen against a mock that only covers this one.
+// runs materially darker on ink and colder on the greys.
+//
+// Its orange was screen-local at first, for exactly the reason you would
+// expect: repainting the shared token against a mock that covers one screen
+// is a big change from a small sample. It has since been promoted —
+// colors.orange IS the mock's vermilion now, app-wide — so this screen uses
+// the token and there is no second orange to drift from.
+//
+// INK and MUTED stay local. They are the mock's, they differ from the Figma
+// values on purpose, and nothing has argued they should be everyone's.
 const INK = "#0B0B0C";
 const MUTED = "#67676A";
-/** Browse-mock orange. See note above before promoting this to lib/theme. */
-const ORANGE = "#FD6A03";
 /** Card ink, one step lighter than the headline — mock samples ~(91,88,88). */
 const META = "#5B5858";
 
@@ -218,7 +222,7 @@ export default function Browse() {
           See the note on `venues` above. */}
       <View style={styles.countRow}>
         {/* Solid pin, not an outline — the mock's marker is filled. */}
-        <MapPin size={12} color={ORANGE} fill={ORANGE} strokeWidth={2} />
+        <MapPin size={12} color={colors.orange} fill={colors.orange} strokeWidth={2} />
         <Text style={styles.countText}>
           <Text style={styles.countStrong}>
             {tab === "venues" ? venues.length : matches.length}
@@ -314,7 +318,7 @@ export default function Browse() {
               <Pressable key={g.id} onPress={() => router.push(`/game/${g.id}`)}>
                 <GlassCard variant="soft" round={18} padding={0} style={styles.rowCard}>
                   <View style={styles.row}>
-                    <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.thumb} />
+                    <VenueArt name={g.pitchName} style={styles.thumb} />
                     <View style={styles.rowText}>
                       {/* Figma Match Row (323:315): format · venue, then when, then spots */}
                       <Text style={styles.rowTitle} numberOfLines={1}>
@@ -377,7 +381,7 @@ const styles = StyleSheet.create({
   // Title cap height measures 41px = 20.5pt, which is ~29pt of a 0.71-cap
   // face; the mock's headline face is narrower than SF, so the line runs wide
   // of the mock's 142pt at the size that matches its height. Height wins.
-  eyebrow: { fontSize: 17, color: ORANGE },
+  eyebrow: { fontSize: 17, color: colors.orange },
   title: { fontSize: 29, fontWeight: "800", color: INK, marginTop: 0, letterSpacing: -1 },
   subtitle: { fontSize: 12, color: "#8E8D8F", marginTop: 4 },
 
@@ -411,9 +415,9 @@ const styles = StyleSheet.create({
   venueTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
   venueName: { flex: 1, fontSize: 14, fontWeight: "700", color: INK, lineHeight: 18 },
   venueMeta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 },
-  venueMetaText: { flex: 1, fontSize: 10, color: META },
-  venueTail: { fontSize: 10, color: "#706E6E", marginTop: 8 },
-  venueTailAccent: { color: ORANGE, fontWeight: "600" },
+  venueMetaText: { flex: 1, fontSize: 11, color: META },
+  venueTail: { fontSize: 11.5, color: "#706E6E", marginTop: 8 },
+  venueTailAccent: { color: colors.orange, fontWeight: "600" },
 
   pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   pill: {
@@ -422,18 +426,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#FAF1EA",
   },
   pillWarm: { backgroundColor: "#FCF1E7" },
-  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: ORANGE },
-  pillText: { fontSize: 10, fontWeight: "600", color: "#363739" },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.orange },
+  pillText: { fontSize: 11, fontWeight: "600", color: "#363739" },
   // The mock runs this in full-strength orange rather than the dark
   // `colors.orangeText` this app reserves for small type. #FD6A03 on the pill
   // measures ~2.8:1 — better than the amber it replaces, still under 4.5:1.
-  pillTextWarm: { color: ORANGE },
+  pillTextWarm: { color: colors.orange },
 
   countRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 19, marginBottom: 7 },
   countText: { fontSize: 12, color: INK },
   countStrong: { fontWeight: "700", color: INK },
 
-  pageTitle: { fontSize: 34, color: "#FF9F0A", marginBottom: 18 },
+  pageTitle: { fontSize: 34, color: colors.orange, marginBottom: 18 },
 
   // Ported from the Play tab, which Browse absorbed — geometry unchanged.
 

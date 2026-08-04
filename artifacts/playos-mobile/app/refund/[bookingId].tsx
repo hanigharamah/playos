@@ -1,7 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, Alert, useWindowDimensions,
-} from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Alert, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay } from "date-fns";
@@ -17,7 +15,7 @@ import { Btn3D } from "@/components/Btn3D";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Callout } from "@/components/Callout";
 import { GlassCard } from "@/components/GlassCard";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { screen } from "@/lib/analytics";
 
 // Measured off the Figma frames (668:697 / 669:717), matching the Read Me
@@ -135,7 +133,7 @@ export default function RefundScreen() {
   const matchCard = (
     <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
       <View style={styles.matchInner}>
-        <Image source={{ uri: getVenuePhoto(match.pitchName, match.photoUrl) }} style={styles.thumb} />
+        <VenueArt name={match.pitchName} style={styles.thumb} />
         <View style={styles.matchText}>
           <Text style={styles.matchTitle} numberOfLines={1}>
             {teamSize}v{teamSize} · {match.pitchName}

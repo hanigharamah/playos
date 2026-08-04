@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ImageBackground, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { ArrowLeft, ArrowRight } from "lucide-react-native";
@@ -7,7 +7,7 @@ import { format, isSameDay } from "date-fns";
 import { useGetGame, useGameRoster } from "@/lib/api";
 import { serverNow } from "@/lib/serverTime";
 import { AvatarStack } from "@/components/AvatarStack";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { colors, spacing, radius } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
 
@@ -75,7 +75,7 @@ export default function Countdown() {
   const names = (roster?.entries ?? []).map((e) => e.name);
 
   return (
-    <ImageBackground source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.wrap}>
+    <VenueArt name={game.pitchName} style={styles.wrap}>
       <LinearGradient colors={["rgba(18,20,28,0.35)", "rgba(18,20,28,0.9)"]} style={StyleSheet.absoluteFill} />
       <Pressable onPress={() => router.back()} style={styles.back} hitSlop={10}>
         <ArrowLeft size={20} color="#FFFFFF" />
@@ -117,7 +117,7 @@ export default function Countdown() {
           </Pressable>
         </View>
       </View>
-    </ImageBackground>
+    </VenueArt>
   );
 }
 

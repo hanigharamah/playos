@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, ActivityIndicator, Platform, Alert } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, ActivityIndicator, Platform, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -8,7 +8,7 @@ import { format, isSameDay } from "date-fns";
 import { ArrowLeft, Check, AlertTriangle } from "lucide-react-native";
 import { useGetMyBookings, useCancelBooking, FREE_CANCEL_HOURS } from "@/lib/api";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { useServerCountdown } from "@/lib/serverTime";
 import { colors, spacing } from "@/lib/theme";
 import { screen } from "@/lib/analytics";
@@ -100,10 +100,7 @@ export default function CancellationConfirm() {
 
         {/* Match summary (Figma 368:678) */}
         <View style={styles.matchCard}>
-          <Image
-            source={{ uri: getVenuePhoto(booking.game.pitchName, booking.game.pitchPhotoUrl) }}
-            style={styles.thumb}
-          />
+          <VenueArt name={booking.game.pitchName} style={styles.thumb} />
           <View style={styles.matchText}>
             <Text style={styles.matchTitle} numberOfLines={1}>
               {teamSize}v{teamSize} · {booking.game.pitchName}

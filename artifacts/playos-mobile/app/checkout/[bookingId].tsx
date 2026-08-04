@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, Pressable, ScrollView, Alert, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay, subHours } from "date-fns";
@@ -10,7 +10,7 @@ import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { Btn3D } from "@/components/Btn3D";
 import { GlassCard } from "@/components/GlassCard";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { screen, track } from "@/lib/analytics";
 
 type Method = "cash" | "stcpay";
@@ -139,7 +139,7 @@ export default function Checkout() {
         {game && (
           <GlassCard variant="soft" round={18} padding={0}>
             <View style={styles.matchInner}>
-              <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+              <VenueArt name={game.pitchName} style={styles.thumb} />
               <View style={styles.matchText}>
                 <Text style={styles.matchTitle} numberOfLines={1}>
                   {Math.floor(game.capacity / 2)}v{Math.floor(game.capacity / 2)} · {game.pitchName}

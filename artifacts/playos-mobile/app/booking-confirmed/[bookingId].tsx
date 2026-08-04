@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, Linking, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, Pressable, Linking, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -10,7 +10,7 @@ import { HandwrittenHeader } from "@/components/HandwrittenHeader";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { Btn3D } from "@/components/Btn3D";
 import { GlassCard } from "@/components/GlassCard";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { colors, spacing } from "@/lib/theme";
 import { useAuth } from "@/lib/auth";
 import { registerForPush } from "@/lib/notifications";
@@ -137,7 +137,7 @@ export default function BookingConfirmed() {
       {game && kickoff && (
         <GlassCard variant="soft" round={18} padding={0} style={styles.matchCard}>
           <View style={styles.matchInner}>
-            <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.thumb} />
+            <VenueArt name={game.pitchName} style={styles.thumb} />
             <View style={styles.matchText}>
               <Text style={styles.matchTitle} numberOfLines={1}>{teamSize}v{teamSize} · {game.pitchName}</Text>
               <Text style={styles.matchSub}>

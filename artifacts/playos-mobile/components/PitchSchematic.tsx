@@ -32,7 +32,17 @@ const DOT = "#FD6A03";
 const VB_W = 320;
 const VB_H = 176;
 
-type Props = { name: string; width?: number; height?: number };
+type Props = {
+  name: string;
+  width?: number;
+  height?: number;
+  /**
+   * How the plan fits its box. "meet" letterboxes (the Browse card, whose box
+   * already matches the mock's 156x86); "slice" fills and crops, which is what
+   * a photo's resizeMode="cover" did on every screen VenueArt replaced.
+   */
+  fit?: "meet" | "slice";
+};
 
 /** Football pitch with the markings the mock actually draws. */
 function Pitch({ x, y, w, h }: { x: number; y: number; w: number; h: number }) {
@@ -274,7 +284,7 @@ function hash(name: string) {
   return h;
 }
 
-export function PitchSchematic({ name, width = 156, height = 86 }: Props) {
+export function PitchSchematic({ name, width = 156, height = 86, fit = "meet" }: Props) {
   const plan = useMemo(() => {
     const k = key(name);
     if (k.includes("arenariyadh")) return <PlanArena />;
@@ -285,7 +295,12 @@ export function PitchSchematic({ name, width = 156, height = 86 }: Props) {
   }, [name]);
 
   return (
-    <Svg width={width} height={height} viewBox={`0 0 ${VB_W} ${VB_H}`}>
+    <Svg
+      width={width}
+      height={height}
+      viewBox={`0 0 ${VB_W} ${VB_H}`}
+      preserveAspectRatio={`xMidYMid ${fit}`}
+    >
       {plan}
     </Svg>
   );

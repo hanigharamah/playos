@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { format, isSameDay, isTomorrow } from "date-fns";
 import { CircleDot, Info } from "lucide-react-native";
@@ -7,7 +7,7 @@ import { Callout } from "@/components/Callout";
 import { GlassCard } from "@/components/GlassCard";
 import { BtnOutline } from "@/components/BtnOutline";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { useGetMyBookings } from "@/lib/api";
 
 const INK = "#1C1C1E";
@@ -62,10 +62,7 @@ export function PlayNothingLive() {
           <Pressable style={styles.nextPress} onPress={() => router.push(`/game/${next.gameId}`)}>
             <GlassCard variant="soft" round={20} padding={0}>
               <View style={styles.nextRow}>
-                <Image
-                  source={{ uri: getVenuePhoto(next.game.pitchName, next.game.pitchPhotoUrl) }}
-                  style={styles.nextThumb}
-                />
+                <VenueArt name={next.game.pitchName} style={styles.nextThumb} />
                 <View style={styles.nextText}>
                   <Text style={styles.nextTitle} numberOfLines={1}>
                     {next.game.capacity / 2}v{next.game.capacity / 2}  ·  {next.game.pitchName}

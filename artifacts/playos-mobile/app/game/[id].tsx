@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Share, Pressable, Image, Linking, Platform } from "react-native";
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator, Share, Pressable, Linking, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
@@ -17,7 +17,7 @@ import { MatchGone } from "@/components/MatchGone";
 import { GameDetailSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { colors, spacing } from "@/lib/theme";
 import { screen, track } from "@/lib/analytics";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 
 function isWithinHours(isoTime: string, hours: number): boolean {
   const ms = new Date(isoTime).getTime() - Date.now();
@@ -143,7 +143,7 @@ export default function GameDetail() {
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Full-bleed hero photo (Figma 602:8 — 455×251, bleeds both edges) */}
         <View style={[styles.hero, { height: 214 + insets.top }]} pointerEvents="none">
-          <Image source={{ uri: getVenuePhoto(game.pitchName, game.pitchPhotoUrl) }} style={styles.heroImg} />
+          <VenueArt name={game.pitchName} style={styles.heroImg} />
           <LinearGradient
             colors={["transparent", "rgba(255,248,240,0.65)", "#FFF8F0"]}
             locations={[0.45, 0.82, 1]}

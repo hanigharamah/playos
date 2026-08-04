@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { Search, Info } from "lucide-react-native";
 import { EmptyCard, EmptyEyebrow } from "@/components/EmptyState";
@@ -6,7 +6,7 @@ import { Callout } from "@/components/Callout";
 import { GlassCard } from "@/components/GlassCard";
 import { BtnOutline } from "@/components/BtnOutline";
 import { Btn3D } from "@/components/Btn3D";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import type { GameSummary } from "@/lib/api";
 
 const INK = "#1C1C1E";
@@ -101,7 +101,7 @@ export function VenuesEmpty({ query, allGames, onClearSearch, onPickVenue }: Pro
             <Pressable key={v.name} style={styles.venuePress} onPress={() => onPickVenue?.(v.name)}>
               <GlassCard variant="soft" round={16} padding={0}>
                 <View style={styles.venueRow}>
-                  <Image source={{ uri: getVenuePhoto(v.name, v.photo) }} style={styles.venueThumb} />
+                  <VenueArt name={v.name} style={styles.venueThumb} />
                   <View style={styles.venueText}>
                     <Text style={styles.venueName} numberOfLines={1}>{v.name}</Text>
                     <Text style={styles.venueSub}>

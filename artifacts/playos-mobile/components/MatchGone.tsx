@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet, Pressable, Image } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { useRouter } from "expo-router";
 import { format, isSameDay } from "date-fns";
 import { useListGames } from "@/lib/api";
@@ -6,7 +6,7 @@ import { ErrorScreen } from "@/components/ErrorScreen";
 import { Callout } from "@/components/Callout";
 import { GlassCard } from "@/components/GlassCard";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
-import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { VenueArt } from "@/components/VenueArt";
 import { colors } from "@/lib/theme";
 
 /**
@@ -49,7 +49,7 @@ export function MatchGone() {
               <Pressable key={g.id} onPress={() => router.replace(`/game/${g.id}`)}>
                 <GlassCard variant="soft" round={18} padding={0} style={styles.altCard}>
                   <View style={styles.altRow}>
-                    <Image source={{ uri: getVenuePhoto(g.pitchName, g.pitchPhotoUrl) }} style={styles.altThumb} />
+                    <VenueArt name={g.pitchName} style={styles.altThumb} />
                     <View style={{ flex: 1, marginLeft: 12 }}>
                       <Text style={styles.altTitle}>{teamSize}v{teamSize}  ·  {g.pitchName}</Text>
                       <Text style={styles.altSub}>
