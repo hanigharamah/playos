@@ -165,6 +165,7 @@ export const qk = {
   myBookings: ["my-bookings"] as const,
   myCredits: ["my-credits"] as const,
   settings: ["settings"] as const,
+  pitchMeta: ["pitch-meta"] as const,
 };
 
 // ─── Auth ───────────────────────────────────────────────────────────────
@@ -1560,5 +1561,53 @@ export function useReconfirmBooking() {
       if (error) throw error;
     },
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.myBookings }),
+  });
+}
+
+// ─── Pitches ────────────────────────────────────────────────────────────
+
+/** What the operator has recorded about a venue, beyond its name. */
+export type PitchMeta = {
+  surface: "indoor" | "outdoor" | null;
+  lat: number | null;
+  lng: number | null;
+};
+
+/**
+ * Venue metadata, keyed by name.
+ *
+ * Keyed by NAME rather than id because games.pitch_name is denormalized free
+ * text with no foreign key — the same reason fetchPitchPhotos matches on name.
+ * A game whose pitch_name has no matching row simply gets no metadata, which
+ * is the typo case the pitch_gaps view exists to surface to the operator.
+ *
+ * Fetched once for the whole table rather than per visible venue: there are
+ * four rows, and an `.in()` list would re-fetch on every keystroke as the
+ * search narrows the venue list.
+ */
+export function usePitchMeta() {
+  return useQuery({
+    queryKey: qk.pitchMeta,
+    // Coordinates and surface change when an operator edits them, which is
+    // approximately never. An hour keeps the list from re-sorting mid-scroll.
+    staleTime: 60 * 60 * 1000,
+    queryFn: async (): Promise<Map<string, PitchMeta>> => {
+      const { data, error } = await supabase
+        .from("pitches")
+        .select("name, surface, lat, lng");
+      if (error) throw error;
+      return new Map(
+        (data ?? []).map((p: any) => [
+          p.name as string,
+          {
+            surface: (p.surface as PitchMeta["surface"]) ?? null,
+            // The DB constraint guarantees lat and lng are set together, so a
+            // half-pair cannot arrive here and be read as 0 km.
+            lat: p.lat ?? null,
+            lng: p.lng ?? null,
+          },
+        ]),
+      );
+    },
   });
 }

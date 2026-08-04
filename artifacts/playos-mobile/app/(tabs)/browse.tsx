@@ -5,8 +5,9 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { format, isSameDay } from "date-fns";
 import { Search, ArrowLeft, LocateFixed, MapPin, Navigation, ChevronRight } from "lucide-react-native";
-import { useListGames } from "@/lib/api";
+import { useListGames, usePitchMeta } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { useMyLocation, sortByDistance, distanceKm, distanceLabel } from "@/lib/nearby";
 import { PitchSchematic } from "@/components/PitchSchematic";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { VenuesEmpty, MatchesEmpty } from "@/components/BrowseEmpty";
@@ -86,43 +87,49 @@ export default function Browse() {
     );
   };
 
+  const { data: pitchMeta } = usePitchMeta();
+  const { coords: me, status: locStatus, request: requestLocation } = useMyLocation();
+
+  /**
+   * The venue list, nearest-first when that is knowable.
+   *
+   * "Knowable" needs two things that are independently absent: a location fix
+   * the player granted, and coordinates an operator typed in. When either is
+   * missing this falls back to most-open-games-first — the order the screen
+   * shipped with — rather than to an arbitrary one. A venue without
+   * coordinates keeps its row and sorts after the located ones; it still has
+   * real bookable games and hiding it would hide football.
+   */
   const venues = useMemo(() => {
-    // Also totals the open spots across a venue's games and keeps its district,
-    // which is what the card shows in place of the mock's distance. `tonight`
-    // and `next` are the two real values that fill the mock's Outdoor/rating
-    // pill slot and its "4 matches tonight" line — both derived from
-    // kickoffTime, neither invented.
-    const now = new Date();
-    const map = new Map<
-      string,
-      { count: number; spots: number; area: string | null; tonight: number; next: Date | null }
-    >();
+    const map = new Map<string, {
+      count: number; photo: string | null; spots: number; area: string | null;
+      tonight: number; next: Date | null;
+    }>();
     for (const g of matches) {
       const e = map.get(g.pitchName);
       const kickoff = new Date(g.kickoffTime);
-      const prevNext = e?.next ?? null;
       map.set(g.pitchName, {
         count: (e?.count ?? 0) + 1,
+        photo: e?.photo ?? g.pitchPhotoUrl,
         spots: (e?.spots ?? 0) + Math.max(0, g.capacity - g.bookedCount),
         area: e?.area ?? g.locationText ?? null,
-        tonight: (e?.tonight ?? 0) + (isSameDay(kickoff, now) ? 1 : 0),
-        next: !prevNext || kickoff < prevNext ? kickoff : prevNext,
+        tonight: (e?.tonight ?? 0) + (isSameDay(kickoff, new Date()) ? 1 : 0),
+        // Soonest, not first seen — the feed is not guaranteed sorted.
+        next: !e?.next || kickoff < e.next ? kickoff : e.next,
       });
     }
-    return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
-  }, [matches]);
 
-  // Areas near you (Figma 3:12) — carried over from the Play tab, which this
-  // screen absorbed. Derived from the whole feed, not the filtered list, so
-  // the strip stays put while a search narrows the rows beneath it.
-  const areas = useMemo(() => {
-    const map = new Map<string, { count: number; photo: string | null }>();
-    for (const g of games ?? []) {
-      const existing = map.get(g.pitchName);
-      map.set(g.pitchName, { count: (existing?.count ?? 0) + 1, photo: existing?.photo ?? g.pitchPhotoUrl });
-    }
-    return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count).slice(0, 6);
-  }, [games]);
+    const entries = Array.from(map.entries());
+    return sortByDistance(
+      entries,
+      me,
+      ([name]) => {
+        const p = pitchMeta?.get(name);
+        return p?.lat != null && p?.lng != null ? { lat: p.lat, lng: p.lng } : null;
+      },
+      (a, b) => b[1].count - a[1].count,
+    );
+  }, [matches, me, pitchMeta]);
 
   // At a tab root there is nothing to go back to, so the arrow would be a dead
   // tap. It still renders when Browse was pushed — from activity, refund, the
@@ -161,51 +168,31 @@ export default function Browse() {
               onChangeText={setQuery}
               returnKeyType="search"
             />
-            {/* Area picker, not GPS. The design shows a locate control, but
-                there is no device-location wiring and no venue coordinates —
-                so this opens the area chooser, which is the real thing behind
-                it. Dark icon, not orange: the mock draws it in ink. */}
+            {/* Asks for location, which is what a locate control should do.
+                Deliberately NOT asked for on mount: a permission sheet that
+                appears the moment Browse opens, before the player knows why,
+                is how you earn a permanent denial — and iOS never asks twice.
+                Here the player has just tapped the thing that means "sort by
+                how close these are", so the prompt has a reason attached.
+                Falls back to the area picker once denied, since that is then
+                the only way left to narrow by place. Dark icon, not orange:
+                the mock draws it in ink. */}
             <Pressable
-              onPress={() => router.push("/permission/location")}
+              onPress={async () => {
+                if (locStatus === "denied") { router.push("/permission/location"); return; }
+                const ok = await requestLocation();
+                if (!ok) router.push("/permission/location");
+              }}
               style={styles.locateBtn}
               hitSlop={10}
               accessibilityRole="button"
-              accessibilityLabel="Choose your area"
+              accessibilityLabel="Sort pitches by how close they are"
             >
               <LocateFixed size={14} color={INK} strokeWidth={2} />
             </Pressable>
           </View>
         </GlassCard>
       </View>
-
-      {/* Areas near you (Figma 3:12) */}
-      {areas.length > 0 && (
-        <>
-          <HandwrittenHeader style={styles.areasLabel}>areas near you</HandwrittenHeader>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tileRow}>
-            {areas.map(([name, { count, photo }], i) => (
-              <Pressable
-                key={name}
-                style={styles.areaTile}
-                onPress={() => { setQuery(name); setTab("matches"); }}
-              >
-                <Image source={{ uri: getVenuePhoto(name, photo) }} style={StyleSheet.absoluteFill} />
-                <LinearGradient colors={["rgba(0,0,0,0.05)", "rgba(0,0,0,0.62)"]} style={StyleSheet.absoluteFill} />
-                {i === 0 && (
-                  <View style={styles.closestBadge}>
-                    <Text style={styles.closestBadgeText}>most games</Text>
-                  </View>
-                )}
-                <View style={styles.areaTileText}>
-                  <Text style={styles.areaName} numberOfLines={2}>{name}</Text>
-                  {/* TODO: prefix travel time once device location is wired up */}
-                  <Text style={styles.areaMeta}>{count} {count === 1 ? "game" : "games"}</Text>
-                </View>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </>
-      )}
 
       {/* A segmented control, not underlined tabs: the two halves are peers
           and a filled thumb says which one you are on more plainly than a
@@ -224,9 +211,11 @@ export default function Browse() {
         ))}
       </View>
 
-      {/* The count, from the data rather than the mock's "24 pitches near
-          you" — there is no distance, and the venue list is whatever the open
-          games actually name. */}
+      {/* "N pitches near you". The count is real — it is the venues that
+          actually have open games. Whether "near" is true depends on
+          `sortedByDistance`: with a fix and coordinates the list really is
+          nearest-first, and without either it falls back to most-games-first.
+          See the note on `venues` above. */}
       <View style={styles.countRow}>
         {/* Solid pin, not an outline — the mock's marker is filled. */}
         <MapPin size={12} color={ORANGE} fill={ORANGE} strokeWidth={2} />
@@ -235,7 +224,7 @@ export default function Browse() {
             {tab === "venues" ? venues.length : matches.length}
           </Text>
           {tab === "venues"
-            ? ` ${venues.length === 1 ? "venue" : "venues"} with games open`
+            ? ` ${venues.length === 1 ? "pitch" : "pitches"} near you`
             : ` ${matches.length === 1 ? "match" : "matches"} open`}
         </Text>
       </View>
@@ -256,22 +245,31 @@ export default function Browse() {
                       <ChevronRight size={16} color="#6F6E71" strokeWidth={2.2} />
                     </View>
 
-                    {/* The mock puts "2.1 km away" here. There is no device
-                        location and no venue coordinates, so the district is
-                        what is actually known — and it is the thing a Riyadh
-                        player navigates by anyway. */}
-                    {!!area && (
-                      <View style={styles.venueMeta}>
-                        <Navigation size={10} color={META} strokeWidth={2} />
-                        <Text style={styles.venueMetaText} numberOfLines={1}>{area}</Text>
-                      </View>
-                    )}
+                    {/* The mock's "2.1 km away". Real when the player has
+                        granted location AND the operator has recorded this
+                        venue's coordinates; the district is the fallback when
+                        either is missing, and it is what a Riyadh player
+                        navigates by anyway. Never both — one line, one fact. */}
+                    {(() => {
+                      const p = pitchMeta?.get(name);
+                      const km = me && p?.lat != null && p?.lng != null
+                        ? distanceKm(me, { lat: p.lat, lng: p.lng })
+                        : null;
+                      const line = km != null ? distanceLabel(km) : area;
+                      if (!line) return null;
+                      return (
+                        <View style={styles.venueMeta}>
+                          <Navigation size={10} color={META} strokeWidth={2} />
+                          <Text style={styles.venueMetaText} numberOfLines={1}>{line}</Text>
+                        </View>
+                      );
+                    })()}
 
-                    {/* Two pills, not three. The mock's Outdoor/Indoor needs a
-                        surface column and its 4.8 needs a ratings system;
-                        neither exists, and inventing them is exactly what the
-                        omitted star rating and distance were omitted for. The
-                        second slot carries the next kickoff, which is real. */}
+                    {/* Three slots in the mock; ratings are cancelled, so the
+                        third is the next kickoff. The surface pill renders
+                        only when the operator has recorded one — null means
+                        "not said yet", and defaulting it to Outdoor would be
+                        a guess printed as a fact. */}
                     <View style={styles.pillRow}>
                       <View style={[styles.pill, styles.pillWarm]}>
                         <View style={styles.pillDot} />
@@ -279,6 +277,11 @@ export default function Browse() {
                           {spots} {spots === 1 ? "spot" : "spots"} left
                         </Text>
                       </View>
+                      {!!pitchMeta?.get(name)?.surface && (
+                        <View style={styles.pill}>
+                          <Text style={styles.pillText}>{pitchMeta.get(name)!.surface}</Text>
+                        </View>
+                      )}
                       {!!next && (
                         <View style={styles.pill}>
                           <Text style={styles.pillText}>next {format(next, "h:mm a").toLowerCase()}</Text>
@@ -433,22 +436,6 @@ const styles = StyleSheet.create({
   pageTitle: { fontSize: 34, color: "#FF9F0A", marginBottom: 18 },
 
   // Ported from the Play tab, which Browse absorbed — geometry unchanged.
-  areasLabel: { fontSize: 20, marginTop: spacing.xl },
-  tileRow: { gap: 10, marginTop: spacing.md, paddingRight: spacing.lg },
-  areaTile: {
-    width: 105, height: 130, borderRadius: 16, overflow: "hidden", justifyContent: "flex-end",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
-  },
-  closestBadge: {
-    position: "absolute", top: 8, left: 8,
-    backgroundColor: "rgba(255,138,0,0.9)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    paddingHorizontal: 8, paddingVertical: 3, borderRadius: 11,
-    shadowColor: "#E56600", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 8, elevation: 2,
-  },
-  closestBadgeText: { fontSize: 10, fontWeight: "600", color: "#FFFFFF" },
-  areaTileText: { padding: 10 },
-  areaName: { fontSize: 13, fontWeight: "700", color: "#FFFFFF" },
-  areaMeta: { fontSize: 10, color: "#FFFFFF", marginTop: 4 },
 
   // Layout only — fill, stroke and shadows come from <GlassCard>. minHeight
   // rather than the height it was: the field holds text.
