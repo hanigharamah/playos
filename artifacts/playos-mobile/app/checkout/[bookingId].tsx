@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
   // Layout only — fill, stroke and shadows come from <GlassCard>, and the row
   // has to sit on the inner view the children lay out in.
   matchInner: { flexDirection: "row", minHeight: 92, padding: 11 },
-  thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
+  thumb: { width: 68, height: 68, borderRadius: 14 },
   matchText: { flex: 1, marginLeft: 12, paddingTop: 4 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
   matchSub: { fontSize: 13, color: MUTED, marginTop: 8 },

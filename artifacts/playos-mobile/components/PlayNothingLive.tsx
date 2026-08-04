@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   // so the glass fills exactly the box the hand-rolled card used to.
   nextPress: { alignSelf: "stretch", maxWidth: 350, marginTop: 9 },
   nextRow: { flexDirection: "row", alignItems: "center", minHeight: 104, paddingHorizontal: 13 },
-  nextThumb: { width: 64, height: 64, borderRadius: 14, backgroundColor: "#CFD8C4" },
+  nextThumb: { width: 64, height: 64, borderRadius: 14 },
   nextText: { flex: 1, marginLeft: 14 },
   nextTitle: { fontSize: 16, fontWeight: "600", color: INK },
   nextSub: { fontSize: 13, color: MUTED, marginTop: 6 },

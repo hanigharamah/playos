@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
   // 64 it was — the row holds two lines of text.
   venuePress: { alignSelf: "stretch", maxWidth: 350, marginTop: 12 },
   venueRow: { flexDirection: "row", alignItems: "center", minHeight: 64, paddingHorizontal: 11 },
-  venueThumb: { width: 44, height: 44, borderRadius: 10, backgroundColor: "#CFD8C4" },
+  venueThumb: { width: 44, height: 44, borderRadius: 10 },
   venueText: { flex: 1, marginLeft: 12 },
   venueName: { fontSize: 15, fontWeight: "600", color: INK },
   venueSub: { fontSize: 12.5, color: MUTED, marginTop: 5 },

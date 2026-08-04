@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   // lay out in.
   matchCard: { marginTop: 17 },
   matchInner: { flexDirection: "row", alignItems: "center", minHeight: 92, padding: 11 },
-  thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
+  thumb: { width: 68, height: 68, borderRadius: 14 },
   matchText: { flex: 1, marginLeft: 12 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
   matchSub: { fontSize: 13, color: MUTED, marginTop: 5 },

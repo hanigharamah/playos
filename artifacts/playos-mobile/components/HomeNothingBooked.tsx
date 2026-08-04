@@ -185,7 +185,7 @@ const styles = StyleSheet.create({
 
   // Geometry only — fill, stroke and shadows come from <GlassCard>.
   hero: { marginTop: 12 },
-  heroPhoto: { height: 110, borderRadius: 16, backgroundColor: "#CFD8C4" },
+  heroPhoto: { height: 110, borderRadius: 16 },
   spotsBadge: {
     position: "absolute", left: 12, top: 12, height: 26, borderRadius: 13,
     paddingHorizontal: 12, alignItems: "center", justifyContent: "center",
@@ -217,7 +217,7 @@ const styles = StyleSheet.create({
   rowCard: { marginBottom: 12 },
   // minHeight, not the fixed 68 it was: the row holds two lines of text.
   row: { flexDirection: "row", alignItems: "center", minHeight: 68, padding: 9 },
-  rowThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
+  rowThumb: { width: 48, height: 48, borderRadius: 12 },
   rowText: { flex: 1, marginLeft: 12 },
   rowTitle: { fontSize: 15, fontWeight: "600", color: INK },
   rowSub: { fontSize: 12.5, color: MUTED, marginTop: 5 },

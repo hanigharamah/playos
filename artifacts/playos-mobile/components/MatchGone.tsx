@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
 
   altBlock: { marginTop: 24 },
   altLabel: { fontSize: 22, color: "#FD6A03", marginBottom: 10, marginLeft: 4 },
-  altThumb: { width: 48, height: 48, borderRadius: 12, backgroundColor: "#CFD8C4" },
+  altThumb: { width: 48, height: 48, borderRadius: 12 },
   altCard: { marginBottom: 12 },
   // minHeight, not the fixed 68 it was: the row holds two lines of text.
   altRow: { flexDirection: "row", alignItems: "center", minHeight: 68, padding: 9 },

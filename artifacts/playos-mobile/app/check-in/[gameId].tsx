@@ -210,7 +210,7 @@ const styles = StyleSheet.create({
   // and its padding sit on the inner view the children lay out in.
   matchCard: { marginTop: 26 },
   matchInner: { flexDirection: "row", minHeight: 92, padding: 11 },
-  thumb: { width: 68, height: 68, borderRadius: 14, backgroundColor: "#CFD8C4" },
+  thumb: { width: 68, height: 68, borderRadius: 14 },
   matchText: { flex: 1, marginLeft: 12, paddingTop: 6 },
   matchTitle: { fontSize: 16, fontWeight: "600", color: INK },
   matchSub: { fontSize: 13, color: MUTED, marginTop: 6 },
