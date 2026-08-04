@@ -8,6 +8,7 @@ import { format, isSameDay } from "date-fns";
 import { MessageCircle } from "lucide-react-native";
 import { useGetMyBookings, useGameRoster, useReconfirmBooking, useGetOrCreateGameChat, type MyBooking } from "@/lib/api";
 import { serverNow, syncServerTime } from "@/lib/serverTime";
+import { useMyRefundChoices } from "@/lib/refunds";
 
 /**
  * Match-day mini-bar (Figma 834:136 / 211 / 248 / 285, placement 834:470).
@@ -144,6 +145,12 @@ export function MatchDayBar() {
   const gameChat = useGetOrCreateGameChat();
   const roster = useGameRoster(active?.state === "checkedIn" ? active.booking.gameId : null);
 
+  // What the player already decided about the money, if anything. Called
+  // unconditionally, above the early return, because hook order cannot depend
+  // on whether a match happens to be cancelled.
+  const { data: refundChoices } = useMyRefundChoices();
+  const refundChoice = active?.state === "cancelled" ? refundChoices?.get(active.booking.id) : undefined;
+
   if (!active) return null;
 
   const { booking, state } = active;
@@ -176,7 +183,13 @@ export function MatchDayBar() {
       title: "match cancelled",
       // The money is the point. Says what happens next rather than only what
       // went wrong, because the player did nothing and is owed a choice.
-      sub: `${booking.game.pitchName}  ·  choose cash or a token`,
+      // Once the choice is made the bar must stop asking for it. A token
+      // settles immediately and the booking leaves this list entirely, so the
+      // only case that reaches here with a choice is cash, which waits on the
+      // operator to actually send the money.
+      sub: refundChoice?.choice === "cash"
+        ? `${booking.game.pitchName}  ·  cash refund on its way`
+        : `${booking.game.pitchName}  ·  choose cash or a token`,
     },
     reconfirm: {
       glyph: "?",

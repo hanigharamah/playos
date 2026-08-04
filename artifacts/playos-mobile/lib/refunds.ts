@@ -26,6 +26,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "./supabase";
 import { useServerCountdown } from "./serverTime";
+import { qk } from "./api";
 
 /** Hours the player has to choose cash or token. Server stamps the deadline. */
 export const REFUND_WINDOW_HOURS = 48;
@@ -166,43 +167,105 @@ export function refundChoiceOpenedAt(row: RefundChoiceRow): number {
 }
 
 /**
- * NOT IMPLEMENTED — there is no backend to write a refund choice to.
+ * Write the player's refund choice.
  *
- * Writing "cash" needs public.refund_choices (specified in
- * supabase/2026-07-operator-surface.sql, migration not applied) plus the
- * settlement sweep that actually moves the money. Writing "token" needs all of
- * that AND a token ledger with a 30-day expiry, which does not exist anywhere
- * in the schema — users.credits is a bare integer with no issue date, no
- * expiry and no audit trail, so incrementing it would silently mint money that
- * never expires.
+ * Goes through the `choose_refund` RPC rather than updating `refund_choices`
+ * directly, because three of the rules cannot be enforced from a client:
  *
- * Deliberately throws rather than optimistically updating: this is the player
- * telling us what to do with their money, and a write that quietly goes
- * nowhere is worse than an error they can report.
+ *   * the 48-hour deadline is checked against the SERVER clock — a device
+ *     clock the player controls must not decide whether their window is open;
+ *   * the row is locked for the duration, so two taps in flight cannot both
+ *     read `choice` as null and issue two tokens for one cancellation;
+ *   * a token is minted into `credit_tokens`, which the client cannot write
+ *     to at all. It is a wallet; a client that can write to it can mint money.
+ *
+ * Cash is recorded but NOT settled: moving real money is the operator's job,
+ * so `settledAt` stays null and the refund shows on their list. A token
+ * settles immediately, because the 30-day expiry runs from the moment of
+ * issue and the player has just asked for it.
  */
-export async function submitRefundChoiceNotImplemented(vars: {
+export async function submitRefundChoice(vars: {
   bookingId: string;
   choice: RefundChoice;
-}): Promise<never> {
-  throw new Error(
-    `Refund choice "${vars.choice}" cannot be saved yet: public.refund_choices is not migrated ` +
-      `(supabase/2026-07-operator-surface.sql) and there is no token ledger to issue a ${TOKEN_EXPIRY_DAYS}-day ` +
-      `token from. Nothing was changed for booking ${vars.bookingId}. ` +
-      `The ${REFUND_WINDOW_HOURS}h auto-cash refund is unaffected.`,
-  );
+}): Promise<RefundChoiceRow> {
+  const { data, error } = await supabase.rpc("choose_refund", {
+    p_booking_id: vars.bookingId,
+    p_choice: vars.choice,
+  });
+
+  // Surfaced, never swallowed: this is the player telling us what to do with
+  // their money, and a write that quietly goes nowhere is worse than an error
+  // they can report. The RPC's own messages are already player-readable
+  // ("the 48 hour window closed on ..."), so they are passed through.
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error(`No refund is pending for booking ${vars.bookingId}.`);
+
+  const row: any = Array.isArray(data) ? data[0] : data;
+  return {
+    bookingId: row.booking_id,
+    gameId: row.game_id,
+    amount: Number(row.amount),
+    choice: (row.choice as RefundChoice | null) ?? null,
+    chosenAt: row.chosen_at ?? null,
+    decideBy: row.decide_by,
+    settledAt: row.settled_at ?? null,
+    createdAt: row.created_at,
+  };
 }
 
 export function useSubmitRefundChoice() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: submitRefundChoiceNotImplemented,
+    mutationFn: submitRefundChoice,
     // Without this the screen cannot move. Its state is a pure function of the
     // refund row, so a successful write left useRefundChoice holding the stale
     // pre-choice row, refundScreenState kept returning "choosing", and the
     // player watched the spinner stop on the same two options — the same dead
-    // end that was already fixed once in checkout. Latent while the write
-    // throws; free to fix now, and wrong the moment the RPC lands.
-    onSuccess: (_result, vars) =>
-      queryClient.invalidateQueries({ queryKey: refundChoiceKey(vars.bookingId) }),
+    // end that was already fixed once in checkout.
+    //
+    // The booking list goes too: a token settles the refund immediately and
+    // sets payment_status to 'refunded', which is what clears the cancelled
+    // state off the match-day mini bar. Without this invalidation the player
+    // makes their choice and the bar stays exactly as it was.
+    onSuccess: (_result, vars) => {
+      queryClient.invalidateQueries({ queryKey: refundChoiceKey(vars.bookingId) });
+      queryClient.invalidateQueries({ queryKey: qk.myBookings });
+    },
+  });
+}
+
+/**
+ * Every refund the player has outstanding, keyed by booking id.
+ *
+ * The match-day bar needs this to stop repeating itself. Choosing a TOKEN
+ * settles the refund and marks the booking refunded, so it drops out of
+ * useGetMyBookings and the bar clears on its own. Choosing CASH does not:
+ * settling cash means an operator actually sending money, so the booking stays
+ * `paid` and the bar kept telling the player to "choose cash or a token" after
+ * they had already chosen cash — which is indistinguishable from the choice
+ * not having saved.
+ */
+export function useMyRefundChoices() {
+  return useQuery({
+    queryKey: ["my-refund-choices"] as const,
+    queryFn: async (): Promise<Map<string, { choice: RefundChoice | null; settledAt: string | null }>> => {
+      const { data, error } = await supabase
+        .from("refund_choices")
+        .select("booking_id, choice, settled_at")
+        .is("settled_at", null);
+
+      // The table may not exist on an older deployment. An empty map degrades
+      // the bar to its previous copy rather than breaking the whole screen.
+      if (error) {
+        if (isMissingTable(error)) return new Map();
+        throw error;
+      }
+      return new Map(
+        (data ?? []).map((r: any) => [
+          r.booking_id as string,
+          { choice: (r.choice as RefundChoice | null) ?? null, settledAt: r.settled_at ?? null },
+        ]),
+      );
+    },
   });
 }
