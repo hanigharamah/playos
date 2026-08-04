@@ -15,7 +15,7 @@ export type OutlineTone = "neutral" | "destructive" | "warning" | "accent";
 export type GlassFill = "clear" | "orange";
 
 /** Burnt terracotta, between the app's #EB6923 and #FDAA5F. */
-const ORANGE_BODY = ["#EE9256", "#E17A3E", "#D66A2C"] as const;
+const ORANGE_BODY = ["#E88348", "#E17A3E", "#D2662A"] as const;
 
 const TONE_COLOR: Record<OutlineTone, string> = {
   neutral: "#1C1C1E",
@@ -87,7 +87,13 @@ export function BtnOutline({ label, onPress, tone = "neutral", fill = "clear", d
                    costs no backdrop, which is the point: the blur behind this
                    button has nothing to bend. */}
             <LinearGradient
-              colors={["rgba(255,255,255,0.95)", "rgba(255,255,255,0.35)", "rgba(255,255,255,0)"]}
+              colors={
+                tinted
+                  // On orange, 95% white paints a stripe rather than a
+                  // highlight — glass catches light, it does not get painted.
+                  ? ["rgba(255,255,255,0.30)", "rgba(255,255,255,0.08)", "rgba(255,255,255,0)"]
+                  : ["rgba(255,255,255,0.95)", "rgba(255,255,255,0.35)", "rgba(255,255,255,0)"]
+              }
               locations={[0, 0.45, 1]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
@@ -110,7 +116,7 @@ export function BtnOutline({ label, onPress, tone = "neutral", fill = "clear", d
             {/* 4. EDGE — bright along the top, fading down the sides, and a
                    warm dark line at the very bottom. That top-light /
                    bottom-dark pair IS the thickness. */}
-            <View style={styles.rim} pointerEvents="none" />
+            <View style={[styles.rim, tinted && styles.rimTinted]} pointerEvents="none" />
             <View style={styles.rimBottom} pointerEvents="none" />
 
             <Text style={[styles.label, { color: tinted ? "#FFFFFF" : TONE_COLOR[tone] }]}>{label}</Text>
@@ -150,9 +156,15 @@ const styles = StyleSheet.create({
   rim: {
     ...StyleSheet.absoluteFillObject,
     borderRadius: 18, borderWidth: 1.2, borderColor: "transparent",
-    borderTopColor: "rgba(255,255,255,1)",
+    borderTopColor: "rgba(255,255,255,0.95)",
     borderLeftColor: "rgba(255,255,255,0.55)",
     borderRightColor: "rgba(255,255,255,0.55)",
+  },
+  // A lit edge on colour is a bright version of the colour, not white.
+  rimTinted: {
+    borderTopColor: "rgba(255,222,196,0.75)",
+    borderLeftColor: "rgba(255,214,180,0.30)",
+    borderRightColor: "rgba(255,214,180,0.30)",
   },
   // Separate view: one border cannot be bright on top and dark on the bottom.
   rimBottom: {
