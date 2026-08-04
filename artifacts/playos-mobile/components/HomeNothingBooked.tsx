@@ -137,7 +137,7 @@ export function HomeNothingBooked({
               the card it sits in rather than a solid orange slab on top of it. */}
           <BtnOutline
             label="join this one"
-            tone="accent"
+            fill="orange"
             // Its own onPress, not the card's: BtnOutline is a Pressable, so
             // without one it swallows the tap and the button does nothing.
             onPress={() => router.push(`/game/${next.id}`)}

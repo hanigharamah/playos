@@ -5,6 +5,18 @@ import { LinearGradient } from "expo-linear-gradient";
 /** Colour carries the meaning, per the Figma annotation. */
 export type OutlineTone = "neutral" | "destructive" | "warning" | "accent";
 
+/**
+ * "clear"  — glass over whatever is behind it. The default.
+ * "orange" — the same glass, TINTED. A burnt-orange body with the identical
+ *   specular sweep, inner floor and edge pair on top, so it reads as a
+ *   coloured pane rather than a flat fill. This is what a primary CTA wants:
+ *   the liquid treatment, but loud enough to carry a conversion surface.
+ */
+export type GlassFill = "clear" | "orange";
+
+/** Burnt terracotta, between the app's #EB6923 and #FDAA5F. */
+const ORANGE_BODY = ["#EE9256", "#E17A3E", "#D66A2C"] as const;
+
 const TONE_COLOR: Record<OutlineTone, string> = {
   neutral: "#1C1C1E",
   destructive: "#BF2626",
@@ -15,6 +27,8 @@ const TONE_COLOR: Record<OutlineTone, string> = {
 
 interface Props {
   label: string;
+  /** "orange" tints the glass for a primary action. Default "clear". */
+  fill?: GlassFill;
   onPress?: () => void;
   tone?: OutlineTone;
   disabled?: boolean;
@@ -32,13 +46,15 @@ interface Props {
  * Pressing brightens the fill and drops the lift, so the button reads as
  * being pushed into the surface.
  */
-export function BtnOutline({ label, onPress, tone = "neutral", disabled, style }: Props) {
+export function BtnOutline({ label, onPress, tone = "neutral", fill = "clear", disabled, style }: Props) {
+  const tinted = fill === "orange";
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       style={({ pressed }) => [
         styles.ambient,
+        tinted && styles.ambientTinted,
         pressed && !disabled && styles.ambientPressed,
         disabled && { opacity: 0.4 },
         style,
@@ -46,15 +62,17 @@ export function BtnOutline({ label, onPress, tone = "neutral", disabled, style }
     >
       {({ pressed }) => (
         <View style={styles.contact}>
-          <BlurView intensity={Platform.OS === "ios" ? 32 : 0} tint="light" style={styles.btn}>
+          <BlurView intensity={tinted || Platform.OS !== "ios" ? 0 : 32} tint="light" style={styles.btn}>
             {/* 1. BODY — vertical, not diagonal. A pane lit from above is
                    brightest at the top and darkest just before the bottom
                    edge, where light has travelled furthest through it. */}
             <LinearGradient
               colors={
-                pressed
-                  ? ["rgba(255,255,255,0.92)", "rgba(255,255,255,0.44)", "rgba(255,240,228,0.30)"]
-                  : ["rgba(255,255,255,0.86)", "rgba(255,255,255,0.26)", "rgba(255,238,224,0.14)"]
+                tinted
+                  ? ORANGE_BODY
+                  : pressed
+                    ? ["rgba(255,255,255,0.92)", "rgba(255,255,255,0.44)", "rgba(255,240,228,0.30)"]
+                    : ["rgba(255,255,255,0.86)", "rgba(255,255,255,0.26)", "rgba(255,238,224,0.14)"]
               }
               locations={[0, 0.52, 1]}
               start={{ x: 0.5, y: 0 }}
@@ -82,7 +100,7 @@ export function BtnOutline({ label, onPress, tone = "neutral", disabled, style }
                    real pane is darkest there. Without this the button reads
                    flat no matter how bright the top is. */}
             <LinearGradient
-              colors={["rgba(140,89,38,0)", "rgba(140,89,38,0.18)"]}
+              colors={tinted ? ["rgba(120,52,10,0)", "rgba(120,52,10,0.30)"] : ["rgba(140,89,38,0)", "rgba(140,89,38,0.18)"]}
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
               style={styles.floor}
@@ -95,7 +113,7 @@ export function BtnOutline({ label, onPress, tone = "neutral", disabled, style }
             <View style={styles.rim} pointerEvents="none" />
             <View style={styles.rimBottom} pointerEvents="none" />
 
-            <Text style={[styles.label, { color: TONE_COLOR[tone] }]}>{label}</Text>
+            <Text style={[styles.label, { color: tinted ? "#FFFFFF" : TONE_COLOR[tone] }]}>{label}</Text>
           </BlurView>
         </View>
       )}
@@ -110,6 +128,8 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.14, shadowRadius: 24,
   },
+  /** A coloured pane casts a coloured shadow, not a neutral brown one. */
+  ambientTinted: { shadowColor: "#C25A18", shadowOpacity: 0.34, shadowRadius: 20 },
   /** Pressed: the lift collapses, so it settles into the page. */
   ambientPressed: { shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10 },
   contact: {
