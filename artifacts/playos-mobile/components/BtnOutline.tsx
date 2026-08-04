@@ -47,19 +47,54 @@ export function BtnOutline({ label, onPress, tone = "neutral", disabled, style }
       {({ pressed }) => (
         <View style={styles.contact}>
           <BlurView intensity={Platform.OS === "ios" ? 32 : 0} tint="light" style={styles.btn}>
+            {/* 1. BODY — vertical, not diagonal. A pane lit from above is
+                   brightest at the top and darkest just before the bottom
+                   edge, where light has travelled furthest through it. */}
             <LinearGradient
               colors={
                 pressed
-                  ? ["rgba(255,255,255,0.75)", "rgba(255,255,255,0.3)", "rgba(255,246,236,0.35)"]
-                  : ["rgba(255,255,255,0.6)", "rgba(255,255,255,0.12)", "rgba(255,246,236,0.2)"]
+                  ? ["rgba(255,255,255,0.92)", "rgba(255,255,255,0.44)", "rgba(255,240,228,0.30)"]
+                  : ["rgba(255,255,255,0.86)", "rgba(255,255,255,0.26)", "rgba(255,238,224,0.14)"]
               }
-              locations={[0, 0.55, 1]}
-              start={{ x: 0.15, y: 0 }}
-              end={{ x: 0.85, y: 1 }}
+              locations={[0, 0.52, 1]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
+
+            {/* 2. SPECULAR SWEEP — the bright band across the upper third that
+                   a curved surface throws. This is the single strongest cue
+                   that the thing is glass rather than tinted plastic, and it
+                   costs no backdrop, which is the point: the blur behind this
+                   button has nothing to bend. */}
+            <LinearGradient
+              colors={["rgba(255,255,255,0.95)", "rgba(255,255,255,0.35)", "rgba(255,255,255,0)"]}
+              locations={[0, 0.45, 1]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.sweep}
+              pointerEvents="none"
+            />
+
+            {/* 3. INNER FLOOR — a dark line hugging the bottom inside edge.
+                   Light entering the top exits refracted at the bottom, so a
+                   real pane is darkest there. Without this the button reads
+                   flat no matter how bright the top is. */}
+            <LinearGradient
+              colors={["rgba(140,89,38,0)", "rgba(140,89,38,0.18)"]}
+              start={{ x: 0.5, y: 0 }}
+              end={{ x: 0.5, y: 1 }}
+              style={styles.floor}
+              pointerEvents="none"
+            />
+
+            {/* 4. EDGE — bright along the top, fading down the sides, and a
+                   warm dark line at the very bottom. That top-light /
+                   bottom-dark pair IS the thickness. */}
             <View style={styles.rim} pointerEvents="none" />
+            <View style={styles.rimBottom} pointerEvents="none" />
+
             <Text style={[styles.label, { color: TONE_COLOR[tone] }]}>{label}</Text>
           </BlurView>
         </View>
@@ -84,16 +119,26 @@ const styles = StyleSheet.create({
   btn: {
     height: 56, borderRadius: 18, overflow: "hidden",
     alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.5)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.85)",
+    backgroundColor: "rgba(255,255,255,0.38)",
+    borderWidth: 0,
     elevation: 3,
   },
+  // The bright band sits in the upper third and stops — a sweep, not a wash.
+  sweep: { position: "absolute", left: 1, right: 1, top: 1, height: 22, borderTopLeftRadius: 17, borderTopRightRadius: 17 },
+  // The dark floor is the bottom quarter only.
+  floor: { position: "absolute", left: 1, right: 1, bottom: 1, height: 16, borderBottomLeftRadius: 17, borderBottomRightRadius: 17 },
   rim: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 18, borderWidth: 1, borderColor: "transparent",
-    borderTopColor: "rgba(255,255,255,0.95)",
-    borderLeftColor: "rgba(255,255,255,0.5)",
-    borderRightColor: "rgba(255,255,255,0.5)",
+    borderRadius: 18, borderWidth: 1.2, borderColor: "transparent",
+    borderTopColor: "rgba(255,255,255,1)",
+    borderLeftColor: "rgba(255,255,255,0.55)",
+    borderRightColor: "rgba(255,255,255,0.55)",
+  },
+  // Separate view: one border cannot be bright on top and dark on the bottom.
+  rimBottom: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 18, borderWidth: 1.2, borderColor: "transparent",
+    borderBottomColor: "rgba(140,89,38,0.22)",
   },
   label: { fontSize: 15, fontWeight: "600" },
 });
