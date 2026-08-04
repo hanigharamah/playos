@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, Pressable, ScrollView, Image, Alert, useWindowD
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { format, isSameDay, subHours } from "date-fns";
-import { useGetSettings, useConfirmPaymentMethod, useGetGame, FREE_CANCEL_HOURS } from "@/lib/api";
+import { useGetSettings, useConfirmPaymentMethod, useGetGame, useSpotHold, FREE_CANCEL_HOURS } from "@/lib/api";
+import { useServerCountdown } from "@/lib/serverTime";
 import { DotWaveBackground } from "@/components/DotWaveBackground";
 import { WarmCanvas } from "@/components/WarmCanvas";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
@@ -51,6 +52,16 @@ export default function Checkout() {
   const confirmMethod = useConfirmPaymentMethod();
 
   const [method, setMethod] = useState<Method | null>(null);
+
+  // The seat is held for five minutes from the moment it was claimed. Read
+  // back from the database rather than passed through params, so backgrounding
+  // the app and returning shows the real remaining time instead of a timer
+  // that restarted. Server clock, like every other deadline in the app — a
+  // device clock the player controls must not decide when their hold lapses.
+  const { data: hold } = useSpotHold(bookingId ?? null);
+  const holdTarget = hold?.expiresAt ? Date.parse(hold.expiresAt) : null;
+  const { remainingMs: holdLeftMs } = useServerCountdown(holdTarget);
+  const holdExpired = holdTarget !== null && holdLeftMs <= 0;
 
   useEffect(() => { screen("Checkout", { bookingId, gameId }); }, [bookingId, gameId]);
 
@@ -100,6 +111,28 @@ export default function Checkout() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* The hold. Only rendered when there IS one — a paid booking and any
+            row predating the hold column have none, and a countdown to nothing
+            would read as urgency the player cannot act on. Turns red under a
+            minute, which is the point at which "5:00" stops being reassuring
+            and starts being a deadline. */}
+        {holdTarget !== null && (
+          <View style={[styles.holdBar, holdExpired && styles.holdBarGone]}>
+            <Text style={[styles.holdText, holdExpired && styles.holdTextGone]}>
+              {holdExpired
+                ? "your hold on this spot has expired"
+                : `spot held for ${Math.floor(holdLeftMs / 60000)}:${String(
+                    Math.floor((holdLeftMs % 60000) / 1000),
+                  ).padStart(2, "0")}`}
+            </Text>
+            {holdExpired && (
+              <Pressable onPress={() => router.replace(`/game/${gameId}`)} hitSlop={8}>
+                <Text style={styles.holdAction}>pick again</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+
         {/* What the player is paying for — absent from this screen entirely
             before now, so they confirmed a charge with nothing to check it
             against. */}
@@ -178,6 +211,16 @@ export default function Checkout() {
 }
 
 const styles = StyleSheet.create({
+  holdBar: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 12,
+    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 14, marginBottom: 14,
+    backgroundColor: "rgba(253,106,3,0.10)",
+  },
+  holdBarGone: { backgroundColor: "rgba(191,38,38,0.12)" },
+  holdText: { fontSize: 13, fontWeight: "600", color: "#A85A00" },
+  holdTextGone: { color: "#BF2626" },
+  holdAction: { fontSize: 13, fontWeight: "700", color: "#BF2626", textDecorationLine: "underline" },
+
   // paddingTop comes from the safe-area inset at the call site; the fixed
   // value was smaller than the Dynamic Island's inset.
   wrap: { flex: 1, backgroundColor: "#FFF8F0" },

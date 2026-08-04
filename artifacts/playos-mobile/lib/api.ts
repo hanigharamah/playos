@@ -316,15 +316,55 @@ export function useGetGame(id: string, options?: { enabled?: boolean }) {
       }
       if (!game) throw { data: { error: "Game not found" }, notFound: true };
 
-      const bookings: BookingRow[] = (game.bookings as any[]).map((b) => ({
+      // The join above is BLIND. `bookings` RLS is self-only, so PostgREST
+      // returns only the caller's own row — not an error, just a shorter list.
+      // That is why a game with nine players drew as nine empty seats: the
+      // picker was told the truth about one booking and nothing about the
+      // other eight. get_game_seatmap is SECURITY DEFINER and returns which
+      // seats are taken and nothing else — no names, no user ids — so the
+      // picker gets the truth without breaking the privacy the RLS policy
+      // exists to protect.
+      const { data: seatRows, error: seatErr } = await supabase.rpc("get_game_seatmap", {
+        p_game_id: id,
+      });
+      if (seatErr) throw { data: { error: seatErr.message }, notFound: false };
+
+      const ownRows: BookingRow[] = (game.bookings as any[]).map((b) => ({
         id: b.id, gameId: b.game_id, userId: b.user_id, team: b.team,
         slotIndex: b.slot_index, paymentStatus: b.payment_status,
         paymentMethod: b.payment_method, bookedAt: b.booked_at,
       }));
 
+      // One synthetic row per occupied seat, with the caller's real row
+      // substituted where the seat is theirs — checkout needs its id and
+      // payment method, and only the caller's own row can supply those.
+      // Everyone else's seat gets a null user id on purpose: the screen must
+      // render it as taken and must not be able to say by whom.
+      const seatmap = (seatRows ?? []) as { team: number; slot_index: number; mine: boolean; held: boolean }[];
+      const bookings: BookingRow[] = seatmap.map((seat) => {
+        const own = seat.mine
+          ? ownRows.find((b) => b.team === seat.team && b.slotIndex === seat.slot_index)
+          : undefined;
+        return own ?? {
+          id: `seat-${seat.team}-${seat.slot_index}`,
+          gameId: id,
+          userId: null as unknown as string,
+          team: seat.team,
+          slotIndex: seat.slot_index,
+          // Occupied is occupied. The seat map already excludes refunded,
+          // forfeited and expired holds, so anything it returns is live.
+          paymentStatus: "pending",
+          paymentMethod: null,
+          bookedAt: null as unknown as string,
+        };
+      });
+
       const photos = await fetchPitchPhotos([game.pitch_name]);
       return {
-        ...mapGameSummary(game, bookings.filter((b) => b.paymentStatus === "paid").length, photos.get(game.pitch_name)),
+        // Occupancy is the seat map's length, not a count of `paid` rows.
+        // Nothing ever writes 'paid', so the old filter made every full game
+        // advertise itself as empty.
+        ...mapGameSummary(game, bookings.length, photos.get(game.pitch_name)),
         bookings,
       };
     },
@@ -339,80 +379,48 @@ export function useGetGame(id: string, options?: { enabled?: boolean }) {
 export function useBookSpot() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { gameId: string; team: number; slotIndex: number }): Promise<{ bookingId: string }> => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) throw { data: { error: "Not authenticated" } };
-
-      const { data: game, error: gameErr } = await supabase
-        .from("games")
-        .select("*, bookings(team, slot_index, payment_status, user_id)")
-        .eq("id", vars.gameId)
-        .single();
-      if (gameErr || !game) throw { data: { error: "Game not found" } };
-      if (game.status === "cancelled") throw { data: { error: "Game is cancelled" } };
-      if (game.status === "full") throw { data: { error: "Game is full" } };
-
-      // A spot is occupied the moment it's booked, not when it's marked paid.
-      // Filtering to "paid" here made every guard below dead code: the app only
-      // ever inserts "pending", so the same user could book a game repeatedly
-      // and two users could land on one slot. This matches PitchSVG, which
-      // already treated any non-refunded booking as occupied.
-      const activeBookings = (game.bookings as any[]).filter(
-        (b) => b.payment_status !== "refunded" && b.payment_status !== "forfeited",
-      );
-      if (activeBookings.some((b) => b.user_id === user.id)) {
-        throw { data: { error: "You already have a spot in this game" } };
-      }
-
-      if (!game.kickoff_time || new Date(game.kickoff_time).getTime() <= Date.now()) {
-        throw { data: { error: "This match has already kicked off" } };
-      }
-
-      // Floor: an odd capacity would otherwise yield a fractional bound and let
-      // the loops below hand out one slot per team more than the game holds.
-      const slotsPerTeam = Math.floor(game.capacity / 2);
-      if (slotsPerTeam < 1) throw { data: { error: "This match has no open slots" } };
-      if (activeBookings.length >= game.capacity) throw { data: { error: "Game is full" } };
-      let assignedTeam = vars.team;
-      let assignedSlot = vars.slotIndex;
-
-      const slotTaken = activeBookings.some((b) => b.team === assignedTeam && b.slot_index === assignedSlot);
-      if (slotTaken) {
-        const used = new Set(activeBookings.filter((b) => b.team === assignedTeam).map((b) => b.slot_index));
-        let found = false;
-        for (let s = 0; s < slotsPerTeam; s++) {
-          if (!used.has(s)) { assignedSlot = s; found = true; break; }
-        }
-        if (!found) {
-          const other = assignedTeam === 1 ? 2 : 1;
-          const otherUsed = new Set(activeBookings.filter((b) => b.team === other).map((b) => b.slot_index));
-          for (let s = 0; s < slotsPerTeam; s++) {
-            if (!otherUsed.has(s)) { assignedTeam = other; assignedSlot = s; found = true; break; }
-          }
-          if (!found) throw { data: { error: "No spots available" } };
-        }
-      }
-
-      const bookingId = uid();
-      const { error: insErr } = await supabase.from("bookings").insert({
-        id: bookingId, game_id: vars.gameId, user_id: user.id,
-        team: assignedTeam, slot_index: assignedSlot, payment_status: "pending",
+    mutationFn: async (vars: { gameId: string; team: number; slotIndex: number }): Promise<{
+      bookingId: string;
+      /** When the hold lapses. Checkout counts down to this. */
+      holdExpiresAt: string | null;
+    }> => {
+      // Every guard this used to run in JS ran against the blinded booking
+      // list — it could see one row and was deciding whether a seat was free.
+      // claim_spot performs the same checks inside the database, where it can
+      // see all of them, and stamps the five-minute hold in the same
+      // statement so a picked seat cannot be held forever by an abandoned
+      // checkout.
+      const { data, error } = await supabase.rpc("claim_spot", {
+        p_game_id: vars.gameId,
+        p_team: vars.team,
+        p_slot_index: vars.slotIndex,
       });
-      if (insErr) {
-        // 23505 = unique violation. Once 2026-07-booking-integrity.sql is
-        // applied this is how a genuine race loses: two devices both passed
-        // the client-side check above and the database rejected the second.
-        if ((insErr as any).code === "23505") {
-          throw { data: { error: "Someone just took that spot — pick another." } };
-        }
-        throw insErr;
+      if (error) throw { data: { error: error.message } };
+
+      const row = (data as { status: string; booking_id: string | null; hold_expires_at: string | null }[] | null)?.[0];
+      if (!row) throw { data: { error: "Couldn't reach the pitch — pull to refresh and try again." } };
+
+      // Refusals come back as DATA, not as an error. Reporting them as success
+      // is the exact bug that made cancellation look like it worked while
+      // nothing had changed.
+      if (row.status !== "ok") {
+        const message: Record<string, string> = {
+          taken: "Someone just took that spot — pick another.",
+          already_booked: "You already have a spot in this game.",
+          full: "This match just filled up.",
+          kicked_off: "This match has already kicked off.",
+          cancelled: "This match has been cancelled.",
+          no_such_game: "We couldn't find that match.",
+          not_authenticated: "Sign in to book a spot.",
+        };
+        throw { data: { error: message[row.status] ?? "Couldn't take that spot." } };
       }
+      if (!row.booking_id) throw { data: { error: "Couldn't take that spot." } };
 
       queryClient.invalidateQueries({ queryKey: qk.game(vars.gameId) });
       queryClient.invalidateQueries({ queryKey: qk.games() });
       queryClient.invalidateQueries({ queryKey: qk.myBookings });
-      return { bookingId };
+      return { bookingId: row.booking_id, holdExpiresAt: row.hold_expires_at };
     },
   });
 }
@@ -1608,6 +1616,37 @@ export function usePitchMeta() {
           },
         ]),
       );
+    },
+  });
+}
+
+// ─── Spot holds ─────────────────────────────────────────────────────────
+
+/**
+ * When this booking's seat stops being held.
+ *
+ * claim_spot stamps a five-minute hold so an abandoned checkout cannot sit on
+ * a seat forever. Null means no hold — a paid booking, or a row from before
+ * the hold column existed. Checkout counts down to this; the value is read
+ * back from the database rather than passed through navigation params, so a
+ * player who backgrounds the app and returns sees the real remaining time
+ * rather than a timer that restarted.
+ */
+export function useSpotHold(bookingId: string | null) {
+  return useQuery({
+    queryKey: ["spot-hold", bookingId] as const,
+    enabled: !!bookingId,
+    // The seat is only held for five minutes; a stale answer here is the
+    // difference between a player thinking they have time and losing the spot.
+    staleTime: 0,
+    queryFn: async (): Promise<{ expiresAt: string | null }> => {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select("hold_expires_at")
+        .eq("id", bookingId!)
+        .maybeSingle();
+      if (error) throw error;
+      return { expiresAt: data?.hold_expires_at ?? null };
     },
   });
 }
