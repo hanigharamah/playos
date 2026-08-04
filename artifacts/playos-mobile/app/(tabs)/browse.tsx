@@ -44,7 +44,8 @@ type Tab = "venues" | "matches";
  * The design shows a star rating and a km distance on each venue row. Neither
  * exists yet: `pitches` has no rating column and there's no device-location
  * wiring, so those are omitted rather than faked. Rows show what's real —
- * a drawn site plan, the name, the district, open spots and the next kickoff.
+ * a drawn site plan, the name, the district, and the next kickoff. Spot
+ * counts belong to a match, not a venue, so they live on the matches tab.
  */
 const GLOWS = [
   { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
@@ -106,7 +107,7 @@ export default function Browse() {
    */
   const venues = useMemo(() => {
     const map = new Map<string, {
-      count: number; photo: string | null; spots: number; area: string | null;
+      count: number; photo: string | null; area: string | null;
       tonight: number; next: Date | null;
     }>();
     for (const g of matches) {
@@ -115,7 +116,6 @@ export default function Browse() {
       map.set(g.pitchName, {
         count: (e?.count ?? 0) + 1,
         photo: e?.photo ?? g.pitchPhotoUrl,
-        spots: (e?.spots ?? 0) + Math.max(0, g.capacity - g.bookedCount),
         area: e?.area ?? g.locationText ?? null,
         tonight: (e?.tonight ?? 0) + (isSameDay(kickoff, new Date()) ? 1 : 0),
         // Soonest, not first seen — the feed is not guaranteed sorted.
@@ -237,7 +237,7 @@ export default function Browse() {
       {showSkeleton && <BrowseSkeleton />}
 
       {!showSkeleton && (tab === "venues"
-        ? venues.map(([name, { count, spots, area, tonight, next }]) => (
+        ? venues.map(([name, { count, area, tonight, next }]) => (
             <Pressable key={name} onPress={() => { setQuery(name); setTab("matches"); }}>
               <GlassCard variant="soft" round={16} padding={0} style={styles.venueCard}>
                 <View style={styles.venueRow}>
@@ -269,18 +269,18 @@ export default function Browse() {
                       );
                     })()}
 
-                    {/* Three slots in the mock; ratings are cancelled, so the
-                        third is the next kickoff. The surface pill renders
-                        only when the operator has recorded one — null means
-                        "not said yet", and defaulting it to Outdoor would be
-                        a guess printed as a fact. */}
+                    {/* No spots-left pill on a VENUE. Summing spots across a
+                        venue's open games gives a number that belongs to no
+                        single match and that nobody can book — "11 spots" at
+                        KAFD might be 3 in one game and 8 in another next
+                        Tuesday. It stays on the matches tab, where a spot
+                        count describes one game and means something.
+
+                        The surface pill renders only when the operator has
+                        recorded one — null means "not said yet", and
+                        defaulting it to Outdoor would be a guess printed as
+                        a fact. */}
                     <View style={styles.pillRow}>
-                      <View style={[styles.pill, styles.pillWarm]}>
-                        <View style={styles.pillDot} />
-                        <Text style={[styles.pillText, styles.pillTextWarm]}>
-                          {spots} {spots === 1 ? "spot" : "spots"} left
-                        </Text>
-                      </View>
                       {!!pitchMeta?.get(name)?.surface && (
                         <View style={styles.pill}>
                           <Text style={styles.pillText}>{pitchMeta.get(name)!.surface}</Text>
