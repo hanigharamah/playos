@@ -7,6 +7,7 @@ import { format, isSameDay } from "date-fns";
 import { Search, ArrowLeft, LocateFixed, MapPin, Navigation, ChevronRight } from "lucide-react-native";
 import { useListGames } from "@/lib/api";
 import { getVenuePhoto } from "@/lib/placeholderPhotos";
+import { PitchSchematic } from "@/components/PitchSchematic";
 import { BrowseSkeleton, useDelayedVisible } from "@/components/Skeleton";
 import { VenuesEmpty, MatchesEmpty } from "@/components/BrowseEmpty";
 import { PlayNothingLive } from "@/components/PlayNothingLive";
@@ -18,9 +19,17 @@ import { colors, spacing } from "@/lib/theme";
 import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
-// Exact palette from the Figma Browse screen (node 1:8)
-const INK = "#1C1C1E";
-const MUTED = "#6C6C70";
+// Sampled off the Browse mock at 2x rather than the Figma tokens — the mock
+// runs materially darker on ink and colder on the greys, and its orange is a
+// vermilion (#FD6A03), not the amber `colors.orange` (#FF9F0A) the rest of the
+// app uses. Kept local to this screen: changing the shared token would repaint
+// every other screen against a mock that only covers this one.
+const INK = "#0B0B0C";
+const MUTED = "#67676A";
+/** Browse-mock orange. See note above before promoting this to lib/theme. */
+const ORANGE = "#FD6A03";
+/** Card ink, one step lighter than the headline — mock samples ~(91,88,88). */
+const META = "#5B5858";
 
 type Tab = "venues" | "matches";
 
@@ -30,7 +39,7 @@ type Tab = "venues" | "matches";
  * The design shows a star rating and a km distance on each venue row. Neither
  * exists yet: `pitches` has no rating column and there's no device-location
  * wiring, so those are omitted rather than faked. Rows show what's real —
- * venue photo, name, and how many games are open there.
+ * a drawn site plan, the name, the district, open spots and the next kickoff.
  */
 const GLOWS = [
   { cx: 0.8, cy: 0.15, r: 0.9, color: "rgba(255,225,204,0.35)" },
@@ -79,15 +88,25 @@ export default function Browse() {
 
   const venues = useMemo(() => {
     // Also totals the open spots across a venue's games and keeps its district,
-    // which is what the card shows in place of the mock's distance.
-    const map = new Map<string, { count: number; photo: string | null; spots: number; area: string | null }>();
+    // which is what the card shows in place of the mock's distance. `tonight`
+    // and `next` are the two real values that fill the mock's Outdoor/rating
+    // pill slot and its "4 matches tonight" line — both derived from
+    // kickoffTime, neither invented.
+    const now = new Date();
+    const map = new Map<
+      string,
+      { count: number; spots: number; area: string | null; tonight: number; next: Date | null }
+    >();
     for (const g of matches) {
       const e = map.get(g.pitchName);
+      const kickoff = new Date(g.kickoffTime);
+      const prevNext = e?.next ?? null;
       map.set(g.pitchName, {
         count: (e?.count ?? 0) + 1,
-        photo: e?.photo ?? g.pitchPhotoUrl,
         spots: (e?.spots ?? 0) + Math.max(0, g.capacity - g.bookedCount),
         area: e?.area ?? g.locationText ?? null,
+        tonight: (e?.tonight ?? 0) + (isSameDay(kickoff, now) ? 1 : 0),
+        next: !prevNext || kickoff < prevNext ? kickoff : prevNext,
       });
     }
     return Array.from(map.entries()).sort((a, b) => b[1].count - a[1].count);
@@ -127,33 +146,36 @@ export default function Browse() {
       <Text style={styles.title}>Find a pitch</Text>
       <Text style={styles.subtitle}>book a game near you</Text>
 
-      {/* Search (Figma 9:3) */}
+      {/* Search (Figma 9:3). The locate control sits INSIDE the pill in the
+          mock — a 27pt disc inset 8pt from the right end, not a sibling
+          button beside it. */}
       <View style={styles.searchRow}>
-        <GlassCard variant="soft" round={26} padding={0} style={{ flex: 1 }}>
+        <GlassCard variant="soft" round={14} padding={0} style={{ flex: 1 }}>
           <View style={styles.searchBar}>
-            <Search size={20} color={MUTED} strokeWidth={1.8} />
+            <Search size={14} color="#919093" strokeWidth={1.8} />
             <TextInput
               style={styles.searchInput}
               placeholder="search venues or matches"
-              placeholderTextColor={MUTED}
+              placeholderTextColor="#989698"
               value={query}
               onChangeText={setQuery}
               returnKeyType="search"
             />
+            {/* Area picker, not GPS. The design shows a locate control, but
+                there is no device-location wiring and no venue coordinates —
+                so this opens the area chooser, which is the real thing behind
+                it. Dark icon, not orange: the mock draws it in ink. */}
+            <Pressable
+              onPress={() => router.push("/permission/location")}
+              style={styles.locateBtn}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Choose your area"
+            >
+              <LocateFixed size={14} color={INK} strokeWidth={2} />
+            </Pressable>
           </View>
         </GlassCard>
-        {/* Area picker, not GPS. The design shows a locate control, but there
-            is no device-location wiring and no venue coordinates — so this
-            opens the area chooser, which is the real thing behind it. */}
-        <Pressable
-          onPress={() => router.push("/permission/location")}
-          style={styles.locateBtn}
-          hitSlop={8}
-          accessibilityRole="button"
-          accessibilityLabel="Choose your area"
-        >
-          <LocateFixed size={20} color={colors.orange} strokeWidth={2} />
-        </Pressable>
       </View>
 
       {/* Areas near you (Figma 3:12) */}
@@ -206,7 +228,8 @@ export default function Browse() {
           you" — there is no distance, and the venue list is whatever the open
           games actually name. */}
       <View style={styles.countRow}>
-        <MapPin size={15} color={colors.orange} strokeWidth={2.2} />
+        {/* Solid pin, not an outline — the mock's marker is filled. */}
+        <MapPin size={12} color={ORANGE} fill={ORANGE} strokeWidth={2} />
         <Text style={styles.countText}>
           <Text style={styles.countStrong}>
             {tab === "venues" ? venues.length : matches.length}
@@ -221,15 +244,16 @@ export default function Browse() {
       {showSkeleton && <BrowseSkeleton />}
 
       {!showSkeleton && (tab === "venues"
-        ? venues.map(([name, { count, photo, spots, area }]) => (
+        ? venues.map(([name, { count, spots, area, tonight, next }]) => (
             <Pressable key={name} onPress={() => { setQuery(name); setTab("matches"); }}>
-              <GlassCard variant="soft" round={22} padding={0} style={styles.venueCard}>
+              <GlassCard variant="soft" round={16} padding={0} style={styles.venueCard}>
                 <View style={styles.venueRow}>
-                  <Image source={{ uri: getVenuePhoto(name, photo) }} style={styles.venueThumb} />
+                  {/* The mock's thumbnail is a drawn site plan, not a photo. */}
+                  <PitchSchematic name={name} width={156} height={86} />
                   <View style={styles.venueText}>
                     <View style={styles.venueTitleRow}>
                       <Text style={styles.venueName} numberOfLines={1}>{name}</Text>
-                      <ChevronRight size={18} color={MUTED} strokeWidth={2.2} />
+                      <ChevronRight size={16} color="#6F6E71" strokeWidth={2.2} />
                     </View>
 
                     {/* The mock puts "2.1 km away" here. There is no device
@@ -238,28 +262,42 @@ export default function Browse() {
                         player navigates by anyway. */}
                     {!!area && (
                       <View style={styles.venueMeta}>
-                        <Navigation size={12} color={MUTED} strokeWidth={2} />
-                        <Text style={styles.venueMetaText}>{area}</Text>
+                        <Navigation size={10} color={META} strokeWidth={2} />
+                        <Text style={styles.venueMetaText} numberOfLines={1}>{area}</Text>
                       </View>
                     )}
 
-                    {/* Two pills, not four. The mock's Outdoor/Indoor needs a
+                    {/* Two pills, not three. The mock's Outdoor/Indoor needs a
                         surface column and its 4.8 needs a ratings system;
                         neither exists, and inventing them is exactly what the
-                        omitted star rating and distance were omitted for. */}
+                        omitted star rating and distance were omitted for. The
+                        second slot carries the next kickoff, which is real. */}
                     <View style={styles.pillRow}>
-                      <View style={styles.pill}>
+                      <View style={[styles.pill, styles.pillWarm]}>
                         <View style={styles.pillDot} />
-                        <Text style={styles.pillText}>
+                        <Text style={[styles.pillText, styles.pillTextWarm]}>
                           {spots} {spots === 1 ? "spot" : "spots"} left
                         </Text>
                       </View>
-                      <View style={styles.pill}>
-                        <Text style={styles.pillText}>
-                          {count} {count === 1 ? "match" : "matches"}
-                        </Text>
-                      </View>
+                      {!!next && (
+                        <View style={styles.pill}>
+                          <Text style={styles.pillText}>next {format(next, "h:mm a").toLowerCase()}</Text>
+                        </View>
+                      )}
                     </View>
+
+                    {/* The mock's "4 matches tonight". "tonight" only shows
+                        when a game actually kicks off today. */}
+                    <Text style={styles.venueTail} numberOfLines={1}>
+                      {tonight > 0 ? (
+                        <>
+                          {tonight} {tonight === 1 ? "match" : "matches"}{" "}
+                          <Text style={styles.venueTailAccent}>tonight</Text>
+                        </>
+                      ) : (
+                        `${count} ${count === 1 ? "match" : "matches"} open`
+                      )}
+                    </Text>
                   </View>
                 </View>
               </GlassCard>
@@ -319,62 +357,77 @@ const styles = StyleSheet.create({
   // Transparent: this ScrollView sits above <WarmCanvas />, which is
   // absoluteFill, so an opaque cream here hid the peach glow completely.
   wrap: { flex: 1, backgroundColor: "transparent" },
-  content: { paddingHorizontal: 20, paddingBottom: 130 },
+  // 30pt gutters: the mock's cards, search pill and segment all start at 58px
+  // (=29pt) and end at 783px (=34.5pt from the right). Symmetric 30 splits the
+  // difference; the mock's own 2.75pt off-centre is a render artefact.
+  content: { paddingHorizontal: 30, paddingBottom: 130 },
 
+  // 63px across in the mock = 31.5pt, with a 26px arrow.
   backCircle: {
-    width: 42, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center",
+    width: 32, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.78)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
     shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 10, elevation: 2,
-    marginBottom: 18,
+    marginBottom: 16,
   },
 
   // Script eyebrow, big ink headline, muted line — the mock's masthead.
-  eyebrow: { fontSize: 22, color: colors.orange },
-  title: { fontSize: 34, fontWeight: "800", color: INK, marginTop: 2, letterSpacing: -0.5 },
-  subtitle: { fontSize: 15, color: MUTED, marginTop: 4 },
+  // Title cap height measures 41px = 20.5pt, which is ~29pt of a 0.71-cap
+  // face; the mock's headline face is narrower than SF, so the line runs wide
+  // of the mock's 142pt at the size that matches its height. Height wins.
+  eyebrow: { fontSize: 17, color: ORANGE },
+  title: { fontSize: 29, fontWeight: "800", color: INK, marginTop: 0, letterSpacing: -1 },
+  subtitle: { fontSize: 12, color: "#8E8D8F", marginTop: 4 },
 
-  searchRow: { flexDirection: "row", alignItems: "center", gap: 10, marginTop: 22 },
+  searchRow: { flexDirection: "row", alignItems: "center", marginTop: 18 },
+  // A 27pt disc riding inside the right end of the pill, 8pt from the edge.
   locateBtn: {
-    width: 52, height: 52, borderRadius: 26, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.72)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.1, shadowRadius: 14, elevation: 2,
+    width: 27, height: 27, borderRadius: 13.5, alignItems: "center", justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.85)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6, elevation: 2,
   },
 
+  // No inner padding: in the mock the white half runs edge to edge and is
+  // exactly half the track, both ends fully rounded.
   segment: {
-    flexDirection: "row", marginTop: 18, borderRadius: 26, padding: 5,
-    backgroundColor: "rgba(240,232,224,0.55)",
+    flexDirection: "row", marginTop: 14, borderRadius: 17, height: 34,
+    backgroundColor: "#F2EBE5",
     borderWidth: 1, borderColor: "rgba(255,255,255,0.7)",
   },
-  segmentHalf: { flex: 1, height: 42, borderRadius: 21, alignItems: "center", justifyContent: "center" },
+  segmentHalf: { flex: 1, height: 32, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   segmentOn: {
-    backgroundColor: "rgba(255,255,255,0.95)",
-    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.12, shadowRadius: 8, elevation: 2,
+    backgroundColor: "#FCF7F2",
+    shadowColor: "#8C5926", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 6, elevation: 2,
   },
-  segmentText: { fontSize: 15, color: MUTED, fontWeight: "500" },
+  segmentText: { fontSize: 12, color: MUTED, fontWeight: "500" },
   segmentTextOn: { color: INK, fontWeight: "700" },
 
-  // Bigger, rounder card than the old row: the mock gives the venue a block,
-  // not a list line. minHeight because the pill row wraps at larger type.
-  venueCard: { marginBottom: 14 },
-  venueRow: { flexDirection: "row", alignItems: "center", minHeight: 104, padding: 12 },
-  venueThumb: { width: 104, height: 80, borderRadius: 16, backgroundColor: "#EFE3D6" },
+  // 110pt tall, 5.5pt apart, 16pt radius, 12pt padding — all measured.
+  venueCard: { marginBottom: 6 },
+  venueRow: { flexDirection: "row", alignItems: "center", minHeight: 110, padding: 12 },
   venueText: { flex: 1, marginLeft: 14 },
   venueTitleRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8 },
-  venueName: { flex: 1, fontSize: 18, fontWeight: "700", color: INK },
-  venueMeta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
-  venueMetaText: { fontSize: 12.5, color: MUTED },
+  venueName: { flex: 1, fontSize: 14, fontWeight: "700", color: INK, lineHeight: 18 },
+  venueMeta: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 6 },
+  venueMetaText: { flex: 1, fontSize: 10, color: META },
+  venueTail: { fontSize: 10, color: "#706E6E", marginTop: 8 },
+  venueTailAccent: { color: ORANGE, fontWeight: "600" },
 
-  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginTop: 10 },
+  pillRow: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 10 },
   pill: {
     flexDirection: "row", alignItems: "center", gap: 5,
-    height: 26, paddingHorizontal: 10, borderRadius: 13,
-    backgroundColor: "rgba(255,236,222,0.9)",
+    height: 18, paddingHorizontal: 9, borderRadius: 9,
+    backgroundColor: "#FAF1EA",
   },
-  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.orange },
-  pillText: { fontSize: 11.5, fontWeight: "600", color: "#A85A00" },
+  pillWarm: { backgroundColor: "#FCF1E7" },
+  pillDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: ORANGE },
+  pillText: { fontSize: 10, fontWeight: "600", color: "#363739" },
+  // The mock runs this in full-strength orange rather than the dark
+  // `colors.orangeText` this app reserves for small type. #FD6A03 on the pill
+  // measures ~2.8:1 — better than the amber it replaces, still under 4.5:1.
+  pillTextWarm: { color: ORANGE },
 
-  countRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: 22, marginBottom: 14 },
-  countText: { fontSize: 14, color: MUTED },
+  countRow: { flexDirection: "row", alignItems: "center", gap: 8, marginTop: 19, marginBottom: 7 },
+  countText: { fontSize: 12, color: INK },
   countStrong: { fontWeight: "700", color: INK },
 
   pageTitle: { fontSize: 34, color: "#FF9F0A", marginBottom: 18 },
@@ -400,10 +453,10 @@ const styles = StyleSheet.create({
   // Layout only — fill, stroke and shadows come from <GlassCard>. minHeight
   // rather than the height it was: the field holds text.
   searchBar: {
-    flexDirection: "row", alignItems: "center", gap: 2,
-    minHeight: 44, paddingHorizontal: 11,
+    flexDirection: "row", alignItems: "center", gap: 7,
+    minHeight: 40, paddingLeft: 14, paddingRight: 8,
   },
-  searchInput: { flex: 1, fontSize: 14, color: INK, padding: 0 },
+  searchInput: { flex: 1, fontSize: 12, color: INK, padding: 0 },
 
   tabs: { flexDirection: "row", gap: 34, marginTop: spacing.xl },
   tab: { fontSize: 15, color: "#6C6C70" },
