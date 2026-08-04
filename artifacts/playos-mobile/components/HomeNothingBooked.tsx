@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/GlassCard";
 import { BtnOutline } from "@/components/BtnOutline";
 import { VenueArt } from "@/components/VenueArt";
 import { useGameLineup, useSignedAvatarUrls, lineupSentence, gameFillLabel, type GameSummary } from "@/lib/api";
+import { colors } from "@/lib/theme";
 
 const INK = "#1C1C1E";
 const MUTED = "#6C6C70";
@@ -73,7 +74,7 @@ export function HomeNothingBooked({
 
       {/* Hero — the one game we're actively recommending */}
       <Pressable onPress={() => router.push(`/game/${next.id}`)}>
-        <GlassCard variant="soft" round={24} padding={19} style={styles.hero}>
+        <GlassCard variant="soft" round={24} padding={15} style={styles.hero}>
           <View>
             <VenueArt name={next.pitchName} style={styles.heroPhoto} />
             {/* "needs 6 more" below the viable threshold, not "6 spots left".
@@ -173,19 +174,23 @@ export function HomeNothingBooked({
         </>
       )}
 
-      <Pressable onPress={() => router.push("/browse")}>
-        <HandwrittenHeader style={styles.browseAll}>browse everything in riyadh  →</HandwrittenHeader>
-      </Pressable>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  eyebrow: { fontSize: 11, fontWeight: "600", color: MUTED, marginTop: 26, letterSpacing: 0.3 },
+  eyebrow: { fontSize: 11, fontWeight: "600", color: MUTED, marginTop: 14, letterSpacing: 0.3 },
 
   // Geometry only — fill, stroke and shadows come from <GlassCard>.
-  hero: { marginTop: 12 },
-  heroPhoto: { height: 110, borderRadius: 16 },
+  hero: { marginTop: 10 },
+  // aspectRatio, not a fixed height: the plan is 320x176, so a full-width box
+  // pinned to 110 could only be filled by cropping or by leaving deep empty
+  // bands. Width comes from the parent, so this resolves height from it.
+  // Height-led, with the plan's own aspect deriving the width, and centred.
+  // Full-bleed at this aspect is ~210pt tall, which is most of why Home had to
+  // scroll. A centred drawing also reads as a drawing rather than as a photo
+  // band that has been cut down.
+  heroPhoto: { height: 132, aspectRatio: 320 / 176, alignSelf: "center", borderRadius: 16 },
   spotsBadge: {
     position: "absolute", left: 12, top: 12, height: 26, borderRadius: 13,
     paddingHorizontal: 12, alignItems: "center", justifyContent: "center",
@@ -194,11 +199,11 @@ const styles = StyleSheet.create({
   spotsBadgeAtRisk: { backgroundColor: "rgba(191,38,38,0.72)" },
   spotsText: { fontSize: 11, fontWeight: "600", color: "#FFFFFF" },
 
-  heroRow: { flexDirection: "row", alignItems: "center", marginTop: 12 },
+  heroRow: { flexDirection: "row", alignItems: "center", marginTop: 10 },
   heroTextCol: { flex: 1 },
   heroTitle: { fontSize: 17, fontWeight: "600", color: INK },
-  heroSub: { fontSize: 13, color: MUTED, marginTop: 6 },
-  lineupRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 12 },
+  heroSub: { fontSize: 13, color: MUTED, marginTop: 4 },
+  lineupRow: { flexDirection: "row", alignItems: "center", gap: 9, marginTop: 10 },
   avatarStack: { flexDirection: "row", alignItems: "center" },
   avatarRing: { borderWidth: 1.5, borderColor: "#FFFFFF", borderRadius: 15 },
   avatarMore: {
@@ -210,11 +215,11 @@ const styles = StyleSheet.create({
   heroPrice: { fontSize: 18, fontWeight: "700", color: INK, marginLeft: 12 },
 
   // Geometry and the glass itself come from BtnOutline; only the gap is ours.
-  heroCta: { marginTop: 16 },
+  heroCta: { marginTop: 10 },
 
-  alsoLabel: { fontSize: 22, color: "#FD6A03", marginTop: 28, marginBottom: 12 },
+  alsoLabel: { fontSize: 22, color: colors.orange, marginTop: 16, marginBottom: 8 },
 
-  rowCard: { marginBottom: 12 },
+  rowCard: { marginBottom: 6 },
   // minHeight, not the fixed 68 it was: the row holds two lines of text.
   row: { flexDirection: "row", alignItems: "center", minHeight: 68, padding: 9 },
   rowThumb: { width: 48, height: 48, borderRadius: 12 },
@@ -223,5 +228,4 @@ const styles = StyleSheet.create({
   rowSub: { fontSize: 12.5, color: MUTED, marginTop: 5 },
   rowPrice: { fontSize: 14, fontWeight: "600", color: INK, marginLeft: 8 },
 
-  browseAll: { fontSize: 22, color: "#FD6A03", textAlign: "center", marginTop: 18 },
 });

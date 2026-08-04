@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { View } from "react-native";
 import Svg, { Circle, Ellipse, G, Line, Path, Rect } from "react-native-svg";
 
 /**
@@ -24,6 +25,15 @@ import Svg, { Circle, Ellipse, G, Line, Path, Rect } from "react-native-svg";
 
 /** Warm tan — the ink everything on the plan is drawn in. */
 const TAN = "#E5D3C1";
+/**
+ * The mark's ink, a few steps darker than TAN.
+ *
+ * At full size the plan has hundreds of strokes and TAN reads as a drawing.
+ * At 48pt there are four or five lines total, and the same tan disappears into
+ * the cream. Darker here is not a different style, it is the same drawing
+ * holding its weight when there is far less of it.
+ */
+const TAN_MARK = "#C9AC8E";
 /** Cooler grey — the ring road / site boundary reads a shade colder. */
 const ROAD = "#D5CDC5";
 /** The one accent. Matches the mock's dot, sampled at (248,115,3). */
@@ -140,11 +150,10 @@ function Dashed({ d }: { d: string }) {
 function PlanArena() {
   return (
     <>
+      {PITCHES.arena.map((r, i) => <Pitch key={i} {...r} />)}
       <Ring x={16} y={12} w={288} h={152} r={30} />
       <Rect x={34} y={24} width={216} height={122} rx={22} stroke={TAN} strokeWidth={1.4} fill="none" />
       <Dashed d="M48 34 H236 M48 136 H236" />
-      <Pitch x={58} y={44} w={78} h={84} />
-      <Pitch x={152} y={44} w={78} h={84} />
       <Comb x={272} y={40} length={90} teeth={13} depth={22} vertical />
       <Rect x={256} y={28} width={38} height={116} rx={14} stroke={TAN} strokeWidth={1.2} fill="none" />
       <Trees
@@ -164,12 +173,10 @@ function PlanArena() {
 function PlanKafd() {
   return (
     <>
+      {PITCHES.kafd.map((r, i) => <Pitch key={i} {...r} />)}
       <Ring x={14} y={12} w={290} h={152} r={30} />
       <Rect x={32} y={22} width={218} height={126} rx={30} stroke={TAN} strokeWidth={1.4} fill="none" />
       <Dashed d="M46 28 H236 M46 146 H236" />
-      <Pitch x={78} y={34} w={110} h={46} />
-      <Pitch x={46} y={90} w={86} h={50} />
-      <Pitch x={144} y={90} w={86} h={50} />
       <Comb x={268} y={34} length={86} teeth={12} depth={20} vertical />
       <Rect x={286} y={96} width={16} height={54} rx={8} stroke={TAN} strokeWidth={1.2} fill="none" />
       <Trees
@@ -190,13 +197,12 @@ function PlanKafd() {
 function PlanRowad() {
   return (
     <>
+      {PITCHES.rowad.map((r, i) => <Pitch key={i} {...r} />)}
       <Ring x={26} y={20} w={272} h={140} r={28} />
       <Rect x={38} y={28} width={132} height={124} rx={12} stroke={TAN} strokeWidth={1.3} fill="none" />
       <Comb x={44} y={38} length={118} teeth={13} depth={16} />
       <Comb x={44} y={142} length={118} teeth={13} depth={16} />
-      <Pitch x={48} y={52} w={114} h={76} />
       <Dashed d="M178 44 H278 V138 H178 Z" />
-      <Pitch x={190} y={60} w={64} h={48} />
       <Trees
         at={[
           [186, 20, 6], [200, 20, 6], [226, 18, 6], [254, 18, 6], [266, 26, 5],
@@ -214,11 +220,10 @@ function PlanRowad() {
 function PlanKingFahd() {
   return (
     <>
+      {PITCHES.kingfahd.map((r, i) => <Pitch key={i} {...r} />)}
       <Ring x={18} y={12} w={286} h={150} r={28} />
       <Rect x={34} y={20} width={148} height={132} rx={16} stroke={TAN} strokeWidth={1.4} fill="none" />
       <Dashed d="M42 26 H176 V148 H42" />
-      <Pitch x={50} y={32} w={116} h={52} />
-      <Pitch x={50} y={94} w={116} h={52} />
       <Rect x={194} y={20} width={98} height={132} rx={14} stroke={TAN} strokeWidth={1.3} fill="none" />
       <Comb x={204} y={44} length={76} teeth={11} depth={16} />
       <Comb x={204} y={72} length={76} teeth={11} depth={16} />
@@ -273,6 +278,71 @@ function PlanGeneric({ seed }: { seed: number }) {
   );
 }
 
+/**
+ * Where each venue's pitches sit, in viewBox units.
+ *
+ * Declared once and consumed twice — by the full site plan and by the small
+ * mark — because the arrangement IS the venue's identity. Two pitches side by
+ * side is Arena; three in an L is KAFD; a big one with a small one beside it
+ * is Al Rowad. If these lived inline in the plans, the mark would drift from
+ * the drawing it is meant to be a reduction of.
+ */
+const PITCHES: Record<string, { x: number; y: number; w: number; h: number }[]> = {
+  arena:     [{ x: 58, y: 44, w: 78, h: 84 }, { x: 152, y: 44, w: 78, h: 84 }],
+  kafd:      [{ x: 78, y: 34, w: 110, h: 46 }, { x: 46, y: 90, w: 86, h: 50 }, { x: 144, y: 90, w: 86, h: 50 }],
+  rowad:     [{ x: 48, y: 52, w: 114, h: 76 }, { x: 190, y: 60, w: 64, h: 48 }],
+  kingfahd:  [{ x: 50, y: 32, w: 116, h: 52 }, { x: 50, y: 94, w: 116, h: 52 }],
+  generic:   [{ x: 52, y: 34, w: 166, h: 50 }, { x: 52, y: 94, w: 166, h: 48 }],
+};
+
+/**
+ * The venue's pitch arrangement alone, for boxes too small to read a plan in.
+ *
+ * At 48pt the full plan is about 0.15 scale: combs, roads and trees collapse
+ * into grey fuzz and the thumbnail reads as empty. This keeps the one thing
+ * that both survives and distinguishes the venues — how many pitches there
+ * are and how they sit — and drops everything that does not.
+ *
+ * The viewBox is cropped to the pitches' bounding box so they FILL the thumb
+ * instead of floating in the empty margin the full 320x176 frame would leave.
+ * Stroke is in viewBox units, so it scales up rather than hairlining away.
+ */
+function PlanMark({ which }: { which: string }) {
+  const rects = PITCHES[which] ?? PITCHES.generic;
+  const pad = 8;
+  const x0 = Math.min(...rects.map((r) => r.x)) - pad;
+  const y0 = Math.min(...rects.map((r) => r.y)) - pad;
+  const x1 = Math.max(...rects.map((r) => r.x + r.w)) + pad;
+  const y1 = Math.max(...rects.map((r) => r.y + r.h)) + pad;
+  return (
+    <Svg
+      width="100%"
+      height="100%"
+      viewBox={`${x0} ${y0} ${x1 - x0} ${y1 - y0}`}
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <G stroke={TAN_MARK} strokeWidth={4} fill="none" strokeLinejoin="round">
+        {rects.map((r, i) => {
+          const cx = r.x + r.w / 2;
+          const cy = r.y + r.h / 2;
+          const portrait = r.h >= r.w;
+          return (
+            <G key={i}>
+              <Rect x={r.x} y={r.y} width={r.w} height={r.h} rx={2} />
+              {portrait ? (
+                <Line x1={r.x} y1={cy} x2={r.x + r.w} y2={cy} />
+              ) : (
+                <Line x1={cx} y1={r.y} x2={cx} y2={r.y + r.h} />
+              )}
+              <Circle cx={cx} cy={cy} r={Math.min(r.w, r.h) * 0.17} />
+            </G>
+          );
+        })}
+      </G>
+    </Svg>
+  );
+}
+
 /** Case- and spacing-insensitive so "kafd pitch" and "KAFD Pitch" agree. */
 function key(name: string) {
   return name.toLowerCase().replace(/[^a-z]/g, "");
@@ -284,22 +354,52 @@ function hash(name: string) {
   return h;
 }
 
+/**
+ * Below this, on the shorter side, the full site plan is unreadable and
+ * PlanMark is drawn instead. 84pt is where the seating combs stop resolving.
+ */
+const MARK_BELOW = 84;
+
 export function PitchSchematic({ name, width = 156, height = 86, fit = "meet" }: Props) {
-  const plan = useMemo(() => {
+  const small = Math.min(width, height) < MARK_BELOW;
+
+  // Which venue, resolved once. The mark and the full plan must agree, so the
+  // name is matched in one place rather than twice.
+  const which = useMemo(() => {
     const k = key(name);
-    if (k.includes("arenariyadh")) return <PlanArena />;
-    if (k.includes("kafd")) return <PlanKafd />;
-    if (k.includes("rowad")) return <PlanRowad />;
-    if (k.includes("kingfahd")) return <PlanKingFahd />;
-    return <PlanGeneric seed={hash(k)} />;
+    if (k.includes("arenariyadh")) return "arena";
+    if (k.includes("kafd")) return "kafd";
+    if (k.includes("rowad")) return "rowad";
+    if (k.includes("kingfahd")) return "kingfahd";
+    return "generic";
   }, [name]);
+
+  const plan = useMemo(() => {
+    if (which === "arena") return <PlanArena />;
+    if (which === "kafd") return <PlanKafd />;
+    if (which === "rowad") return <PlanRowad />;
+    if (which === "kingfahd") return <PlanKingFahd />;
+    return <PlanGeneric seed={hash(key(name))} />;
+  }, [which, name]);
+
+  // The mark brings its own <Svg> — it crops the viewBox to the pitches, which
+  // the shared frame below cannot do.
+  if (small) {
+    return (
+      <View style={{ width, height }}>
+        <PlanMark which={which} />
+      </View>
+    );
+  }
 
   return (
     <Svg
       width={width}
       height={height}
-      viewBox={`0 0 ${VB_W} ${VB_H}`}
-      preserveAspectRatio={`xMidYMid ${fit}`}
+      viewBox={small ? "0 0 120 80" : `0 0 ${VB_W} ${VB_H}`}
+      // Never "slice" on the mark: cropping the one shape that carries the
+      // meaning is what made these read as empty in the first place.
+      preserveAspectRatio={`xMidYMid ${small ? "meet" : fit}`}
     >
       {plan}
     </Svg>

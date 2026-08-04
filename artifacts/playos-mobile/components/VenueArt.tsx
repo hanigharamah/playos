@@ -22,10 +22,15 @@ import { PitchSchematic } from "./PitchSchematic";
  * keep their existing width/height/borderRadius and none of them had to be
  * hand-edited.
  *
- * `slice` rather than `meet`, matching `resizeMode="cover"`: the art fills the
- * frame and crops, so a wide hero and a 40pt square thumbnail both read as a
- * plan rather than a squashed one. On the smallest thumbs the crop lands on
- * the centre of the site, which is the pitch itself.
+ * `meet`, NOT the `slice` that matched a photo's `resizeMode="cover"`. Cropping
+ * is right for a photograph, where any part of it is still a photograph, and
+ * wrong for a drawing: slicing a site plan to fill a 110pt-tall hero showed
+ * the middle third at high magnification, which read as zoomed-in and cheap.
+ * The plan is centred at whatever scale fits, whole.
+ *
+ * Below ~84pt PitchSchematic swaps to a simplified one-pitch mark on its own
+ * account, because at thumbnail size the full plan is unreadable however it
+ * is fitted.
  */
 export function VenueArt({
   name,
@@ -55,7 +60,7 @@ export function VenueArt({
           ground the photo used to. Without it the art floats on whatever is
           behind, which on the darker screens is unreadable. */}
       {size && size.w > 0 && size.h > 0 && (
-        <PitchSchematic name={name} width={size.w} height={size.h} fit="slice" />
+        <PitchSchematic name={name} width={size.w} height={size.h} fit="meet" />
       )}
       {children}
     </View>

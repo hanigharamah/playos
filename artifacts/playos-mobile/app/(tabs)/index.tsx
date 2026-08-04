@@ -16,6 +16,14 @@ import { useScrollToTop } from "@/lib/scrollToTop";
 import { screen } from "@/lib/analytics";
 
 // Exact palette from the Figma Home (node 1:2)
+/**
+ * FloatingTabBar's own height. Duplicated deliberately rather than exported:
+ * the bar is a floating overlay with no layout presence, so anything that has
+ * to sit above it must know how tall it is. Keep in step with
+ * components/FloatingTabBar.tsx.
+ */
+const TAB_BAR_H = 58;
+
 const INK = "#1C1C1E";
 const CARD_META = "#5A564E";
 const CARD_LABEL = "#8A8178";
@@ -91,6 +99,18 @@ export default function Home() {
             single bookable game. Match-day state is the mini-bar's job. */}
         {!showSkeleton && <HomeNothingBooked games={ranked.games} isToday={ranked.isToday} />}
       </ScrollView>
+
+      {/* Pinned above the tab bar rather than trailing the list. It is the way
+          out of a screen that now fits without scrolling, so it must not be
+          the one thing you have to scroll to reach. Outside the ScrollView so
+          it stays put; the list's paddingBottom reserves its height. */}
+      <Pressable
+        onPress={() => router.push("/browse")}
+        style={[styles.browseAllBar, { bottom: Math.max(insets.bottom, 12) + TAB_BAR_H + 14 }]}
+        hitSlop={8}
+      >
+        <HandwrittenHeader style={styles.browseAll}>browse everything in riyadh  →</HandwrittenHeader>
+      </Pressable>
     </View>
   );
 }
@@ -105,10 +125,14 @@ const styles = StyleSheet.create({
     // paddingTop is applied at the call site from the safe-area inset: the
   // fixed value here was smaller than the Dynamic Island's inset, so the first
   // element rendered underneath it.
-  content: { paddingHorizontal: 20, paddingBottom: 130 },
+  // Reserves the floating tab bar AND the pinned browse-all bar above it, so
+  // the last card can still be scrolled clear of both on a short screen.
+  content: { paddingHorizontal: 20, paddingBottom: 150 },
   header: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  browseAllBar: { position: "absolute", left: 0, right: 0, alignItems: "center" },
+  browseAll: { fontSize: 20, color: colors.orange, textAlign: "center" },
   logo: { fontSize: 17, fontWeight: "700", color: INK },
-  headline: { fontSize: 42, lineHeight: 50, marginTop: spacing.xl },
+  headline: { fontSize: 36, lineHeight: 42, marginTop: 10 },
   heroShadow: {
     marginTop: spacing.xxl + 12, borderRadius: 28,
     // No elevation here: this wrapper has no background, and Android derives
