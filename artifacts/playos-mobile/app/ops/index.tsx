@@ -80,10 +80,12 @@ export default function OpsHub() {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
         showsVerticalScrollIndicator={false}
       >
-        {/* Not router.back(): an operator's session OPENS here, so on a cold
-            start there is nothing behind this screen. It crosses to the player
-            app instead — the same person also plays, and has bookings. */}
-        <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={12} style={styles.backRow}>
+        {/* push, NOT replace. An operator's session OPENS here, and there is
+            deliberately no operator row in Settings, so replacing this screen
+            left no route back to /ops for the rest of the session — on the
+            first tap. Pushing keeps the hub underneath, so the system back
+            gesture returns to it. */}
+        <Pressable onPress={() => router.push("/(tabs)")} hitSlop={12} style={styles.backRow}>
           <ArrowLeft size={16} color={MUTED} strokeWidth={2} />
           <Text style={styles.backText}>the app</Text>
         </Pressable>

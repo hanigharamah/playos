@@ -230,6 +230,11 @@ export function useSubmitRefundChoice() {
     onSuccess: (_result, vars) => {
       queryClient.invalidateQueries({ queryKey: refundChoiceKey(vars.bookingId) });
       queryClient.invalidateQueries({ queryKey: qk.myBookings });
+      // The key MatchDayBar actually reads. Without it the bar went on saying
+      // "choose cash or a token" after the player chose cash — which is the
+      // precise failure useMyRefundChoices was added to prevent, so leaving it
+      // uninvalidated made the fix a no-op for the cash path.
+      queryClient.invalidateQueries({ queryKey: ["my-refund-choices"] });
     },
   });
 }

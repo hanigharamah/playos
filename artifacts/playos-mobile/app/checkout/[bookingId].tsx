@@ -72,7 +72,7 @@ export default function Checkout() {
   const pay = () => {
     if (!method || !bookingId) return;
     confirmMethod.mutate(
-      { bookingId, method },
+      { bookingId, gameId: gameId ?? undefined, method },
       {
         onSuccess: () => {
           track("booking_confirmed", { method, fee: game?.price ?? null, gameId: gameId ?? null });
@@ -86,8 +86,14 @@ export default function Checkout() {
         // mutation already builds a message; show it.
         onError: (err: any) =>
           Alert.alert(
-            "Couldn't confirm",
+            err?.expired ? "That spot is gone" : "Couldn't confirm",
             err?.data?.error ?? "Something went wrong — please try again.",
+            // An expired hold is not retryable: the seat is back on sale, so
+            // the only useful action is picking again. Staying on a checkout
+            // for a booking that no longer holds anything is a dead end.
+            err?.expired && gameId
+              ? [{ text: "Pick another spot", onPress: () => router.replace(`/game/${gameId}`) }]
+              : undefined,
           ),
       },
     );
@@ -200,8 +206,10 @@ export default function Checkout() {
 
       <View style={styles.actions}>
         <Btn3D
-          label={game ? `🔒  pay SAR ${game.price}` : "🔒  pay"}
-          disabled={!method}
+          label={holdExpired ? "hold expired" : game ? `🔒  pay SAR ${game.price}` : "🔒  pay"}
+          // Was `!method` alone, so the button stayed live after the hold
+          // expired and "paid" for a seat already back on sale.
+          disabled={!method || holdExpired}
           loading={confirmMethod.isPending}
           onPress={pay}
         />

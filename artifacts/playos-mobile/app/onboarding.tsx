@@ -36,7 +36,10 @@ export default function Onboarding() {
     } catch {
       // Deliberately swallowed; see above.
     }
-    router.replace("/(tabs)");
+    // "/" rather than the tabs: the entry route is the one place that knows
+    // an operator opens on /ops. Hardcoding the tabs here dropped them into
+    // the player app instead.
+    router.replace("/");
   };
 
   useEffect(() => {

@@ -18,7 +18,11 @@ export interface AuthUser {
   email: string;
   phone: string | null;
   name: string;
-  role: "player" | "operator" | "host" | "admin";
+  // Matches is_operator() in the database, which accepts admin | organiser |
+  // host. "operator" was in this union and is not a real role; "organiser" was
+  // missing and is. The row is typed `any` on the way in, so tsc never caught
+  // the disagreement.
+  role: "player" | "organiser" | "host" | "admin";
   /**
    * When this ACCOUNT was shown the notification pitch, whatever it answered.
    * Null means never asked. Lives on the account rather than in AsyncStorage
@@ -271,7 +275,23 @@ export function useSignUp() {
       if (error) throw { data: { error: error.message } };
       if (!auth.user) throw { data: { error: "Signup failed" } };
 
-      await supabase.from("users").update({ phone: normalizePhone(vars.phone) }).eq("id", auth.user.id);
+      // Checked, not fired and forgotten. users_phone_key is unique now, so a
+      // number already in use returns 23505 — and this used to report signup
+      // as successful while leaving the account with phone = null, which is
+      // exactly what the unique index was added to prevent.
+      const { error: phoneErr } = await supabase
+        .from("users")
+        .update({ phone: normalizePhone(vars.phone) })
+        .eq("id", auth.user.id);
+      if (phoneErr) {
+        throw {
+          data: {
+            error: (phoneErr as any).code === "23505"
+              ? "That phone number is already registered. Sign in instead, or use another number."
+              : "We couldn't save your phone number. Please try again.",
+          },
+        };
+      }
 
       const { data: profile } = await supabase.from("users").select("*").eq("id", auth.user.id).single();
       if (!profile) throw { data: { error: "Profile creation failed" } };
@@ -307,7 +327,10 @@ export function useListGames(params?: { city?: string }) {
           .select("*, bookings(id, payment_status)")
           .eq("is_public", true)
           .neq("status", "cancelled")
-          .gte("kickoff_time", new Date().toISOString())
+          // Server clock, like every other deadline in this app. The device
+          // clock decided which matches were still bookable, so a phone set an
+          // hour slow offered games that had already kicked off.
+          .gte("kickoff_time", new Date(serverNow()).toISOString())
           .order("kickoff_time", { ascending: true }),
         fetchPublicGameCounts(),
       ]);
@@ -451,12 +474,36 @@ export function useBookSpot() {
 export function useConfirmPaymentMethod() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (vars: { bookingId: string; method: "cash" | "stcpay" }) => {
-      const { error } = await supabase
-        .from("bookings").update({ payment_method: vars.method }).eq("id", vars.bookingId);
+    mutationFn: async (vars: { bookingId: string; gameId?: string; method: "cash" | "stcpay" }) => {
+      // .select() so we can see WHETHER A ROW CHANGED, not merely that the
+      // statement did not error. release_expired_holds() flips an abandoned
+      // booking to 'forfeited' after five minutes; the filter below then
+      // matches nothing, and the bare update returned error: null — so a
+      // player whose hold had lapsed was told their spot was confirmed while
+      // the seat was already free for somebody else.
+      const { data, error } = await supabase
+        .from("bookings")
+        .update({ payment_method: vars.method })
+        .eq("id", vars.bookingId)
+        .in("payment_status", ["pending", "paid"])
+        .select("id");
+
       if (error) throw { data: { error: "Something went wrong — please try again." } };
+      if (!data || data.length === 0) {
+        throw {
+          data: {
+            error: "Your hold on this spot expired, so it went back on sale. Pick a spot again.",
+          },
+          expired: true,
+        };
+      }
     },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.myBookings }),
+    onSuccess: (_r, vars) => {
+      queryClient.invalidateQueries({ queryKey: qk.myBookings });
+      // The match screen reads the game, not the booking list, and was left
+      // saying "Finish checkout" after checkout finished.
+      if (vars.gameId) queryClient.invalidateQueries({ queryKey: qk.game(vars.gameId) });
+    },
   });
 }
 
