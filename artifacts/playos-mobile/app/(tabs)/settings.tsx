@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, Pressable, Linking, ScrollView, Image, Alert } 
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BAR_INSET, useMatchDayBar } from "@/components/MatchDayBar";
-import { CreditCard, Bell, HelpCircle, User as UserIcon, Wallet } from "lucide-react-native";
+import { CreditCard, Bell, HelpCircle, User as UserIcon, Wallet, ShieldCheck } from "lucide-react-native";
 import * as Notifications from "expo-notifications";
 import { useAuth } from "@/lib/auth";
-import { useGetMe, useGetMyStats, useGetMyCredits } from "@/lib/api";
+import { useGetMe, useGetMyStats, useGetMyCredits, useIsOperator } from "@/lib/api";
 import { resetAnalytics, track, screen } from "@/lib/analytics";
 import { registerForPush } from "@/lib/notifications";
 import { HandwrittenHeader } from "@/components/HandwrittenHeader";
@@ -27,6 +27,7 @@ const GLOWS = [
 export default function Profile() {
   const { signOut } = useAuth();
   const { data: me } = useGetMe();
+  const { data: isOperator } = useIsOperator();
   const { data: stats } = useGetMyStats();
   const { data: credits = 0 } = useGetMyCredits();
   const router = useRouter();
@@ -83,6 +84,17 @@ export default function Profile() {
       onPress: () => (pushGranted ? router.push("/account/notifications") : void togglePush()),
     },
     { icon: <HelpCircle size={22} color={INK} strokeWidth={1.8} />, label: "help & support", onPress: () => Linking.openURL("https://playos.sa/about") },
+    // Only rendered for an operator — a player's device never draws this row,
+    // so there is nothing for them to wonder about. The hiding is convenience,
+    // not security: cancel_match and release_spot both gate on is_operator()
+    // server-side, so the route being present in the app bundle costs nothing.
+    ...(isOperator
+      ? [{
+          icon: <ShieldCheck size={22} color={colors.orange} strokeWidth={1.8} />,
+          label: "operator",
+          onPress: () => router.push("/ops"),
+        }]
+      : []),
   ];
 
   return (
