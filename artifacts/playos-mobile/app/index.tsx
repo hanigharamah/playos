@@ -1,6 +1,6 @@
 import { Redirect } from "expo-router";
 import { useAuth } from "@/lib/auth";
-import { useGetMe } from "@/lib/api";
+import { useGetMe, useIsOperator } from "@/lib/api";
 import { View, ActivityIndicator } from "react-native";
 import { colors } from "@/lib/theme";
 
@@ -13,8 +13,9 @@ export default function Index() {
   // Server-side flag, not device storage: a player who reinstalls should not
   // be pitched again, and one who was killed ON the onboarding screen should.
   const { data: me, isLoading: meLoading } = useGetMe();
+  const { data: isOperator, isLoading: opsLoading } = useIsOperator();
 
-  if (isLoading || (user && meLoading)) {
+  if (isLoading || (user && (meLoading || opsLoading))) {
     return (
       <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.creamDeep }}>
         <ActivityIndicator color={colors.orange} />
@@ -29,6 +30,12 @@ export default function Index() {
   // the next cold start comes through here, and they would never be asked
   // again — the same silent gap this whole change exists to close.
   if (me && !me.onboardingSeenAt) return <Redirect href="/onboarding" />;
+
+  // An operator's account opens the operator screens, not the storefront.
+  // There is one operator and this is what they signed in to do; making them
+  // pass through a player home first is a tap they would take every time.
+  // The hub still links across, because the same person also plays.
+  if (isOperator) return <Redirect href="/ops" />;
 
   return <Redirect href="/(tabs)" />;
 }

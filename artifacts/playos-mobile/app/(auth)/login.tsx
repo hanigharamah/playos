@@ -38,7 +38,10 @@ export default function Login() {
         onSuccess: (user) => {
           identifyUser(user.id);
           track("player_logged_in");
-          router.replace("/(tabs)");
+          // Through "/" rather than straight to the tabs: that route already
+          // decides between onboarding, the operator hub and the storefront,
+          // and duplicating the decision here is how the two drift apart.
+          router.replace("/");
         },
         onError: (err: any) => setError(err?.data?.error ?? "Invalid credentials"),
       },

@@ -80,8 +80,12 @@ export default function OpsHub() {
         contentContainerStyle={[styles.content, { paddingTop: insets.top + 8 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backCircle}>
-          <ArrowLeft size={18} color={INK} strokeWidth={2} />
+        {/* Not router.back(): an operator's session OPENS here, so on a cold
+            start there is nothing behind this screen. It crosses to the player
+            app instead — the same person also plays, and has bookings. */}
+        <Pressable onPress={() => router.replace("/(tabs)")} hitSlop={12} style={styles.backRow}>
+          <ArrowLeft size={16} color={MUTED} strokeWidth={2} />
+          <Text style={styles.backText}>the app</Text>
         </Pressable>
 
         <HandwrittenHeader style={styles.header}>operator</HandwrittenHeader>
@@ -163,11 +167,8 @@ const styles = StyleSheet.create({
   plain: { fontSize: 15, color: MUTED },
   link: { fontSize: 15, fontWeight: "600", color: colors.orange },
 
-  backCircle: {
-    width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.8)", borderWidth: 1, borderColor: "rgba(255,255,255,0.9)",
-    marginBottom: 10,
-  },
+  backRow: { flexDirection: "row", alignItems: "center", gap: 6, minHeight: 34, marginBottom: 6 },
+  backText: { fontSize: 13.5, fontWeight: "600", color: MUTED },
   header: { fontSize: 30, color: colors.orange },
   sub: { fontSize: 13, color: MUTED, marginTop: 2, marginBottom: 16 },
   empty: { fontSize: 14, color: MUTED, marginTop: 24 },
