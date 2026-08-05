@@ -454,6 +454,10 @@ export function useBookSpot() {
           taken: "Someone just took that spot — pick another.",
           already_booked: "You already have a spot in this game.",
           full: "This match just filled up.",
+          // claim_spot rejects a malformed team or an out-of-range slot. The
+          // picker should never send one, so this is a bug on our side, not
+          // something the player did.
+          bad_request: "Something went wrong picking that spot — try another.",
           kicked_off: "This match has already kicked off.",
           cancelled: "This match has been cancelled.",
           no_such_game: "We couldn't find that match.",
