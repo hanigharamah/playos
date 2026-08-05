@@ -160,7 +160,18 @@ function mapGameSummary(g: Record<string, any>, bookedCount?: number, photoUrl?:
     capacity: g.capacity,
     status: g.status,
     bookedCount:
-      bookedCount ?? (g.bookings as any[] | undefined)?.filter((b) => b.payment_status === "paid").length ?? 0,
+      bookedCount ??
+      // Same rule as get_public_game_counts and get_game_seatmap: a seat is
+      // taken unless the booking is terminal or its hold has lapsed. This
+      // filtered on 'paid' — which nothing in the app ever writes — so the
+      // fallback always returned 0 and advertised full games as empty.
+      (g.bookings as any[] | undefined)?.filter(
+        (b) =>
+          b.payment_status !== "refunded" &&
+          b.payment_status !== "forfeited" &&
+          (!b.hold_expires_at || new Date(b.hold_expires_at).getTime() > serverNow()),
+      ).length ??
+      0,
     durationMinutes: g.duration_minutes,
     isPublic: g.is_public,
     mapsUrl: g.maps_url ?? null,
@@ -324,7 +335,10 @@ export function useListGames(params?: { city?: string }) {
       const [{ data, error }, counts] = await Promise.all([
         supabase
           .from("games")
-          .select("*, bookings(id, payment_status)")
+          // hold_expires_at is needed by the bookedCount fallback below: without
+          // it every booking looks unheld and an expired hold is counted as an
+          // occupied seat, which is the disagreement this rule exists to end.
+          .select("*, bookings(id, payment_status, hold_expires_at)")
           .eq("is_public", true)
           .neq("status", "cancelled")
           // Server clock, like every other deadline in this app. The device
