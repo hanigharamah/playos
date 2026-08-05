@@ -1369,18 +1369,6 @@ export function useSendMessage() {
   });
 }
 
-// ─── Operator: delete game (mirrors web's manage.tsx) ──────────────────
-
-export function useDeleteGame() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (vars: { id: string }): Promise<void> => {
-      const { error } = await supabase.from("games").delete().eq("id", vars.id);
-      if (error) throw error;
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.games() }),
-  });
-}
 
 
 // ─── Operator surface ──────────────────────────────────────────────────────
