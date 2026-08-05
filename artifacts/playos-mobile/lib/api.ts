@@ -19,6 +19,12 @@ export interface AuthUser {
   phone: string | null;
   name: string;
   role: "player" | "operator" | "host" | "admin";
+  /**
+   * When this ACCOUNT was shown the notification pitch, whatever it answered.
+   * Null means never asked. Lives on the account rather than in AsyncStorage
+   * so it survives a reinstall — see 2026-08-onboarding-and-phone-identity.sql.
+   */
+  onboardingSeenAt: string | null;
   createdAt: string;
   /** 1-10, or null when no cartoon avatar has been picked. */
   avatarPreset: number | null;
@@ -89,13 +95,27 @@ export interface MyBooking {
 }
 
 export interface AppSettings {
-  whatsappUrl: string;
-  stcpayNumber: string;
+  /** Null until an operator sets one. Callers must handle the absence. */
+  whatsappUrl: string | null;
+  stcpayNumber: string | null;
 }
 
+/**
+ * Null, not a placeholder.
+ *
+ * These used to default to "05XXXXXXXX" and a bare WhatsApp domain, and both
+ * columns are still NULL in the database — so checkout rendered a fabricated
+ * phone number under STC Pay as though it were the number to send money to.
+ * A made-up payment destination is worse than no payment method: the player
+ * cannot tell it is fake, and an App Store reviewer reads it as an unfinished
+ * app.
+ *
+ * With null, the number simply does not render (checkout already guards on
+ * truthiness) and the row shows the method without a destination.
+ */
 const DEFAULT_SETTINGS: AppSettings = {
-  whatsappUrl: "https://chat.whatsapp.com/",
-  stcpayNumber: "05XXXXXXXX",
+  whatsappUrl: null,
+  stcpayNumber: null,
 };
 
 // ─── Helpers ────────────────────────────────────────────────────────────
@@ -182,6 +202,7 @@ export function useGetMe() {
       return {
         id: data.id, email: data.email, phone: data.phone,
         name: data.name, role: data.role, createdAt: data.created_at,
+        onboardingSeenAt: data.onboarding_seen_at ?? null,
         avatarPreset: data.avatar_preset ?? null,
         avatarUrl: data.avatar_url ?? null,
       };
@@ -226,6 +247,7 @@ export function useLogin() {
       const user: AuthUser = {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
+        onboardingSeenAt: profile.onboarding_seen_at ?? null,
         avatarPreset: profile.avatar_preset ?? null,
         avatarUrl: profile.avatar_url ?? null,
       };
@@ -257,6 +279,7 @@ export function useSignUp() {
       const user: AuthUser = {
         id: profile.id, email: profile.email, phone: profile.phone,
         name: profile.name, role: profile.role, createdAt: profile.created_at,
+        onboardingSeenAt: profile.onboarding_seen_at ?? null,
         avatarPreset: profile.avatar_preset ?? null,
         avatarUrl: profile.avatar_url ?? null,
       };
@@ -1678,5 +1701,33 @@ export function useDeleteMyAccount() {
       if (error) throw new Error(error.message);
       return (data as DeleteAccountResult) ?? "not_authenticated";
     },
+  });
+}
+
+/**
+ * Record that this account has been shown the notification pitch.
+ *
+ * Written by BOTH branches of onboarding — enabling and skipping — because the
+ * question being answered is "have we asked?", not "did they say yes". Writing
+ * it only on success would re-pitch anyone who declined, on every launch.
+ *
+ * 2026-08-onboarding-and-phone-identity.sql grants UPDATE on this single
+ * column, so this is a direct write rather than an RPC: there is nothing here
+ * a player could set to their own advantage.
+ */
+export function useMarkOnboardingSeen() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const uid = session?.user?.id;
+      if (!uid) return;
+      await supabase
+        .from("users")
+        .update({ onboarding_seen_at: new Date().toISOString() })
+        .eq("id", uid);
+    },
+    // Refresh `me` so app/index.tsx stops redirecting back to onboarding.
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.me }),
   });
 }

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Bell, Check } from "lucide-react-native";
 import { useAuth } from "@/lib/auth";
+import { useMarkOnboardingSeen } from "@/lib/api";
 import { registerForPush } from "@/lib/notifications";
 import { track } from "@/lib/analytics";
 import { PillButton } from "@/components/PillButton";
@@ -18,29 +19,55 @@ export default function Onboarding() {
   const router = useRouter();
   const { user } = useAuth();
   const [state, setState] = useState<"idle" | "loading" | "done">("idle");
+  const markSeen = useMarkOnboardingSeen();
+
+  /**
+   * Stamp the account, then leave. Awaited rather than fired and forgotten:
+   * app/index.tsx decides where to send you from this same flag, so navigating
+   * before the write lands would bounce a player straight back here.
+   *
+   * mutateAsync can reject (offline). Leaving is still right — the pitch was
+   * shown, and trapping someone on a permission screen because the network
+   * dropped is worse than asking once more next launch.
+   */
+  const leave = async () => {
+    try {
+      await markSeen.mutateAsync();
+    } catch {
+      // Deliberately swallowed; see above.
+    }
+    router.replace("/(tabs)");
+  };
 
   useEffect(() => {
     track("reminder_onboarding_shown", { source: "manual", platform: "native" });
   }, []);
 
   const enable = async () => {
-    if (!user?.id) return router.replace("/(tabs)");
+    if (!user?.id) return void leave();
     setState("loading");
     const result = await registerForPush(user.id);
     if (result.status === "granted") {
       setState("done");
       track("reminder_enabled", { source: "signup" });
-      setTimeout(() => router.replace("/(tabs)"), 900);
+      // Long enough to read "Reminders are on" and no longer.
+      setTimeout(() => void leave(), 900);
     } else {
       setState("idle");
-      track("reminder_denied", { source: "signup", result: result.status });
-      router.replace("/(tabs)");
+      // `error` is a real outcome here and used to be indistinguishable from
+      // a plain refusal: registerForPush returns it when the token write fails,
+      // which is exactly how the broken push column went unnoticed for a month.
+      track(result.status === "error" ? "reminder_failed" : "reminder_denied", {
+        source: "signup",
+        result: result.status,
+      });
+      void leave();
     }
   };
 
   const skip = () => {
     track("reminder_onboarding_dismissed", { source: "signup" });
-    router.replace("/(tabs)");
+    void leave();
   };
 
   return (

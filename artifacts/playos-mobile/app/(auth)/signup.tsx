@@ -48,7 +48,10 @@ export default function Signup() {
           // player who has paid has a reason to want the check-in message,
           // and the opt-in rate at signup is not one we can build a forfeit
           // policy on. See app/checkout/[bookingId].tsx.
-          router.replace("/(tabs)");
+          // Through onboarding, not past it. That screen is the only place
+          // that asks for notification permission, and skipping it is why no
+          // device has ever registered for push.
+          router.replace("/onboarding");
         },
         onError: (err: any) => setError(err?.data?.error ?? "Signup failed"),
       },
