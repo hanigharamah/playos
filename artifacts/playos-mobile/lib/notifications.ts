@@ -13,9 +13,9 @@ import { supabase } from "./supabase";
  *  - Delivery works while the app is fully closed
  *
  * The Expo push token is stored in the SAME `push_subscriptions` Supabase
- * table used by the web PWA, in a new `expo_push_token` column that the
+ * table used by the web PWA, in an `expo_push_token` column that the
  * send-match-reminders edge function must be taught to read.
- * See SPEC.md > "Push notifications" for the schema + edge-function change.
+ * See supabase/2026-08-expo-push-tokens.sql for the schema this depends on.
  */
 
 // Foreground presentation behavior (banner + sound while app is open).
@@ -37,10 +37,14 @@ export type RegisterResult =
 
 /**
  * Requests notification permission, retrieves the Expo push token, and
- * upserts it into `push_subscriptions` for the given user.
+ * registers it in `push_subscriptions` for the signed-in user.
  * Call once from the post-signup / post-login onboarding sheet.
+ *
+ * `_userId` is kept only so the five existing call sites keep compiling. The
+ * row is written by register_push_token(), which takes the user from the JWT;
+ * a caller-supplied id is not an identity claim and is deliberately ignored.
  */
-export async function registerForPush(userId: string): Promise<RegisterResult> {
+export async function registerForPush(_userId: string): Promise<RegisterResult> {
   if (!Device.isDevice) return { status: "unsupported" };
 
   // Android needs a channel explicitly declared before any notification can arrive.
@@ -68,14 +72,24 @@ export async function registerForPush(userId: string): Promise<RegisterResult> {
 
   const { data: expoPushToken } = await Notifications.getExpoPushTokenAsync({ projectId });
 
-  const { error } = await supabase.from("push_subscriptions").upsert(
-    {
-      user_id: userId,
-      expo_push_token: expoPushToken,
-      platform: Platform.OS,
-    },
-    { onConflict: "expo_push_token" },
-  );
+  // push_subscriptions.platform is constrained to web|ios|android. Platform.OS
+  // is wider than that (windows, macos), and an unexpected value would fail the
+  // check constraint at 23514 rather than degrading — so narrow it here.
+  if (Platform.OS !== "ios" && Platform.OS !== "android") {
+    return { status: "unsupported" };
+  }
+
+  // register_push_token() rather than a direct upsert. The table is protected
+  // by RLS on user_id = auth.uid(), which correctly stops one player writing
+  // another's row — but it also blocks the legitimate case where this phone
+  // was last registered to a different account (sign out, sign in), because
+  // the ON CONFLICT target row is invisible to the new user. The definer
+  // function reassigns the device instead. It reads auth.uid() itself, so
+  // `userId` is never trusted as an identity claim.
+  const { error } = await supabase.rpc("register_push_token", {
+    p_token: expoPushToken,
+    p_platform: Platform.OS,
+  });
   if (error) return { status: "error", reason: error.message };
 
   return { status: "granted", token: expoPushToken };
