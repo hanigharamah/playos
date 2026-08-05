@@ -137,7 +137,21 @@ Deno.serve(async (_req) => {
       .in("payment_status", ["paid", "pending"])
       .not("user_id", "is", null);
 
-    const userIds = [...new Set((bookings ?? []).map((b) => b.user_id as string))];
+    let userIds = [...new Set((bookings ?? []).map((b) => b.user_id as string))];
+
+    // Honour the opt-out. A MISSING row means defaults, not silence: someone
+    // who never opened the preferences screen must still get their reminder,
+    // so only players with an explicit match_reminders = false are dropped.
+    if (userIds.length > 0) {
+      const { data: optedOut } = await supabase
+        .from("notification_preferences")
+        .select("user_id")
+        .in("user_id", userIds)
+        .eq("match_reminders", false);
+      const mute = new Set((optedOut ?? []).map((r) => r.user_id as string));
+      if (mute.size > 0) userIds = userIds.filter((id) => !mute.has(id));
+    }
+
     if (userIds.length === 0) {
       await supabase.from("games").update({ reminder_sent_at: new Date().toISOString() }).eq("id", game.id);
       continue;
@@ -211,11 +225,9 @@ Deno.serve(async (_req) => {
       // Surfaced rather than silent: phones registered with no VAPID keys is a
       // normal state now, and "web: 0" should not read as a failure.
       webPushConfigured: webPushReady,
-      // NOT filtered by notification_preferences. That table does not exist --
-      // 2026-07-notification-preferences.sql has never been applied -- so
-      // there is nothing to consult, and every booked player gets the T-20
-      // reminder. Apply that migration before adding per-message opt-outs.
-      respectsPreferences: false,
+      // Filtered by notification_preferences.match_reminders. A missing row
+      // means defaults, so only an explicit opt-out mutes anyone.
+      respectsPreferences: true,
     }),
     { status: 200 },
   );
