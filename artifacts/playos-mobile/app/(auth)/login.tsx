@@ -105,7 +105,21 @@ export default function Login() {
 
             {error && <Text style={styles.error}>{error}</Text>}
 
-            <Btn3D label="Sign In" onPress={submit} loading={login.isPending} disabled={!canSubmit} />
+            {/* WhatsApp first: it is the route new players will use, and the
+            one that does not depend on remembering a password. Email sign-in
+            stays below it — existing accounts have passwords, and a sign-in
+            screen with a single route in is one that can lock everyone out
+            when a provider has a bad day. */}
+        <Pressable
+          onPress={() => router.push("/(auth)/whatsapp")}
+          hitSlop={8}
+          style={styles.whatsappAlt}
+          accessibilityRole="button"
+        >
+          <Text style={styles.whatsappAltText}>sign in with WhatsApp instead</Text>
+        </Pressable>
+
+        <Btn3D label="Sign In" onPress={submit} loading={login.isPending} disabled={!canSubmit} />
 
             <Link href="/(auth)/signup" style={styles.link}>
               <Text style={styles.linkText}>New here? Create an account</Text>
@@ -118,6 +132,9 @@ export default function Login() {
 }
 
 const styles = StyleSheet.create({
+  whatsappAlt: { alignSelf: "center", minHeight: 44, justifyContent: "center", marginBottom: 8 },
+  whatsappAltText: { fontSize: 14, fontWeight: "600", color: colors.orange },
+
   wrap: { flexGrow: 1, padding: spacing.xl, justifyContent: "center" },
   title: { fontSize: 56, textAlign: "center", marginBottom: 4 },
   subtitle: { textAlign: "center", color: colors.inkMuted, marginBottom: spacing.xxl },

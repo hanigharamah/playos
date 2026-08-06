@@ -10,6 +10,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { File } from "expo-file-system";
 import { supabase } from "./supabase";
 import { serverNow, syncServerTime } from "./serverTime";
+import { normalizeSaudiMobile } from "./phone";
 
 // ─── Types ──────────────────────────────────────────────────────────────
 
@@ -1790,4 +1791,114 @@ export function useMarkOnboardingSeen() {
     // Refresh `me` so app/index.tsx stops redirecting back to onboarding.
     onSuccess: () => queryClient.invalidateQueries({ queryKey: qk.me }),
   });
+}
+
+// ─── WhatsApp sign-in ───────────────────────────────────────────────────
+
+/**
+ * Send a one-time code over WhatsApp.
+ *
+ * Supabase generates, stores, expires and rate-limits the code and mints the
+ * session; Twilio only delivers the message. That division matters — the
+ * alternative was hand-rolling OTP storage, brute-force lockout and session
+ * minting, and the failure mode of getting that wrong is account takeover.
+ *
+ * `channel: "whatsapp"` requires Twilio configured as the Supabase phone
+ * provider with a WhatsApp sender. Until that is set up in the dashboard this
+ * returns a provider error, which the screen surfaces rather than swallowing.
+ *
+ * The number is canonicalised HERE as well as by the database trigger, because
+ * with phone auth it is both the identity and the delivery address: sending to
+ * one spelling and looking the account up under another silently creates a
+ * second account for the same person.
+ */
+export function useSendWhatsAppCode() {
+  return useMutation({
+    mutationFn: async (vars: { phone: string }): Promise<{ phone: string }> => {
+      const phone = normalizeSaudiMobile(vars.phone);
+      if (!phone) {
+        throw { data: { error: "That doesn't look like a Saudi mobile number." } };
+      }
+
+      const { error } = await supabase.auth.signInWithOtp({
+        phone,
+        options: {
+          channel: "whatsapp",
+          // An unknown number should not silently become an account. Signup
+          // collects a name, and a player created here would have none —
+          // which is what the lineup and the operator's call list read.
+          shouldCreateUser: false,
+        },
+      });
+
+      if (error) throw { data: { error: whatsappErrorMessage(error) } };
+      return { phone };
+    },
+  });
+}
+
+/**
+ * Exchange the code for a session.
+ *
+ * type: "sms" even though it arrived over WhatsApp — Supabase treats WhatsApp
+ * as a delivery channel for the same phone OTP, not a separate factor. Passing
+ * "whatsapp" here is rejected.
+ */
+export function useVerifyWhatsAppCode() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (vars: { phone: string; token: string }): Promise<AuthUser> => {
+      const phone = normalizeSaudiMobile(vars.phone);
+      if (!phone) throw { data: { error: "That number is no longer valid — start again." } };
+
+      const { data: auth, error } = await supabase.auth.verifyOtp({
+        phone,
+        token: vars.token.trim(),
+        type: "sms",
+      });
+      if (error) throw { data: { error: whatsappErrorMessage(error) } };
+      if (!auth.user) throw { data: { error: "That code didn't work. Try again." } };
+
+      const { data: profile } = await supabase
+        .from("users").select("*").eq("id", auth.user.id).single();
+      if (!profile) throw { data: { error: "We couldn't find your player profile." } };
+
+      const user: AuthUser = {
+        id: profile.id, email: profile.email, phone: profile.phone,
+        name: profile.name, role: profile.role, createdAt: profile.created_at,
+        avatarPreset: profile.avatar_preset ?? null,
+        avatarUrl: profile.avatar_url ?? null,
+        onboardingSeenAt: profile.onboarding_seen_at ?? null,
+      };
+      queryClient.setQueryData(qk.me, user);
+      return user;
+    },
+  });
+}
+
+/**
+ * Supabase's auth errors are written for developers. These are the ones a
+ * player can actually hit, in words that tell them what to do next.
+ *
+ * Anything unrecognised is passed through rather than replaced with a generic
+ * line: a message we have not seen before is more useful verbatim than
+ * flattened into "something went wrong".
+ */
+function whatsappErrorMessage(error: { message?: string; status?: number }): string {
+  const m = (error.message ?? "").toLowerCase();
+
+  // shouldCreateUser: false — the number has no account.
+  if (m.includes("signups not allowed") || m.includes("user not found")) {
+    return "No account uses that number. Create one first, or check the number.";
+  }
+  if (m.includes("expired")) return "That code has expired. Send a new one.";
+  if (m.includes("invalid") && m.includes("token")) return "That code isn't right. Check and try again.";
+  if (error.status === 429 || m.includes("rate limit") || m.includes("too many")) {
+    return "Too many attempts. Wait a minute and try again.";
+  }
+  // Twilio not configured, or the WhatsApp sender not approved yet.
+  if (m.includes("provider") || m.includes("not enabled") || m.includes("unsupported")) {
+    return "WhatsApp sign-in isn't switched on yet. Use your email and password for now.";
+  }
+  return error.message ?? "Something went wrong. Try again.";
 }
