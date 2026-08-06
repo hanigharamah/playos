@@ -18,7 +18,9 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-10">
           {/* Brand */}
           <div className="col-span-2 md:col-span-2">
-            <div className="flex items-center mb-3">
+            {/* dir="ltr": same two-span wordmark as the navbar, same reversal
+                under RTL. See the note there. */}
+            <div dir="ltr" className="flex items-center mb-3">
               <span className="text-xl font-extrabold uppercase" style={{ color: "#1D3557", letterSpacing: "-0.03em" }}>PLAY</span>
               <span className="text-xl font-extrabold uppercase" style={{ background: "linear-gradient(120deg, #FF8A00 0%, #FF3D9A 50%, #8E3DFF 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", letterSpacing: "-0.03em" }}>OS</span>
             </div>

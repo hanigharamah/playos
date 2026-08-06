@@ -69,6 +69,11 @@ export function Navbar() {
         <div className="flex items-center gap-7">
           <Link
             href={isOperator(user?.role) ? getPath("/dashboard") : user ? getPath("/my-games") : getPath("/")}
+            // dir="ltr" because the wordmark is two spans -- PLAY and OS --
+            // and a flex row reverses under the RTL wrapper, rendering the
+            // brand as "OSPLAY" on every Arabic page. A brand name is not
+            // translated content and should not follow text direction.
+            dir="ltr"
             className="flex items-center"
           >
             <span
