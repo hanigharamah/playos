@@ -1268,7 +1268,14 @@ export interface ConversationSummary {
   lastMessageAt: string | null;
 }
 
-/** The user's group chats — one per game they've booked and opened chat for at least once. */
+/**
+ * The user's group chats — one per game they've booked and opened chat once.
+ *
+ * There is no chat LIST screen any more: the tab was a leftover from the
+ * 5-tab layout, hidden from the bar and reachable from nowhere, and match
+ * chat is ratified as match-day only. This survives because
+ * /chat/[conversationId] reads it to title the conversation it is showing.
+ */
 export function useMyConversations() {
   return useQuery({
     queryKey: ["my-conversations"],

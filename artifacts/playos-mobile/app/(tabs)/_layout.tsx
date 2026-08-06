@@ -19,7 +19,6 @@ export default function TabsLayout() {
           the match room and nowhere else. There is deliberately no player-side
           chat history: the 30-day retention is for operators, and once a chat
           soft-closes the messages a player still needs arrived as push. */}
-      <Tabs.Screen name="chat" options={{ href: null }} />
       <Tabs.Screen name="settings" />
     </Tabs>
       {/* Above the tabs, on tab screens only — never over checkout or a modal. */}
