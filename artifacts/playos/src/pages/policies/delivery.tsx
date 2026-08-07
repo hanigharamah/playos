@@ -49,12 +49,11 @@ export default function DeliveryPolicy() {
 
       <Separator className="my-8" />
 
+      {/* TODO(contact): address removed at the owner's request, replacement
+          not chosen yet. Restore a mailto here when it is — see the note in
+          pages/privacy.tsx. */}
       <p className="text-sm text-muted-foreground">
-        Questions? Contact us at{" "}
-        <a href="mailto:hani.gharamah@evision-corp.org" className="text-primary hover:underline">
-          hani.gharamah@evision-corp.org
-        </a>
-        .
+        Questions? Get in touch and we'll help.
       </p>
     </div>
   );
