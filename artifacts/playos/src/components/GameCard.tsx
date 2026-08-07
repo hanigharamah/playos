@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { APP_GATE } from "@/lib/config";
 import { format } from "date-fns";
 import { MapPin, Users, Calendar, Clock, Ticket, ArrowRight } from "lucide-react";
 
@@ -134,7 +135,12 @@ export function GameCard({ game, getPath, bookLabel, fullLabel, className }: Gam
       {/* CTA button — fixed blue glass, not tied to the occupancy accent;
           badge + bar are what carry the occupancy color. */}
       <div className="px-4 pb-4">
-        <Link href={getPath(`/game/${game.id}`)}>
+        {/* With APP_GATE on, the CTA goes to the download page instead of
+            the web booking flow — carrying the game id, so that page can name
+            the match and, later, deep-link into it after install. The card
+            itself is unchanged: the games list stays browsable, because a
+            brochure with live fixtures on it is the proof PlayOS is running. */}
+        <Link href={getPath(APP_GATE ? `/get-app/${game.id}` : `/game/${game.id}`)}>
           <button
             disabled={isFull}
             className="btn-pill btn-pill-book w-full text-base font-bold flex items-center justify-between"

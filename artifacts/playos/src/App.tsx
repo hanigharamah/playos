@@ -26,6 +26,7 @@ import CheckIn from "@/pages/checkin/[pitchId]";
 import About from "@/pages/about";
 import Terms from "@/pages/terms";
 import Privacy from "@/pages/privacy";
+import GetApp from "@/pages/get-app";
 import RefundPolicy from "@/pages/policies/refund";
 import DeliveryPolicy from "@/pages/policies/delivery";
 import MyGames from "@/pages/my-games";
@@ -97,6 +98,7 @@ function AppContent() {
           <Route path="/about" component={About} />
           <Route path="/terms" component={Terms} />
           <Route path="/privacy" component={Privacy} />
+          <Route path="/get-app/:id" component={GetApp} />
           <Route path="/policies/refund" component={RefundPolicy} />
           <Route path="/policies/delivery" component={DeliveryPolicy} />
           <Route path="/my-games" component={MyGames} />
@@ -118,6 +120,7 @@ function AppContent() {
           <Route path="/ar/about" component={About} />
           <Route path="/ar/terms" component={Terms} />
           <Route path="/ar/privacy" component={Privacy} />
+          <Route path="/ar/get-app/:id" component={GetApp} />
           <Route path="/ar/policies/refund" component={RefundPolicy} />
           <Route path="/ar/policies/delivery" component={DeliveryPolicy} />
           <Route path="/ar/my-games" component={MyGames} />

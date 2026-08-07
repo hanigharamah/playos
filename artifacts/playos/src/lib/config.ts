@@ -65,3 +65,26 @@ export const DEFAULT_SETTINGS = {
     "Respect other players and the venue staff.\n" +
     "No-shows may lose booking priority for future games.",
 } as const;
+
+/**
+ * Send players to the app instead of the web booking flow.
+ *
+ * The website is a brochure now — the app is what gets marketed, and the web
+ * booking flow exists but is not promoted. When this is on, tapping a game
+ * card's CTA opens /get-app instead of the booking page.
+ *
+ * OFF BY DEFAULT, and it must stay off until the app is actually downloadable
+ * on both stores: with it on and no store listing, the CTA leads nowhere.
+ * Set VITE_APP_GATE=true in Vercel on launch day.
+ *
+ * Deliberately narrow. It gates the PLAYER booking CTA and nothing else — the
+ * games list stays browsable (it is the proof the thing is alive), and host
+ * login, the dashboard and the /x/<token> operator route are untouched. Those
+ * are working tools, and a download prompt swallowing them would remove a
+ * workflow rather than redirect one.
+ */
+export const APP_GATE = (import.meta.env.VITE_APP_GATE as string | undefined) === "true";
+
+/** Store listings. Empty until the apps are live; the page hides a missing one. */
+export const IOS_APP_URL = (import.meta.env.VITE_IOS_APP_URL as string | undefined) || "";
+export const ANDROID_APP_URL = (import.meta.env.VITE_ANDROID_APP_URL as string | undefined) || "";
