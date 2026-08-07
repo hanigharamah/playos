@@ -7,6 +7,13 @@ import { useI18n } from "@/lib/i18n";
  * /ar/privacy used to render this component with English content. Direction
  * (rtl/ltr) is handled by I18nProvider, so nothing here sets it.
  *
+ * TODO(contact): the support address was removed at the owner's request and a
+ * replacement is not chosen yet. Both the privacy and delivery policies now
+ * say "get in touch" without saying how. PDPL expects a reachable contact for
+ * data-access and deletion requests, and the App Store privacy questionnaire
+ * asks for one too — so this must be filled before submission, in BOTH
+ * languages here and in policies/delivery.tsx.
+ *
  * NOTE FOR WHOEVER TOUCHES THIS NEXT: sections 1 and 3 describe a product that
  * takes no card payments. That is true today and becomes FALSE the moment a
  * payment gateway is connected. Update both, in both languages, as part of
@@ -39,7 +46,7 @@ const EN: Section[] = [
   },
   {
     title: "6. Your Rights Under Saudi Law (PDPL)",
-    body: "Under the Saudi Personal Data Protection Law (PDPL), you have the right to know what personal data we hold about you, request a copy of it, ask us to correct inaccurate data, withdraw your consent, and request that we delete your account and associated data. You can delete your account yourself at any time from Settings in the PlayOS app. To exercise any other right, or to complain about how we handle your data, contact us using the details below.",
+    body: "Under the Saudi Personal Data Protection Law (PDPL), you have the right to know what personal data we hold about you, request a copy of it, ask us to correct inaccurate data, withdraw your consent, and request that we delete your account and associated data. You can delete your account yourself at any time from Settings in the PlayOS app. To exercise any other right, or to complain about how we handle your data, get in touch with us.",
   },
   {
     title: "7. Third-Party Links",
@@ -47,7 +54,7 @@ const EN: Section[] = [
   },
   {
     title: "8. Contact",
-    body: "If you have any questions or concerns about this Privacy Policy, or want to access, correct, or delete your data, please contact us at hani.gharamah@evision-corp.org.",
+    body: "If you have any questions or concerns about this Privacy Policy, or want to access, correct, or delete your data, please get in touch and we will respond.",
   },
 ];
 
@@ -74,7 +81,7 @@ const AR: Section[] = [
   },
   {
     title: "٦. حقوقك بموجب نظام حماية البيانات الشخصية",
-    body: "بموجب نظام حماية البيانات الشخصية في المملكة العربية السعودية، يحق لك معرفة البيانات الشخصية التي نحتفظ بها عنك، وطلب نسخة منها، وطلب تصحيح البيانات غير الدقيقة، وسحب موافقتك، وطلب حذف حسابك والبيانات المرتبطة به. ويمكنك حذف حسابك بنفسك في أي وقت من الإعدادات داخل تطبيق PlayOS. ولممارسة أي حق آخر، أو لتقديم شكوى بشأن طريقة تعاملنا مع بياناتك، يُرجى التواصل معنا عبر البيانات أدناه.",
+    body: "بموجب نظام حماية البيانات الشخصية في المملكة العربية السعودية، يحق لك معرفة البيانات الشخصية التي نحتفظ بها عنك، وطلب نسخة منها، وطلب تصحيح البيانات غير الدقيقة، وسحب موافقتك، وطلب حذف حسابك والبيانات المرتبطة به. ويمكنك حذف حسابك بنفسك في أي وقت من الإعدادات داخل تطبيق PlayOS. ولممارسة أي حق آخر، أو لتقديم شكوى بشأن طريقة تعاملنا مع بياناتك، يُرجى التواصل معنا.",
   },
   {
     title: "٧. روابط الجهات الخارجية",
@@ -82,7 +89,7 @@ const AR: Section[] = [
   },
   {
     title: "٨. التواصل",
-    body: "إذا كان لديك أي استفسار أو ملاحظة بشأن سياسة الخصوصية هذه، أو رغبت في الاطلاع على بياناتك أو تصحيحها أو حذفها، يُرجى التواصل معنا على hani.gharamah@evision-corp.org.",
+    body: "إذا كان لديك أي استفسار أو ملاحظة بشأن سياسة الخصوصية هذه، أو رغبت في الاطلاع على بياناتك أو تصحيحها أو حذفها، يُرجى التواصل معنا وسنقوم بالرد عليك.",
   },
 ];
 
